@@ -12,33 +12,24 @@ conditions_list <- list(
 )
 
 
-disc_var <- filter_with_conditions_list(
+disc_var <- make_var_list(
   data_frame,
   complete_list(conditions_list), "gender"
+)
+
+disc_var <- make_var_list(
+  data_frame,
+  complete_list(conditions_list)
+)
+
+x <- disc_var[[6]][[1]]
+x[c(85, 78, 45)] <- NA
+
+
+cont_var <-  make_var_list(
+  data_frame[, 4:6]
 )[[1]]
 
-# disc_var <- filter_with_conditions_list(
-#   data_frame,
-#   complete_list(conditions_list)
-# )[[1]]
+summary_tibble(cont_var[,1])
+summary(cont_var[,1])
 
-raw_table <- count_prop(disc_var) |>
-  tibble::as_tibble()
-
-raw_prop_table <- count_prop(disc_var) |>
-  prop.table(2) |>
-  tibble::as_tibble() |>
-  dplyr::rename(prop = n)
-
-final_table <- dplyr::left_join(raw_table, raw_prop_table) |>
-  tidyr::pivot_wider(
-    names_from = colnames(disc_var[2]),
-    values_from = c(n, prop),
-    names_vary = "slowest"
-  )
-
-
-disc_var
-compared <- compareGroups::compareGroups(gender ~ group, disc_var)
-compareGroups::createTable(compared)
-summary(compared)

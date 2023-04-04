@@ -12,49 +12,22 @@ data_frame <- medicaldata::smartpill |>
       lubridate::dmy()
   )
 
-conditions_list <- list(
-  gender = "age <= 80",
-  race = "",
-  height = "",
-  weight = "",
-  age = ""
-)
-
-foo_vars <- make_var_list(
-  data_frame,
-  complete_list(conditions_list), "gender"
-)
-foo_vars <- make_var_list(
-  data_frame,
-  complete_list(conditions_list)
-)
-
-cont_var <- foo_vars[[6]]
-cont_var[, 2] <- factor(cont_var[, 2], levels = c("F", "M"))
-cont_var[sample(87, 5), 2] <- NA
-cont_var[sample(87, 15), 1] <- NA
-summarise_continous_var(cont_var, use_NA = "ifany")
-
-disc_var <- foo_vars[[3]]
-disc_var[, 2] <- factor(disc_var[, 2], levels = c("F", "M"))
-disc_var[sample(87, 15), 2] <- NA
-disc_var[sample(87, 15), 1] <- NA
-summarise_discrete_var(disc_var)
-
-date_var <- foo_vars[[7]]
-date_var[, 2] <- factor(date_var[, 2], levels = c("F", "M"))
-date_var[sample(87, 5), 2] <- NA
-date_var[sample(87, 15), 1] <- NA
-summarise_continous_var(date_var, use_NA = "no")
-
-medicaldata::smartpill |>
-  janitor::clean_names() |>
-  dplyr::select(group:age)
-
 data_frame |>
   dplyr::mutate(
+    group = factor(group),
     race = factor(race)
   ) |>
-  summarise_df()
+  ody_summarise_df(
+    grouping_var = "gender",
+    conditions_list = list(
+      race = "group == 1",
+      height = "",
+      weight = "",
+      age = "",
+      date = ""
+    ),
+    exclude = "group",
+    use_NA = "ifany")
+
 
 

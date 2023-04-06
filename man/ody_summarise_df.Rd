@@ -9,9 +9,7 @@ ody_summarise_df(
   grouping_var = NULL,
   conditions_list = NULL,
   exclude = NULL,
-  use_NA = c("no", "ifany", "always"),
-  num_dec = 3,
-  prop_dec = 3
+  use_NA = c("no", "ifany", "always")
 )
 }
 \arguments{
@@ -24,10 +22,6 @@ ody_summarise_df(
 \item{exclude}{Variables that should be excluded}
 
 \item{use_NA}{Add missing values in the report?}
-
-\item{num_dec}{Number of decimals in the summary of a numeric variable}
-
-\item{prop_dec}{Number of decimals in the proportions}
 }
 \value{
 A list

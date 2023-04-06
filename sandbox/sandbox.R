@@ -32,7 +32,6 @@ data_frame$race[sample(95, 15)] <- NA
     exclude = "group",
     use_NA = "no"))
 
-
 result$age$mean
 
 

@@ -29,6 +29,7 @@ data_frame$race[sample(95, 15)] <- NA
       age = "",
       date = ""
     ),
+    compare_groups = TRUE,
     exclude = "group",
     use_NA = "ifany"))
 

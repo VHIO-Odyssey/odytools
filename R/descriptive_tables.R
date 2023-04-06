@@ -284,14 +284,19 @@ summarise_discrete_var <- function(disc_var,
 #' @param grouping_var A grouping variable
 #' @param conditions_list Conditions list to filter variables
 #' @param exclude Variables that should be excluded
+#' @param compare_groups Compare groups?
 #' @param use_NA Add missing values in the report?
 #'
 #' @return A list
+#' @details
+#' If grouping_var exists and compare_groups = TRUE, the code runs compareGroups::compareGroups(grouping_var ~ variable).
+#'
 #' @export
 ody_summarise_df <- function(data_frame,
                              grouping_var = NULL,
                              conditions_list = NULL,
                              exclude = NULL,
+                             compare_groups = FALSE,
                              use_NA = c("no", "ifany", "always")) {
 
   use_NA <- rlang::arg_match(use_NA)
@@ -307,10 +312,29 @@ ody_summarise_df <- function(data_frame,
   purrr::map(
     var_list,
     function(x) {
+
+      # Descriptive
       if (is.numeric(x[[1]]) | lubridate::is.Date(x[[1]])) {
-        summarise_continous_var(x, use_NA)
+        descriptive <- summarise_continous_var(x, use_NA)
       } else {
-        summarise_discrete_var(x, use_NA)
+        descriptive <- summarise_discrete_var(x, use_NA)
+      }
+
+      #Groups comparison
+      if (ncol(x) == 2 & compare_groups) {
+        form <- call(
+          "as.formula",
+          stringr::str_c(
+            colnames(x)[2], " ~ ", colnames(x)[1]
+          )
+        )
+
+      group_comparison <- compareGroups::compareGroups(eval(form), x)
+
+      list(descriptive = descriptive, comparison = group_comparison)
+
+      } else {
+        descriptive
       }
     }
   )

@@ -9,6 +9,7 @@ ody_summarise_df(
   grouping_var = NULL,
   conditions_list = NULL,
   exclude = NULL,
+  compare_groups = FALSE,
   use_NA = c("no", "ifany", "always")
 )
 }
@@ -21,6 +22,8 @@ ody_summarise_df(
 
 \item{exclude}{Variables that should be excluded}
 
+\item{compare_groups}{Compare groups?}
+
 \item{use_NA}{Add missing values in the report?}
 }
 \value{
@@ -28,4 +31,7 @@ A list
 }
 \description{
 ody_summarise_df
+}
+\details{
+If grouping_var exists and compare_groups = TRUE, the code runs compareGroups::compareGroups(grouping_var ~ variable).
 }

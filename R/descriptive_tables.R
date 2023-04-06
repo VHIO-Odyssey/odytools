@@ -95,7 +95,7 @@ make_var_list <- function(data_frame,
 
 # Helper function to create a tibble-like summary for both numeric or date
 # variables.
-summary_tibble <- function(x, num_dec = 3) {
+summary_tibble <- function(x) {
 
   if (lubridate::is.Date(x)) {
 
@@ -104,7 +104,7 @@ summary_tibble <- function(x, num_dec = 3) {
       min = min(x, na.rm = TRUE),
       q1 = stats::quantile(x, 0.25, na.rm = TRUE, type = 1),
       median = stats::median(x, na.rm = TRUE),
-      mean = mean(x, na.rm = TRUE) |> round(num_dec),
+      mean = mean(x, na.rm = TRUE),
       q3 = stats::quantile(x, 0.75, na.rm = TRUE, type = 1),
       max = max(x, na.rm = TRUE),
       `<NA>` = sum(is.na(x))
@@ -117,8 +117,8 @@ summary_tibble <- function(x, num_dec = 3) {
       min = min(x, na.rm = TRUE),
       q1 = stats::quantile(x, 0.25, na.rm = TRUE),
       median = stats::median(x, na.rm = TRUE),
-      mean = mean(x, na.rm = TRUE) |> round(num_dec),
-      sd = stats::sd(x, na.rm = TRUE) |> round(num_dec),
+      mean = mean(x, na.rm = TRUE),
+      sd = stats::sd(x, na.rm = TRUE),
       q3 = stats::quantile(x, 0.75, na.rm = TRUE),
       max = max(x, na.rm = TRUE),
       `<NA>` = sum(is.na(x))
@@ -131,8 +131,7 @@ summary_tibble <- function(x, num_dec = 3) {
 # Helper function to summarise continuous variables (including dates). If there
 # is a grouping_var, the summary is performed by each level of grouping_var.
 summarise_continous_var <- function(cont_var,
-                                    use_NA = c("no", "ifany", "always"),
-                                    num_dec = 3) {
+                                    use_NA = c("no", "ifany", "always")) {
 
   use_NA <- rlang::arg_match(use_NA)
 
@@ -158,17 +157,17 @@ summarise_continous_var <- function(cont_var,
 
     full_summary <- dplyr::bind_rows(
       # Overall summary
-      summary_tibble(overall_data, num_dec),
+      summary_tibble(overall_data),
       # By levels summaries
       purrr::map_dfr(
-        by_group_data$data, ~summary_tibble(.[[1]]), num_dec
+        by_group_data$data, ~summary_tibble(.[[1]])
       )[factor_order, ],
       # Missing level summary
       summary_tibble(cont_var[is.na(cont_var[[2]]), ][[1]]) |>
         suppressWarnings()
     ) |>
       dplyr::mutate(
-        "{names(cont_var)[1]}" := c(
+        "{names(cont_var)[2]}" := c(
           "Overall", levels(by_group_data[[1]]), "<NA>"
         ),
         .before = "n"
@@ -185,7 +184,7 @@ summarise_continous_var <- function(cont_var,
   ) {
     return(
       full_summary |>
-        dplyr::filter(.data[[colnames(cont_var)[1]]] != "<NA>") |>
+        dplyr::filter(.data[[colnames(cont_var)[2]]] != "<NA>") |>
         dplyr::select(-.data$`<NA>`)
     )
   } else if (use_NA == "always") {
@@ -193,7 +192,7 @@ summarise_continous_var <- function(cont_var,
   } else {
     if (!missing_levels) {
       full_summary <- full_summary |>
-        dplyr::filter(.data[[colnames(cont_var)[1]]] != "<NA>")
+        dplyr::filter(.data[[colnames(cont_var)[2]]] != "<NA>")
     }
     if (!missing_values) {
       full_summary <- full_summary |>
@@ -208,8 +207,7 @@ summarise_continous_var <- function(cont_var,
 # 1D table if no grouping_var is suplied to make_var_list. Otherwise, a 2d table
 # including an overall.
 summarise_discrete_var <- function(disc_var,
-                                   use_NA = c("no", "ifany", "always"),
-                                   prop_dec = 3) {
+                                   use_NA = c("no", "ifany", "always")) {
 
   if (ncol(disc_var) == 1) {
     # 1D count
@@ -218,7 +216,7 @@ summarise_discrete_var <- function(disc_var,
     count_prop_table <- tibble::tibble(
       "{colnames(disc_var)}" := names(raw_count),
       n = as.numeric(raw_count),
-      prop = round(prop.table(raw_count), prop_dec) |> as.numeric()
+      prop = as.numeric(prop.table(raw_count))
     )
   }
 
@@ -236,7 +234,6 @@ summarise_discrete_var <- function(disc_var,
       tibble::as_tibble() |>
       dplyr::rename(prop = "n") |>
       dplyr::mutate(
-        prop = round(.data$prop, prop_dec),
         # NA is replacd by <NA> which is a more improbable wild level name.
         "{colnames(disc_var)[2]}" := tidyr::replace_na(
           .data[[colnames(disc_var)[2]]], "<NA>"
@@ -248,7 +245,7 @@ summarise_discrete_var <- function(disc_var,
       "{colnames(disc_var[1])}" := names(raw_overall),
       "{colnames(disc_var[2])}" := "overall",
       n = as.numeric(raw_overall),
-      prop = round(prop.table(raw_overall), prop_dec) |> as.numeric()
+      prop = as.numeric(prop.table(raw_overall))
     )
 
     count_prop_table <- dplyr::bind_rows(
@@ -263,14 +260,19 @@ summarise_discrete_var <- function(disc_var,
       suppressMessages()
   }
 
+  count_prop_table
+
   # NA to "<NA>" and NaN to 0
   count_prop_table |>
     dplyr::mutate(
+      "{colnames(disc_var[1])}" := tidyr::replace_na(
+        .data[[colnames(disc_var[1])]], "<NA>"
+      ),
       dplyr::across(
         tidyselect::everything(),
         function(x) {
-          x <- replace(x, is.nan(x), 0)
-          replace(x, is.na(x), "<NA>")
+          replace(x, is.nan(x), 0)
+          # replace(x, is.na(x), "<NA>")
         }
       )
     )
@@ -283,8 +285,6 @@ summarise_discrete_var <- function(disc_var,
 #' @param conditions_list Conditions list to filter variables
 #' @param exclude Variables that should be excluded
 #' @param use_NA Add missing values in the report?
-#' @param num_dec Number of decimals in the summary of a numeric variable
-#' @param prop_dec Number of decimals in the proportions
 #'
 #' @return A list
 #' @export
@@ -292,8 +292,7 @@ ody_summarise_df <- function(data_frame,
                              grouping_var = NULL,
                              conditions_list = NULL,
                              exclude = NULL,
-                             use_NA = c("no", "ifany", "always"),
-                             num_dec = 3, prop_dec = 3) {
+                             use_NA = c("no", "ifany", "always")) {
 
   use_NA <- rlang::arg_match(use_NA)
 
@@ -309,9 +308,9 @@ ody_summarise_df <- function(data_frame,
     var_list,
     function(x) {
       if (is.numeric(x[[1]]) | lubridate::is.Date(x[[1]])) {
-        summarise_continous_var(x, use_NA, num_dec)
+        summarise_continous_var(x, use_NA)
       } else {
-        summarise_discrete_var(x, use_NA, prop_dec)
+        summarise_discrete_var(x, use_NA)
       }
     }
   )

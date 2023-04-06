@@ -12,7 +12,10 @@ data_frame <- medicaldata::smartpill |>
       lubridate::dmy()
   )
 
-data_frame |>
+data_frame$gender[sample(95, 15)] <- NA
+data_frame$race[sample(95, 15)] <- NA
+
+(result <- data_frame |>
   dplyr::mutate(
     group = factor(group),
     race = factor(race)
@@ -27,7 +30,9 @@ data_frame |>
       date = ""
     ),
     exclude = "group",
-    use_NA = "ifany")
+    use_NA = "no"))
 
+
+result$age$mean
 
 

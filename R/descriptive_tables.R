@@ -138,9 +138,9 @@ summarise_continous_var <- function(cont_var,
 
   if (ncol(cont_var) == 1) {
     full_summary <- summary_tibble(cont_var[[1]]) |>
-      dplyr::select(-n)
+      dplyr::select(-.data$n)
     if (use_NA == "no" | (use_NA == "ifany" & full_summary[["<NA>"]] == 0)) {
-      return(dplyr::select(full_summary, -`<NA>`))
+      return(dplyr::select(full_summary, -.data$`<NA>`))
     } else {
        return(full_summary)
     }
@@ -168,13 +168,13 @@ summarise_continous_var <- function(cont_var,
         suppressWarnings()
     ) |>
       dplyr::mutate(
-        "{names(cont_var)[2]}" := c(
+        "{names(cont_var)[1]}" := c(
           "Overall", levels(by_group_data[[1]]), "<NA>"
         ),
         .before = "n"
       )
 
-    missing_levels <- tail(full_summary$n, 1) != 0
+    missing_levels <- utils::tail(full_summary$n, 1) != 0
     missing_values <- full_summary$`<NA>`[1] != 0
 
   }
@@ -185,19 +185,19 @@ summarise_continous_var <- function(cont_var,
   ) {
     return(
       full_summary |>
-        dplyr::filter(.data[[colnames(cont_var)[2]]] != "<NA>") |>
-        dplyr::select(-`<NA>`)
+        dplyr::filter(.data[[colnames(cont_var)[1]]] != "<NA>") |>
+        dplyr::select(-.data$`<NA>`)
     )
   } else if (use_NA == "always") {
     return(full_summary)
   } else {
     if (!missing_levels) {
       full_summary <- full_summary |>
-        dplyr::filter(.data[[colnames(cont_var)[2]]] != "<NA>")
+        dplyr::filter(.data[[colnames(cont_var)[1]]] != "<NA>")
     }
     if (!missing_values) {
       full_summary <- full_summary |>
-        dplyr::select(-`<NA>`)
+        dplyr::select(-.data$`<NA>`)
     }
     return(full_summary)
   }
@@ -276,7 +276,18 @@ summarise_discrete_var <- function(disc_var,
     )
 }
 
-# Function to run summarise_ functions for each variable of a data.frame
+#' ody_summarise_df
+#'
+#' @param data_frame data frame
+#' @param grouping_var A grouping variable
+#' @param conditions_list Conditions list to filter variables
+#' @param exclude Variables that should be excluded
+#' @param use_NA Add missing values in the report?
+#' @param num_dec Number of decimals in the summary of a numeric variable
+#' @param prop_dec Number of decimals in the proportions
+#'
+#' @return A list
+#' @export
 ody_summarise_df <- function(data_frame,
                              grouping_var = NULL,
                              conditions_list = NULL,

@@ -30,8 +30,33 @@ data_frame$race[sample(95, 15)] <- NA
       date = ""
     ),
     exclude = "group",
-    use_NA = "no"))
+    use_NA = "ifany"))
 
 result$age$mean
+
+
+comparison <- compareGroups::compareGroups(
+  gender ~ height + age + weight + group, data_frame, na.action = "na.exclude"
+)
+
+compareGroups::createTable(comparison)
+
+data_frame |>
+  dplyr::select(gender, height, age, weight, group) |>
+  make_var_list(grouping_var = "gender") |>
+  purrr::map(
+    function(data_frame) {
+      if (ncol(data_frame) == 1) return("No  groups")
+      form <- call(
+        "as.formula",
+        stringr::str_c(
+          colnames(data_frame)[2], " ~ ",
+          colnames(data_frame)[1]
+        )
+      )
+
+      compareGroups::compareGroups(eval(form), data_frame)
+    }
+  )
 
 

@@ -1,3 +1,4 @@
+# data_summary ----
 data_frame <- medicaldata::smartpill |>
   janitor::clean_names() |>
   dplyr::select(group:age) |>

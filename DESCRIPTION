@@ -16,6 +16,7 @@ Imports:
     DT,
     flexdashboard,
     ggplot2,
+    kableExtra,
     knitr,
     lme4,
     lubridate,

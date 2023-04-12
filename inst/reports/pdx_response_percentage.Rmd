@@ -1,61 +1,71 @@
 ---
-title: "GLMM"
-output: html_document
+title: "PDX Response"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
 params:
   data_frame: NA
+  method: "Wald"
 editor_options: 
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+library(flexdashboard)
+library(dplyr)
+library(stringr)
+library(lme4)
+library(purrr)
+library(tidyr)
+library(ggplot2)
+library(tidyselect)
+library(DT)
+library(kableExtra)
 ```
 
 ```{r data}
-# df structure:
-  # 1: Subject id
-  # 2: Sensitivity factor (2 levels)
-  # 3: Treatment factor (2 levels)
-  # 4: Response percentage
 
-df <- params$data_frame
-# df <- openxlsx::read.xlsx("C:/Users/eduardogarcia/Documents/garcia_galea/t_monserrat/data/230322 table example for r script.xlsx") |>
-#   janitor::clean_names() |>
-#   dplyr::select(pdx_id, sensitivity, group, percent_ki67)
+# data_frame <- params$data_frame
+data_frame <- openxlsx::read.xlsx(
+  "C:/Users/eduardogarcia/Documents/garcia_galea/t_monserrat/data/230322 table example for r script.xlsx"
+  ) |>
+  janitor::clean_names() |>
+  select(pdx_id, sensitivity, group, percent_ki67)
 
-df_names <- names(df)
-df <- df |>
-  dplyr::mutate(
-    response = .data[[df_names[4]]] / 100,
-    dplyr::across(2:3, factor)
+df_names <- names(data_frame)
+data_frame <- data_frame |>
+  mutate(
+    "{df_names[4]}" := .data[[df_names[4]]] / 100,
+    across(1:3, factor),
+    weight_100 = 100
   )
 ```
-
 
 ```{r model}
 
 # Model with random intercepts only
 form1 <- call(
   "formula",
-  stringr::str_c(
-    "response ~ ", df_names[2], " * ", df_names[3],
+  str_c(
+    df_names[4], " ~ ", df_names[2], " * ", df_names[3],
     " + (1 | ", df_names[1], ")"
   )
 )
-model1 <- lme4::glmer(
-  eval(form1), data = df, family = "binomial", weights = rep(100, nrow(df))
+model1 <- glmer(
+  eval(form1), data = data_frame, family = "binomial", weights = weight_100
 )
 
 # Model with random intercepts and slopes
 form2 <- call(
   "formula",
-  stringr::str_c(
-    "response ~ ", df_names[2], " * ", df_names[3],
+  str_c(
+    df_names[4], " ~ ", df_names[2], " * ", df_names[3],
     " + (1 + ", df_names[3], " | ", df_names[1], ")"
   )
 )
-model2 <- lme4::glmer(
-  eval(form2), data = df, family = "binomial", weights = rep(100, nrow(df))
+model2 <- glmer(
+  eval(form2), data = data_frame, family = "binomial", weights = weight_100
 )
 
 comp_models <- anova(model1, model2)
@@ -69,72 +79,183 @@ if (comp_models$`Pr(>Chisq)`[2] <= 0.05) {
   model <- model1
 }
 
-
 ```
 
 ```{r coefficients}
 model_summary <- summary(model)
-model_anova <- car::Anova(model, type = "III")
 
 # Coefficients Confidence Intervals 
-intervals <- confint(model)
+intervals <- confint(model, method = params$method, parm = "beta_")
+
 coef_int <- list(
   # Lower coefficient values
-  intervals[4:7, 1],
+  intervals[, 1],
   # Coefficients values
   model_summary$coefficients[, 1],
   # Upper coefficients values
-  intervals[4:7, 2]
+  intervals[, 2]
 )
 
 ```
 
 ```{r estimates}
 
-sensitivity_levels <- levels(df[[2]])
-treatment_levels <- levels(df[[3]])
+sensitivity_levels <- levels(data_frame[[2]])
+treatment_levels <- levels(data_frame[[3]])
 
-parameters <- tibble::tibble(
-  "{stringr::str_c(treatment_levels[1], '___', sensitivity_levels[1])}" := c(1, 0, 0, 0),
-  "{stringr::str_c(treatment_levels[1], '___', sensitivity_levels[2])}" := c(1, 1, 0, 0),
-  "{stringr::str_c(treatment_levels[2], '___', sensitivity_levels[1])}" := c(1, 0, 1, 0),
-  "{stringr::str_c(treatment_levels[2], '___', sensitivity_levels[2])}" := c(1, 1, 1, 1),
+parameters <- tibble(
+  "{str_c(treatment_levels[1], '___', sensitivity_levels[1])}" := c(1, 0, 0, 0),
+  "{str_c(treatment_levels[1], '___', sensitivity_levels[2])}" := c(1, 1, 0, 0),
+  "{str_c(treatment_levels[2], '___', sensitivity_levels[1])}" := c(1, 0, 1, 0),
+  "{str_c(treatment_levels[2], '___', sensitivity_levels[2])}" := c(1, 1, 1, 1),
 )
 
-estimates <- purrr::map_df(
+estimates <- map_df(
   parameters,
   function(x) {
-    purrr::map_dbl(coef_int, ~ sum(. * x) |> boot::inv.logit()) * 100
+    map_dbl(coef_int, ~ sum(. * x) |> boot::inv.logit()) * 100
   }
 ) |>
-  dplyr::mutate(
+  mutate(
     interval = c("lower", "value", "upper")
   ) |>
-  tidyr::pivot_longer(cols = 1:4) |>
-  dplyr::mutate(
-    "{df_names[3]}" := stringr::str_remove(name, "___.+$"),
-    "{df_names[2]}" := stringr::str_remove(name, "^.+___")
+  pivot_longer(cols = 1:4) |>
+  mutate(
+    "{df_names[3]}" := str_remove(name, "___.+$"),
+    "{df_names[2]}" := str_remove(name, "^.+___")
   ) |>
-  dplyr::select(
-    tidyselect::all_of(c(df_names[2], df_names[3])), interval, value
+  select(
+    all_of(c(df_names[2], df_names[3])), interval, value
   ) |>
-  tidyr::pivot_wider(names_from = interval, values_from = value)
+  pivot_wider(names_from = interval, values_from = value)
+
 ```
 
-```{r estimates-plot}
-ggplot2::ggplot(
-    estimates, ggplot2::aes(
-      .data[[df_names[3]]], value,
-      group = .data[[df_names[2]]], color = .data[[df_names[2]]]
-    )
+```{r treatment-OR}
+or_params <- tibble(
+  "{str_c('OR_', sensitivity_levels[1])}" := c(0, 0, 1, 0),
+  "{str_c('OR_', sensitivity_levels[2])}" := c(0, 0, 1, 1),
+)
+
+
+
+ 
+or_estimates <- map_df(
+  or_params,
+  function(x) {
+    map_dbl(coef_int, ~ sum(. * x) |> exp())
+  }
+) |>
+  mutate(
+    interval = c("lower", "value", "upper")
+  )
+```
+
+
+
+Data
+================================================================================
+
+```{r}
+
+data_frame |> 
+  select(-weight_100) |> 
+  DT::datatable(
+    filter = "top", options = list(paging = FALSE, dom = 't')
+  )
+
+```
+
+
+Exploration
+================================================================================
+
+Column
+--------------------------------------------------------------------------------
+### **Raw Data**
+
+```{r raw-plot, fig.width=8, fig.asp=1}
+data_exploration <- data_frame |>
+  mutate(
+    "{df_names[4]}" := .data[[df_names[4]]] * 100,
+  )
+
+ggplot(data_exploration, aes(.data[[df_names[3]]], .data[[df_names[4]]])) +
+  facet_grid( ~ .data[[df_names[2]]]) +
+  geom_boxplot() +
+  geom_jitter()
+```
+
+Column
+--------------------------------------------------------------------------------
+### **Paired by PDX**
+
+```{r paired-plot, fig.width=8, fig.asp=1}
+paired_data <- data_exploration |> 
+  group_by(.data[[df_names[1]]], .data[[df_names[2]]], .data[[df_names[3]]]) |> 
+  summarise(
+    "{df_names[4]}" := mean(.data[[df_names[4]]])
+  )
+
+
+ggplot(paired_data, aes(.data[[df_names[3]]], .data[[df_names[4]]])) +
+  facet_wrap(~ .data[[df_names[2]]]) +
+  geom_point() +
+  geom_line(aes(group = .data[[df_names[1]]]))
+
+```
+
+
+Analysis
+================================================================================
+
+Column {.tabset}
+--------------------------------------------------------------------------------
+
+### **Estimates**
+```{r}
+estimates |> 
+  mutate(
+    across(lower:upper, ~round(., 1))
+  ) |> 
+  kbl(format = "pipe")
+```
+
+
+### **Summary**
+```{r}
+model_summary
+```
+
+
+
+Column
+--------------------------------------------------------------------------------
+
+###
+
+```{r estimates-plot, fig.width=12, fig.asp=0.62}
+
+ggplot(
+  estimates, aes(
+    .data[[df_names[3]]], value,
+    group = .data[[df_names[2]]], color = .data[[df_names[2]]]
+  )
+) +
+  geom_line(
+    aes(
+      .data[[df_names[3]]], .data[[df_names[4]]], 
+      group = .data[[df_names[1]]], color = .data[[df_names[2]]]
+    ),
+    paired_data, alpha = 0.25
   ) +
-    ggplot2::geom_line(position = ggplot2::position_dodge(width = 0.1)) +
-    ggplot2::geom_point(position = ggplot2::position_dodge(width = 0.1)) +
-    ggplot2::geom_pointrange(
-      ggplot2::aes(ymin = lower, ymax = upper),
-      position = ggplot2::position_dodge(width = 0.1)
-    ) +
-    ggplot2::ylab(df_names[4]) +
-    ggplot2::ylim(0, 100)
+  geom_line(position = position_dodge(width = 0.1), linewidth = 1) +
+  geom_point(position = position_dodge(width = 0.1)) +
+  geom_pointrange(
+    aes(ymin = lower, ymax = upper),
+    position = position_dodge(width = 0.1), linewidth = 1
+  ) +
+  ylab(df_names[4]) +
+  ylim(0, 100)
 ```
 

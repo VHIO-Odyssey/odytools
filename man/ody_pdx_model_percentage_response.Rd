@@ -4,7 +4,12 @@
 \alias{ody_pdx_model_percentage_response}
 \title{Binomial GLMM to test PDX responsiveness}
 \usage{
-ody_pdx_model_percentage_response(data_frame)
+ody_pdx_model_percentage_response(
+  data_frame,
+  file_name = NULL,
+  file_dir = getwd(),
+  method = c("profile", "Wald", "boot")
+)
 }
 \arguments{
 \item{data_frame}{A data frame where:
@@ -14,9 +19,15 @@ ody_pdx_model_percentage_response(data_frame)
 \item The third column is a two levels factor for treatment.
 \item The fourth column is the response variable (integer from 0 to 100).
 }}
+
+\item{file_name}{Name of the html file. If NULL, the file is named with the date the analysis was performed and the name of the dependent variable.}
+
+\item{file_dir}{Directory where the result is stored. The default is the current working directory.}
+
+\item{method}{Method used to calculate glmr confidence intervals.}
 }
 \value{
-A HTML report in the working directory.
+A HTML dashboard.
 }
 \description{
 Runs a binomial Genralized Mixed Model to test wether the response to a treatment depends on the sensitivity. The response variable is assumed to be a count of "positive" findings over a total count of 100.

@@ -1,3 +1,55 @@
+# pdx_response_percentage ----
+data_frame <- openxlsx::read.xlsx(
+  "C:/Users/eduardogarcia/Documents/garcia_galea/t_monserrat/data/230322 table example for r script.xlsx"
+) |>
+  janitor::clean_names() |>
+  select(pdx_id, sensitivity, group, percent_ki67)
+
+
+names_df <- names(data_frame)
+
+rnd_fct <- stringr::str_c(
+  "- PDX random factor:",
+  stringr::str_c("'", names_df[1], "'"), "with",
+  unique(data_frame[[1]]) |> length(),
+  "subjects", sep = " "
+)
+
+sen_fct <- stringr::str_c(
+  "- Sensitivity fixed factor:",
+  stringr::str_c("'", names_df[2], "'"), "with levels",
+  stringr::str_c(
+    stringr::str_c("'", unique(data_frame[[2]]), "'"),
+    collapse = " and "
+  ),
+  sep = " "
+)
+
+trt_fct <- stringr::str_c(
+  "- Treatment fixed factor:",
+  stringr::str_c("'", names_df[3], "'"), "with levels",
+  stringr::str_c(
+    stringr::str_c("'", unique(data_frame[[3]]), "'"),
+    collapse = " and "
+  ),
+  sep = " "
+)
+
+resp <- stringr::str_c(
+  "- Response variable:", stringr::str_c("'", names_df[4], "'"), sep = " "
+)
+
+cat(
+ str_c(
+    c("Data Structure:", rnd_fct, sen_fct, trt_fct, resp), collapse = "\n"
+  )
+)
+
+ok <- readline("Please, confirm the data is correct to proceed (y/n): ")
+
+if (ok == "n") stop("Analysis interrupted")
+
+
 # data_summary ----
 data_frame <- medicaldata::smartpill |>
   janitor::clean_names() |>

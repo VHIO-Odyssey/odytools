@@ -6,7 +6,7 @@ output:
     vertical_layout: fill
 params:
   data_frame: NA
-  method: "Wald"
+  method: "profile"
 editor_options: 
   chunk_output_type: console
 ---
@@ -26,15 +26,10 @@ library(kableExtra)
 
 ```{r data}
 
-# data_frame <- params$data_frame
-data_frame <- openxlsx::read.xlsx(
-  "C:/Users/eduardogarcia/Documents/garcia_galea/t_monserrat/data/230322 table example for r script.xlsx"
-  ) |>
-  janitor::clean_names() |>
-  select(pdx_id, sensitivity, group, percent_ki67)
+data_frame <- params$data_frame
 
 df_names <- names(data_frame)
-data_frame <- data_frame |>
+data_analysis <- data_frame |>
   mutate(
     "{df_names[4]}" := .data[[df_names[4]]] / 100,
     across(1:3, factor),
@@ -53,7 +48,7 @@ form1 <- call(
   )
 )
 model1 <- glmer(
-  eval(form1), data = data_frame, family = "binomial", weights = weight_100
+  eval(form1), data = data_analysis, family = "binomial", weights = weight_100
 )
 
 # Model with random intercepts and slopes
@@ -65,7 +60,7 @@ form2 <- call(
   )
 )
 model2 <- glmer(
-  eval(form2), data = data_frame, family = "binomial", weights = weight_100
+  eval(form2), data = data_analysis, family = "binomial", weights = weight_100
 )
 
 comp_models <- anova(model1, model2)
@@ -100,8 +95,8 @@ coef_int <- list(
 
 ```{r estimates}
 
-sensitivity_levels <- levels(data_frame[[2]])
-treatment_levels <- levels(data_frame[[3]])
+sensitivity_levels <- levels(data_analysis[[2]])
+treatment_levels <- levels(data_analysis[[3]])
 
 parameters <- tibble(
   "{str_c(treatment_levels[1], '___', sensitivity_levels[1])}" := c(1, 0, 0, 0),
@@ -137,9 +132,6 @@ or_params <- tibble(
   "{str_c('OR_', sensitivity_levels[2])}" := c(0, 0, 1, 1),
 )
 
-
-
- 
 or_estimates <- map_df(
   or_params,
   function(x) {
@@ -148,20 +140,30 @@ or_estimates <- map_df(
 ) |>
   mutate(
     interval = c("lower", "value", "upper")
+  ) |> 
+  pivot_longer(1:2) |> 
+  pivot_wider(names_from = interval, values_from = value) |> 
+  mutate(
+    name = str_remove(name, "^OR_")
+  ) |> 
+  rename(
+    "{df_names[2]}" := name
   )
 ```
-
 
 
 Data
 ================================================================================
 
-```{r}
 
+```{r data-table}
 data_frame |> 
-  select(-weight_100) |> 
+  mutate(
+    across(1:3, factor)
+  ) |> 
   DT::datatable(
-    filter = "top", options = list(paging = FALSE, dom = 't')
+    data_frame,
+    filter = "top", options = list(paging = FALSE)
   )
 
 ```
@@ -175,12 +177,8 @@ Column
 ### **Raw Data**
 
 ```{r raw-plot, fig.width=8, fig.asp=1}
-data_exploration <- data_frame |>
-  mutate(
-    "{df_names[4]}" := .data[[df_names[4]]] * 100,
-  )
 
-ggplot(data_exploration, aes(.data[[df_names[3]]], .data[[df_names[4]]])) +
+ggplot(data_frame, aes(.data[[df_names[3]]], .data[[df_names[4]]])) +
   facet_grid( ~ .data[[df_names[2]]]) +
   geom_boxplot() +
   geom_jitter()
@@ -191,7 +189,7 @@ Column
 ### **Paired by PDX**
 
 ```{r paired-plot, fig.width=8, fig.asp=1}
-paired_data <- data_exploration |> 
+paired_data <- data_frame |> 
   group_by(.data[[df_names[1]]], .data[[df_names[2]]], .data[[df_names[3]]]) |> 
   summarise(
     "{df_names[4]}" := mean(.data[[df_names[4]]])
@@ -213,7 +211,9 @@ Column {.tabset}
 --------------------------------------------------------------------------------
 
 ### **Estimates**
-```{r}
+
+**`r df_names[4]` estimates**
+```{r estimates-tbl}
 estimates |> 
   mutate(
     across(lower:upper, ~round(., 1))
@@ -221,12 +221,21 @@ estimates |>
   kbl(format = "pipe")
 ```
 
+**Odds `r treatment_levels[2]` / Odds `r treatment_levels[1]`**
 
-### **Summary**
-```{r}
-model_summary
+```{r OR-tbl}
+or_estimates |> 
+  mutate(
+    across(lower:upper, ~round(., 3))
+  ) |> 
+  kbl(format = "pipe")
 ```
 
+
+### **Summary**
+```{r summary}
+model_summary
+```
 
 
 Column
@@ -247,7 +256,7 @@ ggplot(
       .data[[df_names[3]]], .data[[df_names[4]]], 
       group = .data[[df_names[1]]], color = .data[[df_names[2]]]
     ),
-    paired_data, alpha = 0.25
+    paired_data, alpha = 1/3
   ) +
   geom_line(position = position_dodge(width = 0.1), linewidth = 1) +
   geom_point(position = position_dodge(width = 0.1)) +
@@ -257,5 +266,6 @@ ggplot(
   ) +
   ylab(df_names[4]) +
   ylim(0, 100)
+
 ```
 

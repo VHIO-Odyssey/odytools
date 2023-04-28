@@ -5,14 +5,15 @@ output:
     toc_float: TRUE
 params:
   data_frame: NA
-  resistant_level: "resistant"
-  control_level: "control"
+  resistant_level: NA
+  control_level: NA
+  model_type: NA
 editor_options: 
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, comment = NA)
 
 library(dplyr)
 library(stringr)
@@ -29,17 +30,10 @@ library(forcats)
 
 
 ```{r data}
-
-# data_frame <- openxlsx::read.xlsx(
-#   "C:/Users/eduardogarcia/Documents/garcia_galea/t_monserrat/data/230322 table example for r script.xlsx"
-# ) |>
-#   janitor::clean_names() |>
-#   dplyr::select(pdx_id, sensitivity, group, percent_ki67)
-
 data_frame <- params$data_frame
-
-
 df_names <- names(data_frame)
+
+if (model_type == "glmm") {
 data_model <- data_frame |>
   mutate(
     "{df_names[1]}" := factor(.data[[df_names[1]]]),
@@ -50,15 +44,29 @@ data_model <- data_frame |>
     "{df_names[4]}" := .data[[df_names[4]]] / 100,
     weight_100 = 100
   )
+} 
+
+if (model_type == "lmm") {
+  data_model <- data_frame |>
+  mutate(
+    "{df_names[1]}" := factor(.data[[df_names[1]]]),
+    "{df_names[2]}" := factor(data_frame[[df_names[2]]]) |>
+      fct_relevel(params$resistant_level),
+    "{df_names[3]}" := factor(data_frame[[df_names[3]]]) |>
+      fct_relevel(params$control_level)
+  )
+}
 ```
 
 ---
-title: "`r str_c(df_names[4], " ~ ", df_names[2], " x ", df_names[3])`"
+title: "`r str_c(str_to_upper(model_type), ": ", df_names[4], " ~ ", df_names[2], " x ", df_names[3])`"
 ---
 
 ```{r model}
 
-# Model with random intercepts only
+
+# Formulas
+# With random intercepts only
 form1 <- call(
   "formula",
   str_c(
@@ -66,11 +74,7 @@ form1 <- call(
     " + (1 | ", df_names[1], ")"
   )
 )
-model1 <- glmer(
-  eval(form1), data = data_model, family = "binomial", weights = weight_100
-)
-
-# Model with random intercepts and slopes
+# With random intercepts and slopes
 form2 <- call(
   "formula",
   str_c(
@@ -78,11 +82,26 @@ form2 <- call(
     " + (1 + ", df_names[3], " | ", df_names[1], ")"
   )
 )
-model2 <- glmer(
-  eval(form2), data = data_model, family = "binomial", weights = weight_100
-)
 
-comp_models <- anova(model1, model2)
+
+if (model_type == "lmm") {
+  model1 <- lmer(eval(form1), data = data_model)
+  model2 <- lmer(eval(form2), data = data_model)
+}
+
+if (model_type == "glmm") {
+  model1 <- glmer(
+    eval(form1), data = data_model, family = "binomial", weights = weight_100
+  )
+  model2 <- glmer(
+    eval(form2), data = data_model, family = "binomial", weights = weight_100
+  )
+}
+
+# Model comparison, when running a LMM, refiting from REML to ML is not needed
+# since the fixed part is the same in both models.
+# (https://stats.stackexchange.com/questions/465879/different-results-for-model-comparison-using-anova-function-for-reml-and-ml)
+comp_models <- anova(model1, model2, refit = FALSE)
 
 # If both models are different, we choose the best. If not, we choose the less
 # complex (random intercepts only)
@@ -158,7 +177,7 @@ data_frame |>
 
 ### Data Structure
 
-```{r}
+```{r data-structure}
 rnd_fct <- str_c(
     str_c("__", df_names[1], "__"), "with",
     unique(data_frame[[1]]) |> length(),
@@ -192,17 +211,24 @@ rnd_fct <- str_c(
 
 ```
 
-
 - **PDX** random factor: `r rnd_fct`
 - **Sensitivity** fixed factor: `r sen_fct`
 - **Treatment** fixed factor: `r trt_fct`
 - **Response** variable: `r resp`
 
-```{r}
+```{r data-count}
 
-data_model |> 
-  count(.data[[df_names[2]]], .data[[df_names[3]]]) |> 
-  kbl() |> 
+count_data <- left_join(
+  data_model |>
+    dplyr::select(1:3) |> 
+    unique() |> 
+    count(.data[[df_names[2]]], .data[[df_names[3]]], name = "n PDX"),
+  data_model |> 
+    count(.data[[df_names[2]]], .data[[df_names[3]]], name = "n Measures")
+) |> 
+  suppressMessages()
+
+kbl(count_data) |> 
   kable_styling(full_width = FALSE)
 
 ```
@@ -247,6 +273,31 @@ summary(model)
 
 ```
 
+
+## References
+
+### R
+```{r}
+citation()
+```
+
+### lme4
+Package used to perform the `r str_to_upper(model_type)` model.
+```{r}
+citation("lme4")
+```
+
+### multcomp
+Package used for simultaneous hypothesis testing.
+```{r}
+citation("multcomp")
+```
+
+## Session Info
+
+```{r}
+sessionInfo()
+```
 
 
 

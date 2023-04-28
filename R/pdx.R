@@ -92,25 +92,31 @@ ody_pdx_model_percentage_response <- function(
 }
 
 
-#' (Generalized) Lineal Mixed Model to test PDX sensitivity
+#' (Generalized) Linear Mixed Model to test PDX sensitivity
 #'
-#' Runs a binomial Genralized Mixed Model to test wether the response to a treatment depends on the sensitivity. The response variable is assumed to be a count of "positive" findings over a total count of 100.
+#' Runs a (Generalized) Linear Mixed Model to test wether the response to a treatment depends on the sensitivity. By default, if the response is a count of positive findings over 100, the function performs a Binomial Generalized Linear Mixed Model, otherwise it runs a Linear Mixed Model.
 #'
 #' @param data_frame A data frame where:
 #'   - The first column contains the PDX id's.
 #'   - The second column is a two levels factors for sensitivity.
 #'   - The third column is a two levels factor for treatment.
-#'   - The fourth column is the response variable (integer from 0 to 100).
-#' @param file_name Name of the html file. If NULL, the file is named with the date the analysis was performed and the name of the dependent variable.
+#'   - The fourth column is the response variable.
+#' @param file_name Name of the html file. If NULL, the file is named with the date the analysis was performed, the name of the dependent variable and type of model performed.
 #' @param file_dir Directory where the result is stored. The default is the current working directory.
+#' @param model_type The type of model the function will run. With the default value, "guess_it", the function "guesses" the model according to the response variable. Other valid arguments are "lmm" or "glmm" to force the function to perform a LMM or a GLMM respectively.
+#'
+#' @details The way the function decides wich model to use when model_type equals "guess_it" is very simple: If the response variable is a 0 to 100 integer (a number with no decimals), then the model is a GLMM, else, the model is a LMM.
 #'
 #' @return A HTML report
 #' @export
 ody_pdx_model_sensitivity <- function(
     data_frame,
     file_name = NULL,
-    file_dir = getwd()
+    file_dir = getwd(),
+    model_type = c("guess_it", "glmm", "lmm")
 ) {
+
+  model_type <- rlang::arg_match(model_type)
 
   # Data structure confirmation
   names_df <- names(data_frame)
@@ -154,13 +160,18 @@ ody_pdx_model_sensitivity <- function(
   )
 
   if (
-    length(unique(data_frame[[2]])) != 2 |
-    length(unique(data_frame[[3]])) != 2 |
-    !all(data_frame[[4]] == as.integer(data_frame[[4]])) |
-    any(data_frame[[4]] < 0) | any(data_frame[[4]] > 100)
+    length(unique(data_frame[[2]])) != 2 ||
+    length(unique(data_frame[[3]])) != 2
   ) {
     stop(
-      "Unexpected data structure.
+      "Unexpected data structure: Factors with more than two levels.
+       See ?ody_pdx_model_sensitivity to check the right expected structure."
+    )
+  }
+
+  if (any(data_frame[[4]] < 0)) {
+    stop(
+      "Unexpected data structure: Negative values in the response variable.
        See ?ody_pdx_model_sensitivity to check the right expected structure."
     )
   }
@@ -188,23 +199,43 @@ ody_pdx_model_sensitivity <- function(
   )
 
   #Analysis
+
+  ## Type of analisys if model_type is "guess_it
+  if (model_type == "guess_it") {
+
+    no_dec <- all(as.integer(data_frame[[4]]) == data_frame[[4]])
+    from_0_to_100 <- all(dplyr::between(data_frame[[4]], 0, 100))
+
+    if (no_dec && from_0_to_100) model_type <- "glmm" else model_type <- "lmm"
+
+  }
+
+  ## File name
   if (is.null(file_name)) {
+
+     sys_time_num <- Sys.time() |> stringr::str_remove_all("[^\\d]")
+     date_time <- stringr::str_c(
+      stringr::str_sub(sys_time_num, 1, 8),
+      stringr::str_sub(sys_time_num, 9, 12), sep = "_")
+
     file_name <-stringr::str_c(
-      stringr::str_remove_all(lubridate::today(), "-"),
-      "_", names_df[4], "_sensitivity.html"
+      date_time, "_", names_df[4], "_", model_type, ".html"
     )
+
   }
 
   rmarkdown::render(
     system.file(
-      "reports", "pdx_model_sensitivity.Rmd", package = "odytools"
+      "pdx_reports", "pdx_model_sensitivity.Rmd", package = "odytools"
     ),
     output_dir = file_dir,
     output_file = file_name,
     params = list(
       data_frame = data_frame,
       resistant_level = resistant_level,
-      control_level = control_level
+      control_level = control_level,
+      model_type = model_type
     )
   )
+
 }

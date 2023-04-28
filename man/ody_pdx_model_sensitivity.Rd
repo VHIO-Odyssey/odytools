@@ -2,9 +2,14 @@
 % Please edit documentation in R/pdx.R
 \name{ody_pdx_model_sensitivity}
 \alias{ody_pdx_model_sensitivity}
-\title{(Generalized) Lineal Mixed Model to test PDX sensitivity}
+\title{(Generalized) Linear Mixed Model to test PDX sensitivity}
 \usage{
-ody_pdx_model_sensitivity(data_frame, file_name = NULL, file_dir = getwd())
+ody_pdx_model_sensitivity(
+  data_frame,
+  file_name = NULL,
+  file_dir = getwd(),
+  model_type = c("guess_it", "glmm", "lmm")
+)
 }
 \arguments{
 \item{data_frame}{A data frame where:
@@ -12,16 +17,21 @@ ody_pdx_model_sensitivity(data_frame, file_name = NULL, file_dir = getwd())
 \item The first column contains the PDX id's.
 \item The second column is a two levels factors for sensitivity.
 \item The third column is a two levels factor for treatment.
-\item The fourth column is the response variable (integer from 0 to 100).
+\item The fourth column is the response variable.
 }}
 
-\item{file_name}{Name of the html file. If NULL, the file is named with the date the analysis was performed and the name of the dependent variable.}
+\item{file_name}{Name of the html file. If NULL, the file is named with the date the analysis was performed, the name of the dependent variable and type of model performed.}
 
 \item{file_dir}{Directory where the result is stored. The default is the current working directory.}
+
+\item{model_type}{The type of model the function will run. With the default value, "guess_it", the function "guesses" the model according to the response variable. Other valid arguments are "lmm" or "glmm" to force the function to perform a LMM or a GLMM respectively.}
 }
 \value{
 A HTML report
 }
 \description{
-Runs a binomial Genralized Mixed Model to test wether the response to a treatment depends on the sensitivity. The response variable is assumed to be a count of "positive" findings over a total count of 100.
+Runs a (Generalized) Linear Mixed Model to test wether the response to a treatment depends on the sensitivity. By default, if the response is a count of positive findings over 100, the function performs a Binomial Generalized Linear Mixed Model, otherwise it runs a Linear Mixed Model.
+}
+\details{
+The way the function decides wich model to use when model_type equals "guess_it" is very simple: If the response variable is a 0 to 100 integer (a number with no decimals), then the model is a GLMM, else, the model is a LMM.
 }

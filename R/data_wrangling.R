@@ -75,7 +75,10 @@ ody_define_timepoints <- function(extractions, events) {
   extractions_col_name <- names(extractions)[extractions_date_index][1]
 
   # events is cleaned, so only the first and date columns are keept
-
+  date_event_index <- purrr::map_lgl(events, lubridate::is.Date)
+  col_events_dates <- names(date_event_index[date_event_index])
+  events <- events |>
+    dplyr::select(1, tidyselect::all_of(col_events_dates))
 
   events_nested <- tidyr::pivot_longer(
     events, -1, names_to = "event_name", values_to = "event_date"

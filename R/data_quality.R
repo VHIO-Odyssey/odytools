@@ -593,3 +593,56 @@ report_conformance <- function(conformance_table) {
     )
 }
 
+
+#' Render a quality report
+#'
+#' @param project_name Name to use in the file name.
+#' @param data_frame data frame to report.
+#' @param missing_values vector with the values (apart from the regular NA and "") used as missing. Default is NULL.
+#' @param id_var ID variable.
+#' @param conditions_list List of conditions used as argument of verify_completeness.
+#' @param add_data If TRUE, raw data is added to the report.
+#' @param max_integer_distinct ody_verify_conformance argument.
+#' @param output_dir Location to save the report.
+#'
+#' @return A quality report HTML.
+#' @export
+ody_render_quality_report <- function(
+    data_frame, project_name = "project", missing_values = "",
+    id_var = "row_number", conditions_list = "no", add_data = FALSE,
+    max_integer_distinct = 10, output_dir = getwd()
+) {
+
+  parameters <- list(
+    project_name = project_name,
+    data = data_frame,
+    missing_values = missing_values,
+    conditions_list = conditions_list,
+    id_var = id_var,
+    max_integer_distinct = max_integer_distinct
+  )
+
+  report_name <- stringr::str_c(
+    lubridate::today() |> stringr::str_remove_all("-"),
+    "_", project_name, "_data_quality.html"
+  )
+
+  if (add_data) {
+    template <- system.file(
+      "quality_reports", "quality_report_template_with_data.Rmd",
+      package = "odytools"
+      )
+  } else {
+    template <- system.file(
+      "quality_reports", "quality_report_template.Rmd",
+      package = "odytools"
+    )
+  }
+
+  rmarkdown::render(
+    template,
+    params = parameters,
+    output_dir = output_dir,
+    output_file = report_name
+  )
+}

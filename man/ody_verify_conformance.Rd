@@ -17,6 +17,9 @@ ody_verify_conformance(
 
 \item{max_integer_distinct}{Max number of different integer values that will be reported individually.}
 }
+\value{
+A conformance tibble.
+}
 \description{
 Cheks the format of the variables of a data frame.
 }

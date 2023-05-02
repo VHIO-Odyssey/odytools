@@ -1,9 +1,5 @@
-# odytools 0.0.0.9002
+# odytools 0.1.0
 
-* Added a `NEWS.md` file to track changes to the package.
-* Added ody_pdx_model_sensitivity.
-
-
-# odytools 0.0.0.9003
-
+* Added ody_summarise_df
 * Added ody_define_timepoints
+* Added ody_pdx_model_sensitivity

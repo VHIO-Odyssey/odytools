@@ -14,7 +14,11 @@ ody_define_timepoints(extractions, events)
 \item The extraction date is assumed to be the first date column.
 }}
 
-\item{events}{Events data frame. Each row represents the history of a single patient and the first column must be the patient id used to join with the extractions data frame.}
+\item{events}{Events data frame:
+\itemize{
+\item Each row represents the history of a single patient.
+\item The first column must be the patient id used to join with the extractions data frame.
+}}
 }
 \value{
 A tibble

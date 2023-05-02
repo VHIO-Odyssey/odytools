@@ -1,18 +1,8 @@
-#' Binomial GLMM to test PDX responsiveness
-#'
-#' Runs a binomial Genralized Mixed Model to test wether the response to a treatment depends on the sensitivity. The response variable is assumed to be a count of "positive" findings over a total count of 100.
-#'
-#' @param data_frame A data frame where:
-#'   - The first column contains the PDX id's.
-#'   - The second column is a two levels factors for sensitivity.
-#'   - The third column is a two levels factor for treatment.
-#'   - The fourth column is the response variable (integer from 0 to 100).
-#' @param file_name Name of the html file. If NULL, the file is named with the date the analysis was performed and the name of the dependent variable.
-#' @param file_dir Directory where the result is stored. The default is the current working directory.
-#' @param method Method used to calculate glmr confidence intervals.
-#'
-#' @return A HTML dashboard.
-#' @export
+
+# Old function. First version that only performs binomial GLMMs.
+# ody_pdx_model_senitivity is the current life function.
+# pdx_response_percentage.Rmd in inst/pdx_reports is also superseded by
+# pdx_model_sensitivity.Rmd
 ody_pdx_model_percentage_response <- function(
     data_frame,
     file_name = NULL,

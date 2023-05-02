@@ -73,7 +73,7 @@ ody_pdx_model_percentage_response <- function(
   }
 
   rmarkdown::render(
-    system.file("reports", "pdx_response_percentage.Rmd", package = "odytools"),
+    system.file("pdx_reports", "pdx_response_percentage.Rmd", package = "odytools"),
     output_dir = file_dir,
     output_file = file_name,
     params = list(data_frame = data_frame, method = method)

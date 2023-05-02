@@ -1,0 +1,595 @@
+#' @importFrom stats na.omit
+#' @importFrom utils tail
+
+# Helper function of ody_verify_conformance to count format grouped in different
+# ways
+count_grouped_cases <- function(count_var, grouped) {
+  count_var <- na.omit(count_var)
+
+  if (grouped == "semi") {
+    # fechas y números agrupados, el resto de formatos se mantiene separado.
+    tibble::tibble(
+      count_var,
+      cases = dplyr::case_when(
+        stringr::str_detect(count_var, "^\\d+$") ~ "integer",
+        stringr::str_detect(count_var, "^\\d+[\\.,]\\d+$") ~ "dec_number",
+        !is.na(lubridate::ymd(count_var, quiet = TRUE)) ~ "date_ymd",
+        !is.na(lubridate::dmy(count_var, quiet = TRUE)) ~ "date_dmy",
+        TRUE ~ stringr::str_c("'", count_var, "'")
+      )
+    ) |>
+      dplyr::count(cases) |>
+      dplyr::arrange(dplyr::desc(n))
+  } else if (grouped == "format") {
+    # integer y number no se distingue y tampoco se distingue entre
+    # character symbol, alpha_num, alpha_sym, num_sym, alpha_num_sym.
+    # Es el que se usa para calcular un índice de shannon
+    tibble::tibble(
+      count_var,
+      cases = dplyr::case_when(
+        stringr::str_detect(count_var, "^\\d+([\\.,]\\d+)?$") ~ "number",
+        !is.na(lubridate::ymd(count_var, quiet = TRUE)) ~ "date_ymd",
+        !is.na(lubridate::dmy(count_var, quiet = TRUE)) ~ "date_dmy",
+        stringr::str_detect(count_var, "^[:blank:]+$") ~ "blank",
+        TRUE ~ "character"
+      )
+    ) |>
+      dplyr::count(cases) |>
+      dplyr::arrange(dplyr::desc(n))
+  } else if (grouped == "subformat") {
+    # se agrupa todo
+    tibble::tibble(
+      count_var,
+      cases = dplyr::case_when(
+        stringr::str_detect(count_var, "^\\d+$") ~ "integer",
+        stringr::str_detect(count_var, "^\\d+[\\.,]\\d+$") ~ "dec_number",
+        !is.na(lubridate::ymd(count_var, quiet = TRUE)) ~ "date_ymd",
+        !is.na(lubridate::dmy(count_var, quiet = TRUE)) ~ "date_dmy",
+        stringr::str_detect(count_var, "^[:blank:]+$") ~ "blank",
+        stringr::str_detect(count_var, "^[[:alpha:][:blank:]]+$") ~ "alpha",
+        stringr::str_detect(count_var, "^[[:punct:][:symbol:][:blank:]]+$") ~ "symbol",
+        stringr::str_detect(count_var, "^[[:alnum:][:blank:]]+$") ~ "alpha_num",
+        stringr::str_detect(count_var,"^[[:punct:][:symbol:][:alpha:][:blank:]]+$") ~ "alpha_sym",
+        stringr::str_detect(count_var,"^[[:punct:][:symbol:][:digit:][:blank:]]+$") ~ "num_sym",
+        stringr::str_detect(count_var, "^[[:graph:][:blank:]]+$") ~ "alpha_num_sym",
+        TRUE ~ "subformat_fail"
+      )
+    ) |>
+      dplyr::count(cases) |>
+      dplyr::arrange(dplyr::desc(n))
+  } else if (grouped == "no") {
+    # no se agrupa nada
+    tibble::tibble(
+      cases = stringr::str_c("'", count_var, "'"),
+    ) |>
+      dplyr::count(cases) |>
+      dplyr::arrange(dplyr::desc(n))
+  }
+}
+
+
+#' Verify Completeness
+#'
+#' Verifies the completeness of each variable of a data frame.
+#'
+#' @param data_frame The data frame to be checked.
+#' @param missing_values Values considered as missing. Actual NA's and empty characters ("") are always considered missing values.
+#' @param conditions_list A list to define the conditional presence of the variables. Needed when the presence of a variable depends on the value of other variable.
+#' @param id_var The id variable. By default, the function uses row numbers.
+#'
+#' @return A completeness tibble.
+#' @export
+ody_verify_completeness <- function(
+    data_frame,
+    missing_values = NULL,
+    conditions_list = NULL,
+    id_var = "row_number"
+) {
+
+  if (!is.null(conditions_list)) {
+
+    conditions_list <- complete_list(conditions_list)
+
+  }
+
+  if (id_var == "row_number") {
+
+    data_frame <- data_frame |>
+      dplyr::mutate(
+        row_number = 1:dplyr::n(), .before = 1
+      )
+
+  }
+
+  missing_values <- c("", missing_values)
+
+  #All variable names except id_var name
+  var_names <- data_frame |>
+    dplyr::select(-tidyselect::all_of(id_var)) |>
+    names()
+
+  data_map <- tibble::tibble(
+    data_list = purrr::map(
+      dplyr::select(data_frame, -tidyselect::all_of(id_var)),
+      function(value) {
+        cbind(dplyr::select(data_frame, tidyselect::all_of(id_var)), value)
+      }
+    ),
+    rel_index = var_names %in% names(conditions_list),
+    name_var = var_names
+  )
+
+  attach(data_frame, warn.conflicts = FALSE)
+  # Data with the expected values
+  data_filtered <- purrr::pmap(
+    data_map,
+    function(data_list, rel_index, name_var) {
+      if (rel_index) {
+        data_list |>
+          dplyr::filter(eval(str2lang(conditions_list[[name_var]])))
+      } else {
+        data_list
+      }
+    }
+  )
+
+  # Data with the unexpected values of the filtered variables
+  data_antifiltered  <-  purrr::pmap(
+    data_map,
+    function(data_list, rel_index, name_var) {
+      if (rel_index) {
+        data_list |>
+          dplyr::filter(!eval(str2lang(conditions_list[[name_var]])))
+      } else {
+        data_list
+      }
+    }
+  )
+
+  detach(data_frame)
+
+  data_missing <- data_filtered |>
+    purrr::map(
+      ~ . |>
+        dplyr::filter(is.na(value) | value %in% missing_values) |>
+        dplyr::select(1)
+    )
+
+  missing_result <- tibble::tibble(
+    variable = names(data_filtered),
+    n_expected = purrr::map_dbl(data_filtered, nrow),
+    n_missing = purrr::map_dbl(data_missing, nrow),
+    ids_missing = purrr::map_chr(
+      data_missing,
+      ~ dplyr::pull(., 1) |>
+        na.omit() |> # For the rare cases id is missing
+                     # (will never miss if id_var = row_number)
+        stringr::str_c(collapse = ", ") %>%
+        {ifelse(. == "", NA, .)}
+    ),
+    n_unexpected = purrr::map2_dbl(
+      data_map$data_list, data_filtered, ~ nrow(.x) - nrow(.y)
+    )
+  )
+
+  data_unexpected <- data_antifiltered[
+    names(data_antifiltered) %in% names(conditions_list)
+  ] |>
+    purrr::map(
+      ~ . |>
+        dplyr::filter(!is.na(value) & !(value %in% missing_values)) |>
+        dplyr::select(1)
+    )
+
+  unexpected_result <- tibble::tibble(
+    variable = names(data_unexpected),
+    n_antimissing = purrr::map_dbl(data_unexpected, nrow),
+    ids_antimissing = purrr::map_chr(
+      data_unexpected,
+      ~ as.character(dplyr::pull(., 1)) |>
+        na.omit() |> # For the rare cases id is missing
+                     # (will never miss if id_var = row_number)
+        stringr::str_c(collapse = ", ") %>%
+        {ifelse(. == "", NA, .)}
+    )
+  )
+
+  cond_frame <- tibble::tibble(
+    variable = names(conditions_list),
+    condition = unlist(conditions_list)
+  )
+
+  if(nrow(cond_frame) != 0) {
+
+    complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
+      dplyr::left_join(cond_frame, by = "variable") |>
+      dplyr::select(
+        variable, condition,
+        tidyselect::starts_with("n_"), tidyselect::starts_with("ids")
+      )
+
+    attr(complet_data, "id_var") <- id_var
+    return(complet_data)
+
+  } else {
+    complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
+      dplyr::mutate(
+        condition = NA, .after = variable
+      )
+
+    attr(complet_data, "id_var") <- id_var
+    return(complet_data)
+
+  }
+
+}
+
+
+#' Verify Conformance
+#'
+#' Cheks the format of the variables of a data frame.
+#'
+#' @param data_frame The data frame to be checked.
+#' @param missing_values Values considered as missing. Actual NA's and empty characters ("") are always considered missing values.
+#' @param max_integer_distinct Max number of different integer values that will be reported individually.
+#'
+#' @return A conformance tibble.
+#' @export
+ody_verify_conformance <- function(
+    data_frame, missing_values = NULL, max_integer_distinct = 10
+) {
+
+  # Todo se convierte a caracter para cazar "formatos" a partir str_detect
+  data_frame <- data_frame |>
+    dplyr::mutate(
+      dplyr::across(tidyselect::everything(), as.character)
+    )
+
+  # El "" siempre se considera un NA
+  missing_values <- c("", missing_values)
+  data_frame <- data_frame |>
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::everything(), ~ replace(., . %in% missing_values, NA)
+      )
+    )
+
+  dplyr::tibble(
+    variable = names(data_frame),
+    n_cases = purrr::map_dbl(data_frame, ~ sum(!is.na(.))),
+    n_distinct = purrr::map_dbl(data_frame, ~ length(na.omit(unique(.)))),
+    n_distinct_trimed = purrr::map_dbl(
+      data_frame,
+      ~ length(na.omit(unique(stringr::str_to_upper(stringr::str_remove_all(., "[:blank:]")))))
+    ),
+    uniqueness = round(n_distinct_trimed / n_distinct, 2),
+    data_list = purrr::map(data_frame, na.omit),
+    formats_table = purrr::map(data_list, count_grouped_cases, grouped = "format"),
+    subformats_table = purrr::map(data_list, count_grouped_cases, grouped = "subformat"),
+    heterogeneity = purrr::map_dbl(
+      formats_table,
+      function(x) {
+        n <- x$n
+        p <- n / sum(n)
+        round(-sum(p * log2(p)), 2)
+      }
+    ),
+    formats = purrr::map_chr(
+      formats_table,
+      function(x) {
+        stringr::str_c(
+          stringr::str_c(x[[1]]),
+          stringr::str_c("[", x[[2]], "]"),
+          collapse = ", "
+        )
+      }
+    ),
+    subformats = purrr::map_chr(
+      subformats_table,
+      function(x) {
+        stringr::str_c(
+          stringr::str_c(x[[1]]),
+          stringr::str_c("[", x[[2]], "]"),
+          collapse = ", "
+        )
+      }
+    ),
+    # todo es integer? si es así y hay menos de max_integer_distinct el recuento de
+    # esa variable se realiza sin agrupar para mostrar en los detalles.
+    all_integer = purrr::map_lgl(data_list, ~ all(stringr::str_detect(., "^\\d+$"))),
+    distinct_formats_detail = purrr::pmap(
+      tibble::tibble(n_distinct, all_integer, data_list),
+      function(n_distinct, all_integer, data_list) {
+        if (all_integer & n_distinct <=max_integer_distinct) {
+          count_grouped_cases(data_list, grouped = "no")
+        } else {
+          count_grouped_cases(data_list, grouped = "semi")
+        }
+      }
+    )
+  ) |>
+    dplyr::select(
+      -data_list, -formats_table, -formats_table, -subformats_table,
+      -n_distinct_trimed, -all_integer
+    )
+}
+
+# Crea tablas html del resultado de verify_completeness
+#   - completeness_table: tabla resultado de verify_completeness.
+#   - text_pos: posición del texto respecto a las barras. Acepta los valores de
+#   text_position de data_bars {reactablefmtr} [
+#     Text labels can be displayed within the filled bars ("inside-end" or "inside-base"),
+#     outside of the filled bars ("outside-end" or "outside-base"), within the
+#     center of the filled bars ("center"), above the filled bars ("above"), or
+#     not displayed at all ("none").
+#   ]
+report_completeness <- function(completeness_table, text_pos = "above") {
+  wrong_bar_color <- "#FF0000"
+  ok_bar_color <- "#00CC11"
+
+  # min col width from n_expected to overall
+  min_col_width <- 130
+  # min col width of variable and condition
+  min_col_width_var <- 200
+
+  report_table <- completeness_table |>
+    dplyr::mutate(
+      completeness = round((n_expected - n_missing) / n_expected, 2),
+      uncompleteness = ifelse(
+        n_unexpected == 0, NA,
+        round((n_unexpected - n_antimissing) / n_unexpected , 2)
+      ),
+      overall = ifelse(
+        is.na(n_antimissing),
+        round((n_expected + n_unexpected - n_missing) / (n_expected + n_unexpected), 2),
+        round((n_expected + n_unexpected - n_missing - n_antimissing) / (n_expected + n_unexpected), 2)
+      ),
+      condition = ifelse(
+        is.na(condition), "allways", condition
+      )
+    ) |>
+    dplyr::select(
+      variable, condition, overall,
+      n_expected, n_missing, completeness,
+      n_unexpected, n_antimissing, uncompleteness
+    ) |>
+    dplyr::mutate(
+      overall_color = dplyr::case_when(
+        overall == 1 ~ ok_bar_color,
+        TRUE ~ wrong_bar_color
+      ),
+      completeness_color = dplyr::case_when(
+        completeness == 1 ~ ok_bar_color,
+        TRUE ~ wrong_bar_color
+      ),
+      uncompleteness_color = dplyr::case_when(
+        uncompleteness == 1 ~ ok_bar_color,
+        TRUE ~ wrong_bar_color
+      )
+    ) |>
+    dplyr::mutate(
+      no = 1:dplyr::n(), .before = 1
+    )
+
+  issues_info <- completeness_table |>
+    dplyr::filter(!is.na(ids_missing) | !is.na(ids_antimissing)) |>
+    dplyr::select(variable, n_missing, ids_missing, n_antimissing, ids_antimissing) |>
+    tidyr::pivot_longer(2:5, names_to = c(".value", "issue"), names_pattern = "(.+)_(.+)") |>
+    dplyr::filter(!is.na(ids))
+
+
+  if (any(!is.na(completeness_table$condition))) {
+
+    report_table  |>
+      reactable::reactable(
+        defaultColDef = reactable::colDef(
+          align = "left"
+        ),
+        details = function(index) {
+          issues <- issues_info |>
+            dplyr::filter(variable == report_table$variable[index]) |>
+            dplyr::select(-variable) |>
+            dplyr::rename("{attr(completeness_table, 'id_var')}" := ids)
+          if(nrow(issues) != 0) {
+            htmltools::div(
+              style = "padding: 1rem",
+              reactable::reactable(
+                issues,
+                columns = list(
+                  issue = reactable::colDef(width = 100),
+                  n = reactable::colDef(width = 50)
+                ), highlight = TRUE, wrap = TRUE
+              )
+            )
+          }
+        },
+        columns = list(
+          no = reactable::colDef(width = 65),
+          variable = reactable::colDef(
+            sticky = "left",
+            resizable = TRUE,
+            minWidth = min_col_width_var
+          ),
+          condition = reactable::colDef(
+            resizable = TRUE, minWidth = min_col_width_var
+          ),
+          overall = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, max_value = 1,
+              fill_color_ref = "overall_color",
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          overall_color = reactable::colDef(show = FALSE),
+          n_expected = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table,
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          n_missing = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, fill_color = wrong_bar_color,
+              max_value = max(report_table$n_expected),
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          completeness = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, max_value = 1,
+              fill_color_ref = "completeness_color",
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          completeness_color = reactable::colDef(show = FALSE),
+          n_unexpected = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table,
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          n_antimissing = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, max_value = max(report_table$n_unexpected),
+              fill_color = wrong_bar_color, text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          uncompleteness = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, max_value = 1,
+              fill_color_ref = "uncompleteness_color",
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          uncompleteness_color = reactable::colDef(show = FALSE)
+        ),
+        borderless = TRUE, highlight = TRUE,
+        wrap = TRUE, pagination = FALSE,
+        searchable = TRUE, onClick = "expand"
+      )
+  } else {
+    report_table  |>
+      reactable::reactable(
+        defaultColDef = reactable::colDef(
+          align = "left"
+        ),
+        details = function(index) {
+          issues <- issues_info |>
+            dplyr::filter(variable == report_table$variable[index]) |>
+            dplyr::select(-variable) |>
+            dplyr::rename("{attr(completeness_table, 'id_var')}" := ids)
+          if(nrow(issues) != 0) {
+            htmltools::div(
+              style = "padding: 1rem",
+              reactable::reactable(
+                issues,
+                columns = list(
+                  issue = reactable::colDef(width = 100),
+                  n = reactable::colDef(width = 50)
+                ), highlight = TRUE, wrap = TRUE
+              )
+            )
+          }
+        },
+        columns = list(
+          no = reactable::colDef(width = 65),
+          variable = reactable::colDef(
+            sticky = "left",
+            resizable = TRUE,
+            minWidth = min_col_width_var
+          ),
+          condition = reactable::colDef(show = FALSE),
+          overall = reactable::colDef(show = FALSE),
+          overall_color = reactable::colDef(show = FALSE),
+          n_expected = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table,
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          n_missing = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, fill_color = wrong_bar_color,
+              max_value = max(report_table$n_expected),
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          completeness = reactable::colDef(
+            cell = reactablefmtr::data_bars(
+              report_table, max_value = 1,
+              fill_color_ref = "completeness_color",
+              text_position = text_pos
+            ),
+            minWidth = min_col_width
+          ),
+          completeness_color = reactable::colDef(show = FALSE),
+          n_unexpected = reactable::colDef(show = FALSE),
+          n_antimissing = reactable::colDef(show = FALSE),
+          uncompleteness = reactable::colDef(show = FALSE),
+          uncompleteness_color = reactable::colDef(show = FALSE)
+        ),
+        borderless = TRUE, highlight = TRUE, onClick = "expand",
+        wrap = TRUE, pagination = FALSE, searchable = TRUE
+      )
+  }
+}
+
+# Helper function to report an ody_verify_conformance output
+#   - conformance_table: output de verify_conformance.
+report_conformance <- function(conformance_table) {
+
+  distinct_formats_detail <- conformance_table$distinct_formats_detail
+
+  conformance_table <- conformance_table |>
+    dplyr::mutate(
+      no = 1:dplyr::n(), .before = 1
+    )
+
+  conformance_table |>
+    dplyr::select(-distinct_formats_detail) |>
+    reactable::reactable(
+      details = reactable::colDef(
+        details = function(index) {
+          htmltools::div(
+            style = "padding: 1rem",
+            reactable::reactable(
+              distinct_formats_detail[[index]],
+              columns = list(
+                cases = reactable::colDef(minWidth = 150, resizable = TRUE),
+                n = reactable::colDef(
+                  minWidth = 200,
+                  cell = reactablefmtr::data_bars(
+                    distinct_formats_detail[[index]],
+                    text_position = "above"
+                  )
+                )
+              ),
+              outlined = FALSE, fullWidth = FALSE, pagination = FALSE, highlight = TRUE
+            )
+          )
+        }
+      ),
+      columns = list(
+        no = reactable::colDef(width = 65),
+        variable = reactable::colDef(minWidth = 200, resizable = TRUE),
+        n_cases = reactable::colDef(maxWidth = 100),
+        n_distinct = reactable::colDef(maxWidth = 100),
+        uniqueness = reactable::colDef(maxWidth = 100),
+        formats = reactable::colDef(minWidth = 200 ,resizable = TRUE),
+        heterogeneity = reactable::colDef(maxWidth = 150),
+        subformats = reactable::colDef(minWidth = 300,resizable = TRUE)
+      ),
+      borderless = TRUE, highlight = TRUE, onClick = "expand",
+      wrap = TRUE, pagination = FALSE, searchable = TRUE
+    )
+}
+

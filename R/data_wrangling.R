@@ -83,10 +83,10 @@ ody_define_timepoints <- function(extractions, events) {
   events_nested <- tidyr::pivot_longer(
     events, -1, names_to = "event_name", values_to = "event_date"
   ) |>
-    dplyr::filter(!is.na(event_date)) |>
+    dplyr::filter(!is.na(.data[["event_date"]])) |>
     # This arrangement is VERY IMPORTANT because get_timepoints assumes dates
     # are in increasing order.
-    dplyr::arrange(event_date) |>
+    dplyr::arrange(.data[["event_date"]]) |>
     tidyr::nest(events = c("event_name", "event_date"))
 
   # ids to join are assume to be in the first column
@@ -108,15 +108,17 @@ ody_define_timepoints <- function(extractions, events) {
 
 
   extr_events_timepoints |>
-    tidyr::unnest(timepoints) |>
+    tidyr::unnest(.data[["timepoints"]]) |>
     dplyr::select(-events) |>
     dplyr::mutate(
-      timepoint_days = timepoint_date - .data[[extractions_col_name]],
-      .after = timepoint_date
+      timepoint_days = .data[["timepoint_date"]] -
+        .data[[extractions_col_name]],
+      .after = .data[["timepoint_date"]]
     ) |>
     dplyr::mutate(
-      next_timepoint_days = next_timepoint_date - .data[[extractions_col_name]],
-      .after = next_timepoint_date
+      next_timepoint_days = .data[["next_timepoint_date"]] -
+        .data[[extractions_col_name]],
+      .after = .data[["next_timepoint_date"]]
     )
 
 }

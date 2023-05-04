@@ -1,0 +1,76 @@
+---
+title: "`r stringr::str_c(params$project_name, ' - Data Quality')`"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+editor_options: 
+  chunk_output_type: console
+params:
+  project_name: "Project"
+  data: NA
+  missing_values: NULL
+  conditions_list: "no"
+  id_var: "row_number"
+  max_integer_distinct: 10
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(janitor)
+library(dplyr)
+library(openxlsx)
+library(reactable)
+library(odytools)
+
+```
+
+```{r report_tables}
+
+if (params$conditions_list[1] == "no") {
+  completeness_table <- ody_verify_completeness(
+    params$data, id_var = params$id_var,
+    missing_values = params$missing_values
+  )
+} else {
+  completeness_table <- ody_verify_completeness(
+    params$data, id_var = params$id_var,
+    missing_values = params$missing_values,
+    conditions_list = params$conditions_list
+  )
+}
+
+conformance_table <- ody_verify_conformance(
+  params$data,
+  missing_values = params$missing_values,
+  max_integer_distinct = params$max_integer_distinct
+)
+```
+
+
+Completeness
+================================================================================
+
+Column
+--------------------------------------------------------------------------------
+
+###
+```{r}
+report_completeness(completeness_table)
+
+```
+
+Conformance
+================================================================================
+
+Column
+--------------------------------------------------------------------------------
+
+###
+```{r}
+report_conformance(conformance_table)
+
+```
+
+
+

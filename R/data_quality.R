@@ -18,8 +18,8 @@ count_grouped_cases <- function(count_var, grouped) {
         TRUE ~ stringr::str_c("'", count_var, "'")
       )
     ) |>
-      dplyr::count(cases) |>
-      dplyr::arrange(dplyr::desc(n))
+      dplyr::count(.data[["cases"]]) |>
+      dplyr::arrange(dplyr::desc(.data[["n"]]))
   } else if (grouped == "format") {
     # integer y number no se distingue y tampoco se distingue entre
     # character symbol, alpha_num, alpha_sym, num_sym, alpha_num_sym.
@@ -34,8 +34,8 @@ count_grouped_cases <- function(count_var, grouped) {
         TRUE ~ "character"
       )
     ) |>
-      dplyr::count(cases) |>
-      dplyr::arrange(dplyr::desc(n))
+      dplyr::count(.data[["cases"]]) |>
+      dplyr::arrange(dplyr::desc(.data[["n"]]))
   } else if (grouped == "subformat") {
     # se agrupa todo
     tibble::tibble(
@@ -55,15 +55,15 @@ count_grouped_cases <- function(count_var, grouped) {
         TRUE ~ "subformat_fail"
       )
     ) |>
-      dplyr::count(cases) |>
-      dplyr::arrange(dplyr::desc(n))
+      dplyr::count(.data[["cases"]]) |>
+      dplyr::arrange(dplyr::desc(.data[["n"]]))
   } else if (grouped == "no") {
     # no se agrupa nada
     tibble::tibble(
       cases = stringr::str_c("'", count_var, "'"),
     ) |>
-      dplyr::count(cases) |>
-      dplyr::arrange(dplyr::desc(n))
+      dplyr::count(.data[["cases"]]) |>
+      dplyr::arrange(dplyr::desc(.data[["n"]]))
   }
 }
 
@@ -204,7 +204,7 @@ ody_verify_completeness <- function(
     complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
       dplyr::left_join(cond_frame, by = "variable") |>
       dplyr::select(
-        variable, condition,
+        .data$variable, .data$condition,
         tidyselect::starts_with("n_"), tidyselect::starts_with("ids")
       )
 
@@ -214,7 +214,7 @@ ody_verify_completeness <- function(
   } else {
     complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
       dplyr::mutate(
-        condition = NA, .after = variable
+        condition = NA, .after = .data$variable
       )
 
     attr(complet_data, "id_var") <- id_var
@@ -262,10 +262,10 @@ ody_verify_conformance <- function(
       data_frame,
       ~ length(na.omit(unique(stringr::str_to_upper(stringr::str_remove_all(., "[:blank:]")))))
     ),
-    uniqueness = round(n_distinct_trimed / n_distinct, 2),
+    uniqueness = round(.data$n_distinct_trimed / .data$n_distinct, 2),
     data_list = purrr::map(data_frame, na.omit),
-    formats_table = purrr::map(data_list, count_grouped_cases, grouped = "format"),
-    subformats_table = purrr::map(data_list, count_grouped_cases, grouped = "subformat"),
+    formats_table = purrr::map(.data$data_list, count_grouped_cases, grouped = "format"),
+    subformats_table = purrr::map(.data$data_list, count_grouped_cases, grouped = "subformat"),
     heterogeneity = purrr::map_dbl(
       formats_table,
       function(x) {
@@ -296,7 +296,7 @@ ody_verify_conformance <- function(
     ),
     # todo es integer? si es así y hay menos de max_integer_distinct el recuento de
     # esa variable se realiza sin agrupar para mostrar en los detalles.
-    all_integer = purrr::map_lgl(data_list, ~ all(stringr::str_detect(., "^\\d+$"))),
+    all_integer = purrr::map_lgl(.data$data_list, ~ all(stringr::str_detect(., "^\\d+$"))),
     distinct_formats_detail = purrr::pmap(
       tibble::tibble(n_distinct, all_integer, data_list),
       function(n_distinct, all_integer, data_list) {

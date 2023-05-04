@@ -49,8 +49,8 @@ count_grouped_cases <- function(count_var, grouped) {
         stringr::str_detect(count_var, "^[[:alpha:][:blank:]]+$") ~ "alpha",
         stringr::str_detect(count_var, "^[[:punct:][:symbol:][:blank:]]+$") ~ "symbol",
         stringr::str_detect(count_var, "^[[:alnum:][:blank:]]+$") ~ "alpha_num",
-        stringr::str_detect(count_var,"^[[:punct:][:symbol:][:alpha:][:blank:]]+$") ~ "alpha_sym",
-        stringr::str_detect(count_var,"^[[:punct:][:symbol:][:digit:][:blank:]]+$") ~ "num_sym",
+        stringr::str_detect(count_var, "^[[:punct:][:symbol:][:alpha:][:blank:]]+$") ~ "alpha_sym",
+        stringr::str_detect(count_var, "^[[:punct:][:symbol:][:digit:][:blank:]]+$") ~ "num_sym",
         stringr::str_detect(count_var, "^[[:graph:][:blank:]]+$") ~ "alpha_num_sym",
         TRUE ~ "subformat_fail"
       )
@@ -83,27 +83,21 @@ ody_verify_completeness <- function(
     data_frame,
     missing_values = NULL,
     conditions_list = NULL,
-    id_var = "row_number"
-) {
-
+    id_var = "row_number") {
   if (!is.null(conditions_list)) {
-
     conditions_list <- complete_list(conditions_list)
-
   }
 
   if (id_var == "row_number") {
-
     data_frame <- data_frame |>
       dplyr::mutate(
         row_number = 1:dplyr::n(), .before = 1
       )
-
   }
 
   missing_values <- c("", missing_values)
 
-  #All variable names except id_var name
+  # All variable names except id_var name
   var_names <- data_frame |>
     dplyr::select(-tidyselect::all_of(id_var)) |>
     names()
@@ -134,7 +128,7 @@ ody_verify_completeness <- function(
   )
 
   # Data with the unexpected values of the filtered variables
-  data_antifiltered  <-  purrr::pmap(
+  data_antifiltered <- purrr::pmap(
     data_map,
     function(data_list, rel_index, name_var) {
       if (rel_index) {
@@ -163,9 +157,11 @@ ody_verify_completeness <- function(
       data_missing,
       ~ dplyr::pull(., 1) |>
         na.omit() |> # For the rare cases id is missing
-                     # (will never miss if id_var = row_number)
+        # (will never miss if id_var = row_number)
         stringr::str_c(collapse = ", ") %>%
-        {ifelse(. == "", NA, .)}
+        {
+          ifelse(. == "", NA, .)
+        }
     ),
     n_unexpected = purrr::map2_dbl(
       data_map$data_list, data_filtered, ~ nrow(.x) - nrow(.y)
@@ -188,9 +184,11 @@ ody_verify_completeness <- function(
       data_unexpected,
       ~ as.character(dplyr::pull(., 1)) |>
         na.omit() |> # For the rare cases id is missing
-                     # (will never miss if id_var = row_number)
+        # (will never miss if id_var = row_number)
         stringr::str_c(collapse = ", ") %>%
-        {ifelse(. == "", NA, .)}
+        {
+          ifelse(. == "", NA, .)
+        }
     )
   )
 
@@ -199,8 +197,7 @@ ody_verify_completeness <- function(
     condition = unlist(conditions_list)
   )
 
-  if(nrow(cond_frame) != 0) {
-
+  if (nrow(cond_frame) != 0) {
     complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
       dplyr::left_join(cond_frame, by = "variable") |>
       dplyr::select(
@@ -210,7 +207,6 @@ ody_verify_completeness <- function(
 
     attr(complet_data, "id_var") <- id_var
     return(complet_data)
-
   } else {
     complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
       dplyr::mutate(
@@ -219,9 +215,7 @@ ody_verify_completeness <- function(
 
     attr(complet_data, "id_var") <- id_var
     return(complet_data)
-
   }
-
 }
 
 
@@ -236,9 +230,7 @@ ody_verify_completeness <- function(
 #' @return A conformance tibble.
 #' @export
 ody_verify_conformance <- function(
-    data_frame, missing_values = NULL, max_integer_distinct = 10
-) {
-
+    data_frame, missing_values = NULL, max_integer_distinct = 10) {
   # Todo se convierte a caracter para cazar "formatos" a partir str_detect
   data_frame <- data_frame |>
     dplyr::mutate(
@@ -314,7 +306,7 @@ ody_verify_conformance <- function(
       distinct_formats_detail = purrr::pmap(
         distinct_formats_detail_table,
         function(n_distinct, all_integer, data_list) {
-          if (all_integer & n_distinct <=max_integer_distinct) {
+          if (all_integer & n_distinct <= max_integer_distinct) {
             count_grouped_cases(data_list, grouped = "no")
           } else {
             count_grouped_cases(data_list, grouped = "semi")
@@ -348,7 +340,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
       completeness = round((.data$n_expected - .data$n_missing) / .data$n_expected, 2),
       uncompleteness = ifelse(
         .data$n_unexpected == 0, NA,
-        round((.data$n_unexpected - .data$n_antimissing) / .data$n_unexpected , 2)
+        round((.data$n_unexpected - .data$n_antimissing) / .data$n_unexpected, 2)
       ),
       overall = ifelse(
         is.na(.data$n_antimissing),
@@ -390,8 +382,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
 
 
   if (any(!is.na(completeness_table$condition))) {
-
-    report_table  |>
+    report_table |>
       reactable::reactable(
         defaultColDef = reactable::colDef(
           align = "left"
@@ -401,7 +392,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
             dplyr::filter(.data$variable == report_table$variable[index]) |>
             dplyr::select(-.data$variable) |>
             dplyr::rename("{attr(completeness_table, 'id_var')}" := .data$ids)
-          if(nrow(issues) != 0) {
+          if (nrow(issues) != 0) {
             htmltools::div(
               style = "padding: 1rem",
               reactable::reactable(
@@ -426,7 +417,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           overall = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, max_value = 1,
+              report_table,
+              max_value = 1,
               fill_color_ref = "overall_color",
               text_position = text_pos
             ),
@@ -442,7 +434,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           n_missing = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, fill_color = wrong_bar_color,
+              report_table,
+              fill_color = wrong_bar_color,
               max_value = max(report_table$n_expected),
               text_position = text_pos
             ),
@@ -450,7 +443,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           completeness = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, max_value = 1,
+              report_table,
+              max_value = 1,
               fill_color_ref = "completeness_color",
               text_position = text_pos
             ),
@@ -466,14 +460,16 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           n_antimissing = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, max_value = max(report_table$n_unexpected),
+              report_table,
+              max_value = max(report_table$n_unexpected),
               fill_color = wrong_bar_color, text_position = text_pos
             ),
             minWidth = min_col_width
           ),
           uncompleteness = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, max_value = 1,
+              report_table,
+              max_value = 1,
               fill_color_ref = "uncompleteness_color",
               text_position = text_pos
             ),
@@ -486,7 +482,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
         searchable = TRUE, onClick = "expand"
       )
   } else {
-    report_table  |>
+    report_table |>
       reactable::reactable(
         defaultColDef = reactable::colDef(
           align = "left"
@@ -496,7 +492,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
             dplyr::filter(.data$variable == report_table$variable[index]) |>
             dplyr::select(-.data$variable) |>
             dplyr::rename("{attr(completeness_table, 'id_var')}" := .data$ids)
-          if(nrow(issues) != 0) {
+          if (nrow(issues) != 0) {
             htmltools::div(
               style = "padding: 1rem",
               reactable::reactable(
@@ -528,7 +524,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           n_missing = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, fill_color = wrong_bar_color,
+              report_table,
+              fill_color = wrong_bar_color,
               max_value = max(report_table$n_expected),
               text_position = text_pos
             ),
@@ -536,7 +533,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           completeness = reactable::colDef(
             cell = reactablefmtr::data_bars(
-              report_table, max_value = 1,
+              report_table,
+              max_value = 1,
               fill_color_ref = "completeness_color",
               text_position = text_pos
             ),
@@ -557,7 +555,6 @@ report_completeness <- function(completeness_table, text_pos = "above") {
 # Helper function to report an ody_verify_conformance output
 #   - conformance_table: output de verify_conformance.
 report_conformance <- function(conformance_table) {
-
   distinct_formats_detail <- conformance_table$distinct_formats_detail
 
   conformance_table <- conformance_table |>
@@ -595,9 +592,9 @@ report_conformance <- function(conformance_table) {
         n_cases = reactable::colDef(maxWidth = 100),
         n_distinct = reactable::colDef(maxWidth = 100),
         uniqueness = reactable::colDef(maxWidth = 100),
-        formats = reactable::colDef(minWidth = 200 ,resizable = TRUE),
+        formats = reactable::colDef(minWidth = 200, resizable = TRUE),
         heterogeneity = reactable::colDef(maxWidth = 150),
-        subformats = reactable::colDef(minWidth = 300,resizable = TRUE)
+        subformats = reactable::colDef(minWidth = 300, resizable = TRUE)
       ),
       borderless = TRUE, highlight = TRUE, onClick = "expand",
       wrap = TRUE, pagination = FALSE, searchable = TRUE
@@ -621,9 +618,7 @@ report_conformance <- function(conformance_table) {
 ody_render_quality_report <- function(
     data_frame, project_name = "project", missing_values = "",
     id_var = "row_number", conditions_list = "no", add_data = FALSE,
-    max_integer_distinct = 10, output_dir = getwd()
-) {
-
+    max_integer_distinct = 10, output_dir = getwd()) {
   parameters <- list(
     project_name = project_name,
     data = data_frame,
@@ -642,7 +637,7 @@ ody_render_quality_report <- function(
     template <- system.file(
       "quality_reports", "quality_report_template_with_data.Rmd",
       package = "odytools"
-      )
+    )
   } else {
     template <- system.file(
       "quality_reports", "quality_report_template.Rmd",

@@ -254,7 +254,7 @@ ody_verify_conformance <- function(
       )
     )
 
-  dplyr::tibble(
+  result_v0 <- dplyr::tibble(
     variable = names(data_frame),
     n_cases = purrr::map_dbl(data_frame, ~ sum(!is.na(.))),
     n_distinct = purrr::map_dbl(data_frame, ~ length(na.omit(unique(.)))),
@@ -267,7 +267,7 @@ ody_verify_conformance <- function(
     formats_table = purrr::map(.data$data_list, count_grouped_cases, grouped = "format"),
     subformats_table = purrr::map(.data$data_list, count_grouped_cases, grouped = "subformat"),
     heterogeneity = purrr::map_dbl(
-      formats_table,
+      .data$formats_table,
       function(x) {
         n <- x$n
         p <- n / sum(n)
@@ -275,7 +275,7 @@ ody_verify_conformance <- function(
       }
     ),
     formats = purrr::map_chr(
-      formats_table,
+      .data$formats_table,
       function(x) {
         stringr::str_c(
           stringr::str_c(x[[1]]),
@@ -285,7 +285,7 @@ ody_verify_conformance <- function(
       }
     ),
     subformats = purrr::map_chr(
-      subformats_table,
+      .data$subformats_table,
       function(x) {
         stringr::str_c(
           stringr::str_c(x[[1]]),
@@ -296,22 +296,33 @@ ody_verify_conformance <- function(
     ),
     # todo es integer? si es así y hay menos de max_integer_distinct el recuento de
     # esa variable se realiza sin agrupar para mostrar en los detalles.
-    all_integer = purrr::map_lgl(.data$data_list, ~ all(stringr::str_detect(., "^\\d+$"))),
-    distinct_formats_detail = purrr::pmap(
-      tibble::tibble(n_distinct, all_integer, data_list),
-      function(n_distinct, all_integer, data_list) {
-        if (all_integer & n_distinct <=max_integer_distinct) {
-          count_grouped_cases(data_list, grouped = "no")
-        } else {
-          count_grouped_cases(data_list, grouped = "semi")
-        }
-      }
-    )
+    all_integer = purrr::map_lgl(.data$data_list, ~ all(stringr::str_detect(., "^\\d+$")))
   ) |>
     dplyr::select(
-      -data_list, -formats_table, -formats_table, -subformats_table,
-      -n_distinct_trimed, -all_integer
+      -.data$formats_table, -.data$subformats_table,
+      -.data$n_distinct_trimed
     )
+
+  distinct_formats_detail_table <- tibble::tibble(
+    n_distinct = result_v0$n_distinct,
+    all_integer = result_v0$all_integer,
+    data_list = result_v0$data_list
+  )
+
+  result_v0 |>
+    dplyr::mutate(
+      distinct_formats_detail = purrr::pmap(
+        distinct_formats_detail_table,
+        function(n_distinct, all_integer, data_list) {
+          if (all_integer & n_distinct <=max_integer_distinct) {
+            count_grouped_cases(data_list, grouped = "no")
+          } else {
+            count_grouped_cases(data_list, grouped = "semi")
+          }
+        }
+      )
+    ) |>
+    dplyr::select(-.data$data_list, -.data$all_integer)
 }
 
 # Crea tablas html del resultado de verify_completeness
@@ -334,24 +345,24 @@ report_completeness <- function(completeness_table, text_pos = "above") {
 
   report_table <- completeness_table |>
     dplyr::mutate(
-      completeness = round((n_expected - n_missing) / n_expected, 2),
+      completeness = round((.data$n_expected - .data$n_missing) / .data$n_expected, 2),
       uncompleteness = ifelse(
         n_unexpected == 0, NA,
-        round((n_unexpected - n_antimissing) / n_unexpected , 2)
+        round((.data$n_unexpected - .data$n_antimissing) / .data$n_unexpected , 2)
       ),
       overall = ifelse(
-        is.na(n_antimissing),
-        round((n_expected + n_unexpected - n_missing) / (n_expected + n_unexpected), 2),
-        round((n_expected + n_unexpected - n_missing - n_antimissing) / (n_expected + n_unexpected), 2)
+        is.na(.data$n_antimissing),
+        round((.data$n_expected + .data$n_unexpected - .data$n_missing) / (.data$n_expected + .data$n_unexpected), 2),
+        round((.data$n_expected + .data$n_unexpected - .data$n_missing - .data$n_antimissing) / (.data$n_expected + .data$n_unexpected), 2)
       ),
       condition = ifelse(
-        is.na(condition), "allways", condition
+        is.na(.data$condition), "allways", .data$condition
       )
     ) |>
     dplyr::select(
-      variable, condition, overall,
-      n_expected, n_missing, completeness,
-      n_unexpected, n_antimissing, uncompleteness
+      .data$variable, .data$condition, overall,
+      .data$n_expected, .data$n_missing, completeness,
+      .data$n_unexpected, .data$n_antimissing, uncompleteness
     ) |>
     dplyr::mutate(
       overall_color = dplyr::case_when(
@@ -373,7 +384,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
 
   issues_info <- completeness_table |>
     dplyr::filter(!is.na(ids_missing) | !is.na(ids_antimissing)) |>
-    dplyr::select(variable, n_missing, ids_missing, n_antimissing, ids_antimissing) |>
+    dplyr::select(.data$variable, .data$n_missing, ids_missing, .data$n_antimissing, ids_antimissing) |>
     tidyr::pivot_longer(2:5, names_to = c(".value", "issue"), names_pattern = "(.+)_(.+)") |>
     dplyr::filter(!is.na(ids))
 
@@ -387,8 +398,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
         ),
         details = function(index) {
           issues <- issues_info |>
-            dplyr::filter(variable == report_table$variable[index]) |>
-            dplyr::select(-variable) |>
+            dplyr::filter(.data$variable == report_table$variable[index]) |>
+            dplyr::select(-.data$variable) |>
             dplyr::rename("{attr(completeness_table, 'id_var')}" := ids)
           if(nrow(issues) != 0) {
             htmltools::div(
@@ -482,8 +493,8 @@ report_completeness <- function(completeness_table, text_pos = "above") {
         ),
         details = function(index) {
           issues <- issues_info |>
-            dplyr::filter(variable == report_table$variable[index]) |>
-            dplyr::select(-variable) |>
+            dplyr::filter(.data$variable == report_table$variable[index]) |>
+            dplyr::select(-.data$variable) |>
             dplyr::rename("{attr(completeness_table, 'id_var')}" := ids)
           if(nrow(issues) != 0) {
             htmltools::div(

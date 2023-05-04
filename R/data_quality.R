@@ -347,7 +347,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
     dplyr::mutate(
       completeness = round((.data$n_expected - .data$n_missing) / .data$n_expected, 2),
       uncompleteness = ifelse(
-        n_unexpected == 0, NA,
+        .data$n_unexpected == 0, NA,
         round((.data$n_unexpected - .data$n_antimissing) / .data$n_unexpected , 2)
       ),
       overall = ifelse(
@@ -360,21 +360,21 @@ report_completeness <- function(completeness_table, text_pos = "above") {
       )
     ) |>
     dplyr::select(
-      .data$variable, .data$condition, overall,
-      .data$n_expected, .data$n_missing, completeness,
-      .data$n_unexpected, .data$n_antimissing, uncompleteness
+      .data$variable, .data$condition, .data$overall,
+      .data$n_expected, .data$n_missing, .data$completeness,
+      .data$n_unexpected, .data$n_antimissing, .data$uncompleteness
     ) |>
     dplyr::mutate(
       overall_color = dplyr::case_when(
-        overall == 1 ~ ok_bar_color,
+        .data$overall == 1 ~ ok_bar_color,
         TRUE ~ wrong_bar_color
       ),
       completeness_color = dplyr::case_when(
-        completeness == 1 ~ ok_bar_color,
+        .data$completeness == 1 ~ ok_bar_color,
         TRUE ~ wrong_bar_color
       ),
       uncompleteness_color = dplyr::case_when(
-        uncompleteness == 1 ~ ok_bar_color,
+        .data$uncompleteness == 1 ~ ok_bar_color,
         TRUE ~ wrong_bar_color
       )
     ) |>
@@ -383,10 +383,10 @@ report_completeness <- function(completeness_table, text_pos = "above") {
     )
 
   issues_info <- completeness_table |>
-    dplyr::filter(!is.na(ids_missing) | !is.na(ids_antimissing)) |>
-    dplyr::select(.data$variable, .data$n_missing, ids_missing, .data$n_antimissing, ids_antimissing) |>
+    dplyr::filter(!is.na(.data$ids_missing) | !is.na(.data$ids_antimissing)) |>
+    dplyr::select(.data$variable, .data$n_missing, .data$ids_missing, .data$n_antimissing, .data$ids_antimissing) |>
     tidyr::pivot_longer(2:5, names_to = c(".value", "issue"), names_pattern = "(.+)_(.+)") |>
-    dplyr::filter(!is.na(ids))
+    dplyr::filter(!is.na(.data$ids))
 
 
   if (any(!is.na(completeness_table$condition))) {
@@ -400,7 +400,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           issues <- issues_info |>
             dplyr::filter(.data$variable == report_table$variable[index]) |>
             dplyr::select(-.data$variable) |>
-            dplyr::rename("{attr(completeness_table, 'id_var')}" := ids)
+            dplyr::rename("{attr(completeness_table, 'id_var')}" := .data$ids)
           if(nrow(issues) != 0) {
             htmltools::div(
               style = "padding: 1rem",
@@ -495,7 +495,7 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           issues <- issues_info |>
             dplyr::filter(.data$variable == report_table$variable[index]) |>
             dplyr::select(-.data$variable) |>
-            dplyr::rename("{attr(completeness_table, 'id_var')}" := ids)
+            dplyr::rename("{attr(completeness_table, 'id_var')}" := .data$ids)
           if(nrow(issues) != 0) {
             htmltools::div(
               style = "padding: 1rem",

@@ -11,4 +11,4 @@
 
 # odytools 0.2.1
 
-* Added a 3 levels version for treatment to ody_pdx_model sensitiviy.
+* Added entry controls to ody_pdx_model_sensitivity.

@@ -114,7 +114,7 @@ if (comp_models$`Pr(>Chisq)`[2] <= 0.05) {
 
 ```
 
-```{r multcomp}
+```{r multcomp_2lv}
 
 # The data_frame passed to this file MUST have...:
 # - The sensitivity factor in the second column and the resistant level must be
@@ -160,6 +160,11 @@ result <- tibble(
 )
 
 ```
+
+```{r multcomp-3lv, eval = false}
+
+```
+
 
 
 ## Data

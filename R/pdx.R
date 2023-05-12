@@ -173,7 +173,6 @@ ody_pdx_model_sensitivity <- function(
   levels_sensitivity <-  unique(data_frame[[2]])
   levels_treatment <- unique(data_frame[[3]])
 
-
   resistant_level <- readline(
     stringr::str_c(
       "In the '", names_df[2],  "' factor, which is the 'resistant' level?",
@@ -181,12 +180,32 @@ ody_pdx_model_sensitivity <- function(
     )
   )
 
+  while (!(resistant_level %in% levels_sensitivity)) {
+    resistant_level <- readline(
+      stringr::str_c(
+        "'", resistant_level, "' is not a level of '", names_df[2],
+        "' factor, which is the 'resistant' level?",
+        " (", levels_sensitivity[1], "/", levels_sensitivity[2], ") "
+      )
+    )
+  }
+
   control_level <- readline(
     stringr::str_c(
       "In the '", names_df[3], "' factor, which is the 'control' level?",
       " (", levels_treatment[1], "/", levels_treatment[2], ") "
     )
   )
+
+  while (!(control_level %in% control_level)) {
+    control_level <- readline(
+      stringr::str_c(
+        "'", control_level, "' is not a level of '", names_df[3],
+        "' factor, which is the 'control' level?",
+        " (", control_level[1], "/", control_level[2], ") "
+      )
+    )
+  }
 
   #Analysis
 

@@ -208,6 +208,36 @@ ody_pdx_model_sensitivity <- function(
     )
   }
 
+
+
+  if (length(levels_treatment) == 3) {
+    levels_treatment_no_control <- levels_treatment[
+      levels_treatment != control_level
+    ]
+
+    treatment1_level <- readline(
+      stringr::str_c(
+        "In the '", names_df[3], "' factor, which is the 'treatment 1' level?",
+        " (", stringr::str_c(levels_treatment_no_control, collapse = "/"), ") "
+      )
+    )
+
+    while (!(treatment1_level %in% levels_treatment_no_control)) {
+      treatment1_level <- readline(
+        stringr::str_c(
+          "'", treatment1_level, "' is not a level of '", names_df[3],
+          "' factor, which is the 'treatment 1' level?",
+          " (", stringr::str_c(
+            levels_treatment_no_control, collapse = "/"
+            ), ") "
+        )
+      )
+    }
+
+  } else {
+    treatment1_level <- NA
+  }
+
   #Analysis
 
   ## Type of analisys if model_type is "guess_it
@@ -244,6 +274,7 @@ ody_pdx_model_sensitivity <- function(
       data_frame = data_frame,
       resistant_level = resistant_level,
       control_level = control_level,
+      treatment1_level = treatment1_level,
       model_type = model_type
     )
   )

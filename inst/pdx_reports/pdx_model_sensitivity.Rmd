@@ -119,16 +119,16 @@ treatment_level <- levels(data_model[[3]])[2]
 if (nlevels(data_model[[3]]) == 2) {
   
   ContSen_ContRes <- str_c(
-    str_c("[", params$control_level, " & ", sensitive_level, "]" ), " - ",
-    str_c("[", params$control_level, " & ", params$resistant_level, "]" )
+    "[", params$control_level, " & ", sensitive_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]" 
   )
   TrtRes_ContRes <- str_c(
-    str_c("[", treatment_level, " & ", params$resistant_level, "]" ), " - ",
-    str_c("[", params$control_level, " & ", params$resistant_level, "]" )
+    "[", treatment_level, " & ", params$resistant_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]"
   )
   TrtSen_ContSen <- str_c(
-    str_c("[", treatment_level, " & ", sensitive_level, "]" ), " - ",
-    str_c("[", params$control_level, " & ", sensitive_level, "]" )
+    "[", treatment_level, " & ", sensitive_level, "] - [", 
+    params$control_level, " & ", sensitive_level, "]" 
   )
   interaction <- str_c(df_names[2], ":", df_names[3], " interaction")
   
@@ -147,25 +147,25 @@ if (nlevels(data_model[[3]]) == 2) {
 } else {
   treatment2_level <- levels(data_model[[3]])[3]
   
-  ContRes_ContSen <- str_c(
-    "[", params$control_level, " & ", params$resistant_level, "] - [",
+  ContSen_ContRes <- str_c(
+    "[",params$control_level, " & ", sensitive_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]"
+  )
+  TrtRes_ContRes <- str_c(
+    "[",treatment_level, " & ", params$resistant_level, "] - [",
+     params$control_level, " & ", params$resistant_level, "]"
+  )
+  TrtSen_ContSen <- str_c(
+    "[", treatment_level, " & ", sensitive_level, "] - [",
+     params$control_level, " & ", sensitive_level, "]"
+  )
+  Trt2Res_ContRes <- str_c(
+    "[", treatment2_level, " & ", params$resistant_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]"
+  )
+  Trt2Sen_ContSen <- str_c(
+    "[", treatment2_level, " & ", sensitive_level, "] - [",
     params$control_level, " & ", sensitive_level, "]"
-  )
-  ContRes_TrtRes <- str_c(
-    "[", params$control_level, " & ", params$resistant_level, "] - [",
-    treatment_level, " & ", params$resistant_level, "]"
-  )
-  ContSen_TrtSen <- str_c(
-    "[", params$control_level, " & ", sensitive_level, "] - [",
-    treatment_level, " & ", sensitive_level, "]"
-  )
-  ContRes_Trt2Res <- str_c(
-    "[", params$control_level, " & ", params$resistant_level, "] - [",
-    treatment2_level, " & ", params$resistant_level, "]"
-  )
-  ContSen_Trt2Sen <- str_c(
-    "[", params$control_level, " & ", sensitive_level, "] - [",
-    treatment2_level, " & ", sensitive_level, "]"
   )
   sensitivity_Trt_interaction <-  str_c(
     df_names[2], ":", treatment_level, " interaction"
@@ -174,45 +174,40 @@ if (nlevels(data_model[[3]]) == 2) {
     df_names[2], ":", treatment2_level, " interaction"
   )
   difference_interactions <- str_c(
-    "[", df_names[2], ":", treatment_level, "] - [",
-     df_names[2], ":", treatment2_level, "]"
+    "[", df_names[2], ":", treatment2_level, "] - [",
+     df_names[2], ":", treatment_level, "]"
   )
-  TrtRes_Trt2Res <- str_c(
-    "[", treatment_level, " & ", params$resistant_level, "] - [",
-    treatment2_level, " & ", params$resistant_level, "]"
+  Trt2Res_TrtRes <- str_c(
+    "[", treatment2_level, " & ", params$resistant_level, "] - [",
+    treatment_level, " & ", params$resistant_level, "]"
   )
-  TrtSen_Trt2Sen <- str_c(
-    "[", treatment_level, " & ", sensitive_level, "] - [",
-    treatment2_level, " & ", sensitive_level, "]"
+  Trt2Sen_TrtSen <- str_c(
+    "[", treatment2_level, " & ", sensitive_level, "] - [",
+    treatment_level, " & ", sensitive_level, "]"
   )
-  
-  
   
   K <- rbind(
-    "ContRes - ContSen"    = c(0, 1, 0, 0, 0, 0),
-    "ContRes - TrtRes"     = c(0, 0, 1, 0, 0, 0),
-    "ContSen - TrtSen"     = c(0, 0, 1, 0, 1, 0),
-    "ContRes - Trt2Res"    = c(0, 0, 0, 1, 0, 0),
-    "ContSen - Trt2Sen"    = c(0, 0, 0, 1, 0, 1),
+    "ContSen - ContRes"    = c(0, 1, 0, 0, 0, 0),
+    "TrtRes - ContRes"     = c(0, 0, 1, 0, 0, 0),
+    "TrtSen - ContSen"     = c(0, 0, 1, 0, 1, 0),
+    "Trt2Res - ContRes"    = c(0, 0, 0, 1, 0, 0),
+    "Trt2Sen - ContSen"    = c(0, 0, 0, 1, 0, 1),
     "sensitivity:Trt"      = c(0, 0, 0, 0, 1, 0),
     "sensitivity:Trt2"     = c(0, 0, 0, 0, 0, 1),
-    "sens:Trt - sens_Trt2" = c(0, 0, 0, 0, 1,-1),
-    "TrtRes_Trt2Res"       = c(0, 0, 1,-1, 0, 0),
-    "TrtSen_Trt2Sen"       = c(0, 0, 1,-1, 1,-1)
+    "sens:Trt2 - sens:Trt" = c(0, 0, 0, 0, 1,-1),
+    "Trt2Res - TrtRes"     = c(0, 0, 1,-1, 0, 0),
+    "Trt2Sen - TrtSen"     = c(0, 0, 1,-1, 1,-1)
   )
-
   
   row.names(K) <- c(
-    ContRes_ContSen, 
-    ContRes_TrtRes, ContSen_TrtSen, 
-    ContRes_Trt2Res, ContSen_Trt2Sen,
+    ContSen_ContRes, 
+    TrtRes_ContRes, TrtSen_ContSen, 
+    Trt2Res_ContRes, Trt2Sen_ContSen,
     sensitivity_Trt_interaction, sensitivity_Trt2_interaction,
-    difference_interactions, TrtRes_Trt2Res
+    difference_interactions, Trt2Res_TrtRes, Trt2Sen_TrtSen
   )
   
 }
-
-
 
 summary <- glht(model, K) |> summary()
 
@@ -244,21 +239,23 @@ data_frame |>
 
 ```{r data-structure}
 rnd_fct <- str_c(
-    str_c("__", df_names[1], "__"), "with",
-    unique(data_frame[[1]]) |> length(),
-    "subjects", sep = " "
-  )
+  str_c("__", df_names[1], "__"), "with",
+  unique(data_frame[[1]]) |> length(),
+  "subjects", sep = " "
+)
 
-  sen_fct <- str_c(
-    str_c("__", df_names[2], "__"), "with levels",
-    str_c(
-      str_c("__", levels(data_model[[2]]), "__"),
-      c(" (resistant level)", " (sensible level)"),
-      collapse = " and "
-    ),
-    sep = " "
-  )
+sen_fct <- str_c(
+  str_c("__", df_names[2], "__"), "with levels",
+  str_c(
+    str_c("__", levels(data_model[[2]]), "__"),
+    c(" (resistant level)", " (sensible level)"),
+    collapse = " and "
+  ),
+  sep = " "
+)
 
+if (nlevels(data_model[[3]]) == 2) {
+  
   trt_fct <- str_c(
     str_c("__", df_names[3], "__"), "with levels",
     str_c(
@@ -269,9 +266,24 @@ rnd_fct <- str_c(
     sep = " "
   )
   
-  resp <- str_c(
-     str_c("__", df_names[4], "__"), sep = " "
-  )
+} else {
+  
+   trt_fct <- str_c(
+    str_c("__", df_names[3], "__"), "with levels",
+    str_c(
+      str_c("__", levels(data_model[[3]]), "__"),
+      c(" (control level)", " (treatment 1 level)",  " (treatment 2 level)"),
+      collapse = " and "
+    ),
+    sep = " "
+  ) |> 
+     str_replace(" and", ",")
+  
+}
+
+resp <- str_c(
+  str_c("__", df_names[4], "__"), sep = " "
+)
 
 
 ```

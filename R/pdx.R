@@ -136,7 +136,8 @@ ody_pdx_model_sensitivity <- function(
       collapse = " and "
     ),
     sep = " "
-  )
+  ) |>
+    stringr::str_replace(" and", ",")
 
   resp <- stringr::str_c(
     "- Response variable:", stringr::str_c("'", names_df[4], "'"), sep = " "
@@ -151,7 +152,7 @@ ody_pdx_model_sensitivity <- function(
 
   if (
     length(unique(data_frame[[2]])) != 2 ||
-    length(unique(data_frame[[3]])) != 2
+    !(length(unique(data_frame[[3]])) %in% 2:3)
   ) {
     stop(
       "Unexpected data structure: Factors with more than two levels.
@@ -193,16 +194,16 @@ ody_pdx_model_sensitivity <- function(
   control_level <- readline(
     stringr::str_c(
       "In the '", names_df[3], "' factor, which is the 'control' level?",
-      " (", levels_treatment[1], "/", levels_treatment[2], ") "
+      " (", stringr::str_c(levels_treatment, collapse = "/"), ") "
     )
   )
 
-  while (!(control_level %in% control_level)) {
+  while (!(control_level %in% levels_treatment)) {
     control_level <- readline(
       stringr::str_c(
         "'", control_level, "' is not a level of '", names_df[3],
         "' factor, which is the 'control' level?",
-        " (", control_level[1], "/", control_level[2], ") "
+        " (", stringr::str_c(levels_treatment, collapse = "/"), ") "
       )
     )
   }

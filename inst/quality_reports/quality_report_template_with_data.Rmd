@@ -17,7 +17,6 @@ params:
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
-library(dataxray)
 library(janitor)
 library(dplyr)
 library(openxlsx)

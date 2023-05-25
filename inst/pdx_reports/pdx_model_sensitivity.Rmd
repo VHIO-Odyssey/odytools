@@ -5,9 +5,12 @@ output:
     toc_float: TRUE
 params:
   data_frame: NA
-  resistant_level: NA
-  control_level: NA
-  model_type: NA
+  resistant_level: "resistant"
+  control_level: "control"
+  treatment1_level: "dht"
+  n_dec: 3
+  model_type: "lmm"
+  p_adjust: "single-step"
 editor_options: 
   chunk_output_type: console
 ---
@@ -30,41 +33,43 @@ library(forcats)
 
 
 ```{r data}
-data_frame <- params$data_frame
+data_frame <- params$data_frame |> 
+  mutate(across(1:3, factor))
 df_names <- names(data_frame)
 
-if (model_type == "glmm") {
 data_model <- data_frame |>
   mutate(
-    "{df_names[1]}" := factor(.data[[df_names[1]]]),
-    "{df_names[2]}" := factor(data_frame[[df_names[2]]]) |>
+    "{df_names[2]}" := .data[[df_names[2]]] |>
       fct_relevel(params$resistant_level),
-    "{df_names[3]}" := factor(data_frame[[df_names[3]]]) |>
-      fct_relevel(params$control_level),
-    "{df_names[4]}" := .data[[df_names[4]]] / 100,
-    weight_100 = 100
-  )
-} 
-
-if (model_type == "lmm") {
-  data_model <- data_frame |>
-  mutate(
-    "{df_names[1]}" := factor(.data[[df_names[1]]]),
-    "{df_names[2]}" := factor(data_frame[[df_names[2]]]) |>
-      fct_relevel(params$resistant_level),
-    "{df_names[3]}" := factor(data_frame[[df_names[3]]]) |>
+    "{df_names[3]}" := .data[[df_names[3]]] |>
       fct_relevel(params$control_level)
   )
+
+# If treatment has 3 levels, treatrment1 is located after control
+if (!is.na(params$treatment1_level)) {
+  data_model <- data_model |> 
+    mutate(
+      "{df_names[3]}" := .data[[df_names[3]]] |>
+      fct_relevel(params$treatment1_level, after = 1L)
+    )
 }
+
+
+if (params$model_type == "glmm") {
+  data_model <- data_frame |>
+    mutate(
+      "{df_names[4]}" := .data[[df_names[4]]] / 100,
+      weight_100 = 100
+    )
+}
+
 ```
 
 ---
-title: "`r str_c(str_to_upper(model_type), ": ", df_names[4], " ~ ", df_names[2], " x ", df_names[3])`"
+title: "`r str_c(str_to_upper(params$model_type), ": ", df_names[4], " ~ ", df_names[2], " x ", df_names[3])`"
 ---
 
 ```{r model}
-
-
 # Formulas
 # With random intercepts only
 form1 <- call(
@@ -84,12 +89,12 @@ form2 <- call(
 )
 
 
-if (model_type == "lmm") {
+if (params$model_type == "lmm") {
   model1 <- lmer(eval(form1), data = data_model)
   model2 <- lmer(eval(form2), data = data_model)
 }
 
-if (model_type == "glmm") {
+if (params$model_type == "glmm") {
   model1 <- glmer(
     eval(form1), data = data_model, family = "binomial", weights = weight_100
   )
@@ -122,34 +127,105 @@ if (comp_models$`Pr(>Chisq)`[2] <= 0.05) {
 # - The treatment factor in the third column and the control level must be the 
 #   first one.
 sensitive_level <- levels(data_model[[2]])[2]
-treatment_level <- levels(data_model[[3]])[2]
-
-ContRes_ContSen <- str_c(
-  str_c("[", params$control_level, " & ", params$resistant_level, "]" ), " - ",
-  str_c("[", params$control_level, " & ", sensitive_level, "]" )
-)
-ContRes_TrtRes <- str_c(
-  str_c("[", params$control_level, " & ", params$resistant_level, "]" ), " - ",
-  str_c("[", treatment_level, " & ", params$resistant_level, "]" )
-)
-ContSen_TrtSen <- str_c(
-  str_c("[", params$control_level, " & ", sensitive_level, "]" ), " - ",
-  str_c("[", treatment_level, " & ", sensitive_level, "]" )
-)
-interaction <- str_c(df_names[2], ":", df_names[3], " interaction")
 
 
-K <- rbind(
-  "ContRes - ContSen" = c(0, 1, 0, 0),
-  "ContRes - TrtRes"  = c(0, 0, 1, 0),
-  "ContSen - TrtSen"  = c(0, 0, 1, 1),
-  "Interaction"       = c(0, 0, 0, 1)
-)
+if (nlevels(data_model[[3]]) == 2) {
+  treatment_level <- levels(data_model[[3]])[2]
+  
+  ContSen_ContRes <- str_c(
+    "[", params$control_level, " & ", sensitive_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]" 
+  )
+  TrtRes_ContRes <- str_c(
+    "[", treatment_level, " & ", params$resistant_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]"
+  )
+  TrtSen_ContSen <- str_c(
+    "[", treatment_level, " & ", sensitive_level, "] - [", 
+    params$control_level, " & ", sensitive_level, "]" 
+  )
+  interaction <- str_c(df_names[2], ":", df_names[3], " interaction")
+  
+  
+  K <- rbind(
+    "ContSen - ContRes" = c(0, 1, 0, 0),
+    "TrtRes - ContRes"  = c(0, 0, 1, 0),
+    "TrtSen - ContSen"  = c(0, 0, 1, 1),
+    "Interaction"       = c(0, 0, 0, 1)
+  )
+  
+  row.names(K) <- c(
+    ContSen_ContRes, TrtRes_ContRes, TrtSen_ContSen, interaction
+  )
+  
+} else {
+  treatment2_level <- levels(data_model[[3]])[3]
+  
+  ContSen_ContRes <- str_c(
+    "[",params$control_level, " & ", sensitive_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]"
+  )
+  TrtRes_ContRes <- str_c(
+    "[",params$treatment1_level, " & ", params$resistant_level, "] - [",
+     params$control_level, " & ", params$resistant_level, "]"
+  )
+  TrtSen_ContSen <- str_c(
+    "[", params$treatment1_level, " & ", sensitive_level, "] - [",
+     params$control_level, " & ", sensitive_level, "]"
+  )
+  Trt2Res_ContRes <- str_c(
+    "[", treatment2_level, " & ", params$resistant_level, "] - [",
+    params$control_level, " & ", params$resistant_level, "]"
+  )
+  Trt2Sen_ContSen <- str_c(
+    "[", treatment2_level, " & ", sensitive_level, "] - [",
+    params$control_level, " & ", sensitive_level, "]"
+  )
+  sensitivity_Trt_interaction <-  str_c(
+    df_names[2], ":", params$treatment1_level, " interaction"
+  )
+  sensitivity_Trt2_interaction <-  str_c(
+    df_names[2], ":", treatment2_level, " interaction"
+  )
+  difference_interactions <- str_c(
+    "[", df_names[2], ":", treatment2_level, "] - [",
+     df_names[2], ":", params$treatment1_level, "]"
+  )
+  Trt2Res_TrtRes <- str_c(
+    "[", treatment2_level, " & ", params$resistant_level, "] - [",
+    params$treatment1_level, " & ", params$resistant_level, "]"
+  )
+  Trt2Sen_TrtSen <- str_c(
+    "[", treatment2_level, " & ", sensitive_level, "] - [",
+    params$treatment1_level, " & ", sensitive_level, "]"
+  )
+  
+  K <- rbind(
+    "ContSen - ContRes"    = c(0, 1, 0, 0, 0, 0),
+    "TrtRes - ContRes"     = c(0, 0, 1, 0, 0, 0),
+    "TrtSen - ContSen"     = c(0, 0, 1, 0, 1, 0),
+    "Trt2Res - ContRes"    = c(0, 0, 0, 1, 0, 0),
+    "Trt2Sen - ContSen"    = c(0, 0, 0, 1, 0, 1),
+    "sensitivity:Trt"      = c(0, 0, 0, 0, 1, 0),
+    "sensitivity:Trt2"     = c(0, 0, 0, 0, 0, 1),
+    "sens:Trt2 - sens:Trt" = c(0, 0, 0, 0,-1, 1),
+    "Trt2Res - TrtRes"     = c(0, 0,-1, 1, 0, 0),
+    "Trt2Sen - TrtSen"     = c(0, 0,-1, 1,-1, 1)
+  )
+  
+  row.names(K) <- c(
+    ContSen_ContRes, 
+    TrtRes_ContRes, TrtSen_ContSen, 
+    Trt2Res_ContRes, Trt2Sen_ContSen,
+    sensitivity_Trt_interaction, sensitivity_Trt2_interaction,
+    difference_interactions, Trt2Res_TrtRes, Trt2Sen_TrtSen
+  )
+  
+}
 
-row.names(K) <- c(ContRes_ContSen, ContRes_TrtRes, ContSen_TrtSen, interaction)
 
-
-summary <- glht(model, K) |> summary()
+# see ?adjusted for adjustment explanations
+summary <- glht(model, K) |> summary(test = adjusted(params$p_adjust))
 
 result <- tibble(
  Hypothesis = str_c(names(summary$test$coefficients), " = 0"),
@@ -157,7 +233,10 @@ result <- tibble(
  `Std. Error` = summary$test$sigma,
  `z value` = summary$test$tstat,
  `p-value` = summary$test$pvalues
-)
+) |> 
+  mutate(
+    across(where(is.numeric), ~round(., n_dec))
+  )
 
 ```
 
@@ -179,21 +258,23 @@ data_frame |>
 
 ```{r data-structure}
 rnd_fct <- str_c(
-    str_c("__", df_names[1], "__"), "with",
-    unique(data_frame[[1]]) |> length(),
-    "subjects", sep = " "
-  )
+  str_c("__", df_names[1], "__"), "with",
+  unique(data_frame[[1]]) |> length(),
+  "subjects", sep = " "
+)
 
-  sen_fct <- str_c(
-    str_c("__", df_names[2], "__"), "with levels",
-    str_c(
-      str_c("__", levels(data_model[[2]]), "__"),
-      c(" (resistant level)", " (sensible level)"),
-      collapse = " and "
-    ),
-    sep = " "
-  )
+sen_fct <- str_c(
+  str_c("__", df_names[2], "__"), "with levels",
+  str_c(
+    str_c("__", levels(data_model[[2]]), "__"),
+    c(" (resistant level)", " (sensible level)"),
+    collapse = " and "
+  ),
+  sep = " "
+)
 
+if (nlevels(data_model[[3]]) == 2) {
+  
   trt_fct <- str_c(
     str_c("__", df_names[3], "__"), "with levels",
     str_c(
@@ -204,9 +285,24 @@ rnd_fct <- str_c(
     sep = " "
   )
   
-  resp <- str_c(
-     str_c("__", df_names[4], "__"), sep = " "
-  )
+} else {
+  
+   trt_fct <- str_c(
+    str_c("__", df_names[3], "__"), "with levels",
+    str_c(
+      str_c("__", levels(data_model[[3]]), "__"),
+      c(" (control level)", " (treatment 1 level)",  " (treatment 2 level)"),
+      collapse = " and "
+    ),
+    sep = " "
+  ) |> 
+     str_replace(" and", ",")
+  
+}
+
+resp <- str_c(
+  str_c("__", df_names[4], "__"), sep = " "
+)
 
 
 ```
@@ -236,10 +332,10 @@ kbl(count_data) |>
 
 ## Graphic
 
-```{r}
+```{r graphic}
 
-paired_data <- data_frame |> 
-  group_by(.data[[df_names[1]]], .data[[df_names[2]]], .data[[df_names[3]]]) |> 
+paired_data <- data_model |> 
+  group_by(.data[[df_names[1]]], .data[[df_names[2]]], .data[[df_names[3]]]) |>
   summarise(
     "{df_names[4]}" := mean(.data[[df_names[4]]]),
     .groups = "drop"
@@ -252,8 +348,57 @@ ggplot(paired_data, aes(.data[[df_names[3]]], .data[[df_names[4]]])) +
   theme_classic() +
   theme(strip.background = element_blank(), text=element_text(size=20))
 
+# run next graphic only if 3 levels treatment
+
+eval_graph2 <- !is.na(treatment1_level)
 
 ```
+
+```{r graphic2, eval=eval_graph2, fig.asp=1.25}
+
+trt1_plot <- paired_data |>
+  mutate(
+    control_treatment = case_when(
+      group == levels(.data[[df_names[3]]])[1] ~ "Control",
+      TRUE ~ "Treatment"
+    ),
+    plot_treatment = levels(.data[[df_names[3]]])[2]
+  ) |>
+  filter(
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[1] |
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[2]
+  )
+
+
+trt2_plot <- paired_data |>
+  mutate(
+    control_treatment = case_when(
+      group == levels(.data[[df_names[3]]])[1] ~ "Control",
+      TRUE ~ "Treatment"
+    ),
+    plot_treatment = levels(.data[[df_names[3]]])[3]
+  ) |>
+  filter(
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[1] |
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[3]
+  )
+
+
+bind_rows(trt1_plot, trt2_plot) |>
+  mutate(
+    plot_treatment = factor(plot_treatment) |> 
+      fct_relevel(treatment1_level)
+  ) |> 
+  ggplot(aes(control_treatment, .data[[df_names[4]]])) +
+  facet_grid(plot_treatment ~ .data[[df_names[2]]]) +
+  geom_point(cex = 2) +
+  geom_line(aes(group = .data[[df_names[1]]])) +
+  theme(
+    strip.background = element_blank(), text=element_text(size=20)
+  ) + 
+  labs(x = "")
+```
+
 
 
 ## Result
@@ -266,6 +411,8 @@ kbl(result) |>
  
 ```
 
+Multiple testing correction method: `r summary$test$type`
+
 ### Model Summary
 ```{r model-summary}
 
@@ -277,25 +424,25 @@ summary(model)
 ## References
 
 ### R
-```{r}
+```{r ref-r}
 citation()
 ```
 
 ### lme4
-Package used to perform the `r str_to_upper(model_type)` model.
-```{r}
+Package used to perform the `r str_to_upper(params$model_type)` model.
+```{r ref-lme4}
 citation("lme4")
 ```
 
 ### multcomp
 Package used for simultaneous hypothesis testing.
-```{r}
+```{r ref-multcomp}
 citation("multcomp")
 ```
 
 ## Session Info
 
-```{r}
+```{r session}
 sessionInfo()
 ```
 

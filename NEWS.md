@@ -12,3 +12,7 @@
 # odytools 0.2.1
 
 * Added entry controls to ody_pdx_model_sensitivity.
+
+# odytools 0.2.2
+
+* Now ody_pdx_model_sensitivity also works with a 3 levels treatment factor.

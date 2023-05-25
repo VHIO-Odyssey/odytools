@@ -1,3 +1,4 @@
+#' @importFrom stats p.adjust.methods
 
 # Old function. First version that only performs binomial GLMMs.
 # ody_pdx_model_senitivity is the current life function.
@@ -94,6 +95,8 @@ ody_pdx_model_percentage_response <- function(
 #' @param file_name Name of the html file. If NULL, the file is named with the date the analysis was performed, the name of the dependent variable and type of model performed.
 #' @param file_dir Directory where the result is stored. The default is the current working directory.
 #' @param model_type The type of model the function will run. With the default value, "guess_it", the function "guesses" the model according to the response variable. Other valid arguments are "lmm" or "glmm" to force the function to perform a LMM or a GLMM respectively.
+#' @param n_dec Number of decimals to show in the results table.
+#' @param p_adjust Method to correct multiple testing (see ?multcomp::adjusted for further detail on the available methods).
 #'
 #' @details The way the function decides wich model to use when model_type equals "guess_it" is very simple: If the response variable is a 0 to 100 integer (a number with no decimals), then the model is a GLMM, else, the model is a LMM.
 #'
@@ -103,10 +106,13 @@ ody_pdx_model_sensitivity <- function(
     data_frame,
     file_name = NULL,
     file_dir = getwd(),
-    model_type = c("guess_it", "glmm", "lmm")
+    model_type = c("guess_it", "glmm", "lmm"),
+    n_dec = 3,
+    p_adjust = c("single-step", "Shaffer", "Westfall", "free", p.adjust.methods)
 ) {
 
   model_type <- rlang::arg_match(model_type)
+  p_adjust <- rlang::arg_match(p_adjust)
 
   # Data structure confirmation
   names_df <- names(data_frame)
@@ -136,7 +142,8 @@ ody_pdx_model_sensitivity <- function(
       collapse = " and "
     ),
     sep = " "
-  )
+  ) |>
+    stringr::str_replace(" and", ",")
 
   resp <- stringr::str_c(
     "- Response variable:", stringr::str_c("'", names_df[4], "'"), sep = " "
@@ -151,7 +158,7 @@ ody_pdx_model_sensitivity <- function(
 
   if (
     length(unique(data_frame[[2]])) != 2 ||
-    length(unique(data_frame[[3]])) != 2
+    !(length(unique(data_frame[[3]])) %in% 2:3)
   ) {
     stop(
       "Unexpected data structure: Factors with more than two levels.
@@ -193,18 +200,46 @@ ody_pdx_model_sensitivity <- function(
   control_level <- readline(
     stringr::str_c(
       "In the '", names_df[3], "' factor, which is the 'control' level?",
-      " (", levels_treatment[1], "/", levels_treatment[2], ") "
+      " (", stringr::str_c(levels_treatment, collapse = "/"), ") "
     )
   )
 
-  while (!(control_level %in% control_level)) {
+  while (!(control_level %in% levels_treatment)) {
     control_level <- readline(
       stringr::str_c(
         "'", control_level, "' is not a level of '", names_df[3],
         "' factor, which is the 'control' level?",
-        " (", control_level[1], "/", control_level[2], ") "
+        " (", stringr::str_c(levels_treatment, collapse = "/"), ") "
       )
     )
+  }
+
+  if (length(levels_treatment) == 3) {
+    levels_treatment_no_control <- levels_treatment[
+      levels_treatment != control_level
+    ]
+
+    treatment1_level <- readline(
+      stringr::str_c(
+        "In the '", names_df[3], "' factor, which is the 'treatment 1' level?",
+        " (", stringr::str_c(levels_treatment_no_control, collapse = "/"), ") "
+      )
+    )
+
+    while (!(treatment1_level %in% levels_treatment_no_control)) {
+      treatment1_level <- readline(
+        stringr::str_c(
+          "'", treatment1_level, "' is not a level of '", names_df[3],
+          "' factor, which is the 'treatment 1' level?",
+          " (", stringr::str_c(
+            levels_treatment_no_control, collapse = "/"
+            ), ") "
+        )
+      )
+    }
+
+  } else {
+    treatment1_level <- NA
   }
 
   #Analysis
@@ -243,7 +278,10 @@ ody_pdx_model_sensitivity <- function(
       data_frame = data_frame,
       resistant_level = resistant_level,
       control_level = control_level,
-      model_type = model_type
+      treatment1_level = treatment1_level,
+      n_dec = n_dec,
+      model_type = model_type,
+      p_adjust = p_adjust
     )
   )
 

@@ -8,7 +8,9 @@ ody_pdx_model_sensitivity(
   data_frame,
   file_name = NULL,
   file_dir = getwd(),
-  model_type = c("guess_it", "glmm", "lmm")
+  model_type = c("guess_it", "glmm", "lmm"),
+  n_dec = 3,
+  p_adjust = c("single-step", "Shaffer", "Westfall", "free", p.adjust.methods)
 )
 }
 \arguments{
@@ -25,6 +27,10 @@ ody_pdx_model_sensitivity(
 \item{file_dir}{Directory where the result is stored. The default is the current working directory.}
 
 \item{model_type}{The type of model the function will run. With the default value, "guess_it", the function "guesses" the model according to the response variable. Other valid arguments are "lmm" or "glmm" to force the function to perform a LMM or a GLMM respectively.}
+
+\item{n_dec}{Number of decimals to show in the results table.}
+
+\item{p_adjust}{Method to correct multiple testing (see ?multcomp::adjusted for further detail on the available methods).}
 }
 \value{
 A HTML report

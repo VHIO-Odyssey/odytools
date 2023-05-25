@@ -7,7 +7,8 @@ params:
   data_frame: NA
   resistant_level: "resistant"
   control_level: "control"
-  treatment1_level: "rad140"
+  treatment1_level: NA
+  n_dec: 3
   model_type: "lmm"
 editor_options: 
   chunk_output_type: console
@@ -206,9 +207,9 @@ if (nlevels(data_model[[3]]) == 2) {
     "Trt2Sen - ContSen"    = c(0, 0, 0, 1, 0, 1),
     "sensitivity:Trt"      = c(0, 0, 0, 0, 1, 0),
     "sensitivity:Trt2"     = c(0, 0, 0, 0, 0, 1),
-    "sens:Trt2 - sens:Trt" = c(0, 0, 0, 0, 1,-1),
-    "Trt2Res - TrtRes"     = c(0, 0, 1,-1, 0, 0),
-    "Trt2Sen - TrtSen"     = c(0, 0, 1,-1, 1,-1)
+    "sens:Trt2 - sens:Trt" = c(0, 0, 0, 0,-1, 1),
+    "Trt2Res - TrtRes"     = c(0, 0,-1, 1, 0, 0),
+    "Trt2Sen - TrtSen"     = c(0, 0,-1, 1,-1, 1)
   )
   
   row.names(K) <- c(
@@ -229,7 +230,10 @@ result <- tibble(
  `Std. Error` = summary$test$sigma,
  `z value` = summary$test$tstat,
  `p-value` = summary$test$pvalues
-)
+) |> 
+  mutate(
+    across(where(is.numeric), ~round(., n_dec))
+  )
 
 ```
 
@@ -341,8 +345,57 @@ ggplot(paired_data, aes(.data[[df_names[3]]], .data[[df_names[4]]])) +
   theme_classic() +
   theme(strip.background = element_blank(), text=element_text(size=20))
 
+# run next graphic only if 3 levels treatment
+
+eval_graph2 <- !is.na(treatment1_level)
 
 ```
+
+```{r graphic2, eval=eval_graph2, fig.asp=1.25}
+
+trt1_plot <- paired_data |>
+  mutate(
+    control_treatment = case_when(
+      group == levels(.data[[df_names[3]]])[1] ~ "Control",
+      TRUE ~ "Treatment"
+    ),
+    plot_treatment = levels(.data[[df_names[3]]])[2]
+  ) |>
+  filter(
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[1] |
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[2]
+  )
+
+
+trt2_plot <- paired_data |>
+  mutate(
+    control_treatment = case_when(
+      group == levels(.data[[df_names[3]]])[1] ~ "Control",
+      TRUE ~ "Treatment"
+    ),
+    plot_treatment = levels(.data[[df_names[3]]])[3]
+  ) |>
+  filter(
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[1] |
+    .data[[df_names[3]]] == levels(.data[[df_names[3]]])[3]
+  )
+
+
+bind_rows(trt1_plot, trt2_plot) |>
+  mutate(
+    plot_treatment = factor(plot_treatment) |> 
+      fct_relevel(treatment1_level)
+  ) |> 
+  ggplot(aes(control_treatment, .data[[df_names[4]]])) +
+  facet_grid(plot_treatment ~ .data[[df_names[2]]]) +
+  geom_point(cex = 2) +
+  geom_line(aes(group = .data[[df_names[1]]])) +
+  theme(
+    strip.background = element_blank(), text=element_text(size=20)
+  ) + 
+  labs(x = "")
+```
+
 
 
 ## Result

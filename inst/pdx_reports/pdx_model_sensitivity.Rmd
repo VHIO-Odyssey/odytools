@@ -7,9 +7,10 @@ params:
   data_frame: NA
   resistant_level: "resistant"
   control_level: "control"
-  treatment1_level: NA
+  treatment1_level: "dht"
   n_dec: 3
   model_type: "lmm"
+  p_adjust: "single-step"
 editor_options: 
   chunk_output_type: console
 ---
@@ -222,7 +223,9 @@ if (nlevels(data_model[[3]]) == 2) {
   
 }
 
-summary <- glht(model, K) |> summary()
+
+# see ?adjusted for adjustment explanations
+summary <- glht(model, K) |> summary(test = adjusted(params$p_adjust))
 
 result <- tibble(
  Hypothesis = str_c(names(summary$test$coefficients), " = 0"),
@@ -407,6 +410,8 @@ kbl(result) |>
   kable_styling(full_width = FALSE)
  
 ```
+
+Multiple testing correction method: `r summary$test$type`
 
 ### Model Summary
 ```{r model-summary}

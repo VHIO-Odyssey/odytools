@@ -1,3 +1,4 @@
+#' @importFrom stats p.adjust.methods
 
 # Old function. First version that only performs binomial GLMMs.
 # ody_pdx_model_senitivity is the current life function.
@@ -95,6 +96,7 @@ ody_pdx_model_percentage_response <- function(
 #' @param file_dir Directory where the result is stored. The default is the current working directory.
 #' @param model_type The type of model the function will run. With the default value, "guess_it", the function "guesses" the model according to the response variable. Other valid arguments are "lmm" or "glmm" to force the function to perform a LMM or a GLMM respectively.
 #' @param n_dec Number of decimals to show in the results table.
+#' @param p_adjust Method to correct multiple testing (see ?multcomp::adjusted for further detail on the available methods).
 #'
 #' @details The way the function decides wich model to use when model_type equals "guess_it" is very simple: If the response variable is a 0 to 100 integer (a number with no decimals), then the model is a GLMM, else, the model is a LMM.
 #'
@@ -105,10 +107,12 @@ ody_pdx_model_sensitivity <- function(
     file_name = NULL,
     file_dir = getwd(),
     model_type = c("guess_it", "glmm", "lmm"),
-    n_dec = 3
+    n_dec = 3,
+    p_adjust = c("single-step", "Shaffer", "Westfall", "free", p.adjust.methods)
 ) {
 
   model_type <- rlang::arg_match(model_type)
+  p_adjust <- rlang::arg_match(p_adjust)
 
   # Data structure confirmation
   names_df <- names(data_frame)
@@ -276,7 +280,8 @@ ody_pdx_model_sensitivity <- function(
       control_level = control_level,
       treatment1_level = treatment1_level,
       n_dec = n_dec,
-      model_type = model_type
+      model_type = model_type,
+      p_adjust = p_adjust
     )
   )
 

@@ -10,7 +10,9 @@ extract_data <- function(content, token, url) {
     ),
     encode = "form"
   ) |>
-    httr::content()
+    httr::content(show_col_types = FALSE) |>
+    suppressWarnings()
+
 }
 
 
@@ -21,7 +23,7 @@ extract_data <- function(content, token, url) {
 #'
 #' @return A nested tibble
 #' @export
-ody_rd_import <- function(
+ody_rc_import <- function(
     token = NULL, url = "https://redcap.vhio.net/redcap/api/"
   ) {
 
@@ -67,21 +69,21 @@ ody_rd_import <- function(
   id_var <- colnames(redcap_data)[1]
 
   # Project-level missing codes
-  missing_codes <- project_info$missing_data_codes |>
+  missing_codes_v0 <- project_info$missing_data_codes |>
     stringr::str_split("\\|", simplify = TRUE) |>
     stringr::str_trim() |>
-    stringr::str_split_fixed(",", n = 2) %>%
-    {
-      tibble::tibble(
-        raw_value = .[, 1],
-        label = stringr::str_trim(.[, 2])
-      )
-    } |>
+    stringr::str_split_fixed(",", n = 2)
+
+  missing_codes <- tibble::tibble(
+        raw_value = missing_codes_v0[, 1],
+        label = stringr::str_trim(missing_codes_v0[, 2])
+      ) |>
     dplyr::mutate(
       raw_value = tidyr::replace_na(
-        raw_value, "No missing codes in this project."
+        .data[["raw_value"]], "No missing codes in this project."
       )
     )
+
 
   # attributes
   attr(redcap_data, "project_info") <- project_info
@@ -103,10 +105,10 @@ ody_rd_import <- function(
   }
   attr(redcap_data, "phantom_variables") <- metadata |>
     dplyr::mutate(
-      present = field_name %in% colnames(data)
+      present = .data[["field_name"]] %in% colnames(redcap_data)
     ) |>
-    dplyr::filter(!present) |>
-    dplyr::select(field_name, field_type, form_name)
+    dplyr::filter(!.data[["present"]]) |>
+    dplyr::select("field_name", "field_type", "form_name")
   attr(redcap_data, "missing_codes") <- missing_codes
   attr(redcap_data, "id_var") <- id_var
   attr(redcap_data, "subjects") <- redcap_data |>
@@ -115,8 +117,6 @@ ody_rd_import <- function(
   attr(redcap_data, "import_date") <- import_date
 
   # Delete unnecessary attributes
-  attr(redcap_data, "names") <- NULL
-  attr(redcap_data, "row.names") <- NULL
   attr(redcap_data, "spec") <- NULL
   attr(redcap_data, "problems") <- NULL
 

@@ -154,7 +154,7 @@ label_rc_import <- function(rc_import) {
                 )
               }
             ) |>
-            purrr::map(~ stringr::str_c(., collapse = " = ")) |>
+            purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
             stringr::str_c(collapse = ", ")
           stringr::str_c("c(", codes, ")") |> str2lang()
         }
@@ -234,7 +234,7 @@ label_rc_import <- function(rc_import) {
           combination <- stringr::str_split(x, ", ")[[1]]
           purrr::map_chr(
             combination,
-            ~ raw_dic[raw_dic[, 1] == ., 2]
+            function(x) raw_dic[raw_dic[, 1] == x, 2]
           ) |>
             stringr::str_c(collapse = ", ")
         }

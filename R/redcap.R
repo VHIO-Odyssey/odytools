@@ -16,14 +16,8 @@ extract_data <- function(content, token, url) {
 }
 
 
-#' Import a RedCap project
-#'
-#' @param token API token provided by RedCap.
-#' @param url RedCap server. The default is the server of VHIO.
-#'
-#' @return A nested tibble
-#' @export
-ody_rc_import <- function(
+# Helper function to import a RedCap project
+import_rc <- function(
     token = NULL, url = "https://redcap.vhio.net/redcap/api/"
   ) {
 
@@ -258,8 +252,9 @@ label_rc_import <- function(rc_import) {
         field_dictionaries$field_name == checkbox_field, 2
       ][[1]] <- new_dic
     }
-    # New variable is added. It's named as the original variable so it will be picked
-    # up during nesting.
+    # New variable is added.
+    # It's named as the original variable so it will be picked up during
+    # nesting.
     rc_import <- rc_import |>
       dplyr::mutate(
         "{checkbox_field}" := pulled_selections_char
@@ -322,11 +317,11 @@ label_rc_import <- function(rc_import) {
 }
 
 # Helper function to nest a classic project with no events
-nest_rc_classic <- function(rc_classic) {
+nest_rc_classic <- function(rc_raw) {
 
-  id_var <- attr(rc_classic, "id_var")
-  metadata <- attr(rc_classic, "metadata")
-  repeating <- attr(rc_classic, "repeating")
+  id_var <- attr(rc_raw, "id_var")
+  metadata <- attr(rc_raw, "metadata")
+  repeating <- attr(rc_raw, "repeating")
 
   redcap_data <- purrr::map_df(
     unique(metadata$form_name),
@@ -335,10 +330,11 @@ nest_rc_classic <- function(rc_classic) {
         dplyr::filter(form_name == form) |>
         dplyr::pull(field_name)
       # Variables selection
-      raw_result <- rc_classic |>
+      raw_result <- rc_raw |>
         dplyr::select(
           # These 3 variables are always selected.
-          dplyr::all_of(id_var), redcap_repeat_instrument, redcap_repeat_instance,
+          dplyr::all_of(id_var),
+          redcap_repeat_instrument, redcap_repeat_instance,
           # list of variables from the current form.
           dplyr::any_of(form_fields),
           # Possible checbox original variables
@@ -417,3 +413,171 @@ nest_rc_classic <- function(rc_classic) {
 
   redcap_data
 }
+
+# Helper function to nest a longitudinal project with events
+nest_rc_long <- function(rc_raw) {
+
+  id_var <- attr(rc_raw, "id_var")
+  metadata <- attr(rc_raw, "metadata")
+  repeating <- attr(rc_raw, "repeating")
+
+  rc_raw <- rc_raw |>
+    dplyr::mutate(
+      redcap_instance_type = dplyr::case_when(
+        is.na(redcap_repeat_instance) ~ "unique",
+        is.na(redcap_repeat_instrument) ~ "event",
+        TRUE ~ "form"
+      ),
+      redcap_instance_number = redcap_repeat_instance
+    )
+
+  redcap_data <- rc_raw |>
+    tidyr::nest(data_raw = -redcap_event_name) |>
+    dplyr::mutate(
+      repeating_event = redcap_event_name %in% (
+        repeating |>
+          dplyr::filter(is.na(form_name)) |>
+          dplyr::pull(event_name)
+      ),
+      .before = "data_raw"
+    ) |>
+    dplyr::mutate(
+      event_data = purrr::map2(
+        data_raw, redcap_event_name,
+        function(event_data, redcap_event_name) {
+          purrr::map_dfr(
+            unique(metadata$form_name),
+            function(form) {
+              form_fields <- metadata |>
+                dplyr::filter(form_name == form) |>
+                dplyr::pull(field_name)
+              # Variables selection
+              if (event_data |>
+                  dplyr::select(dplyr::any_of(form_fields)) |>
+                  # id_var is extracted
+                  dplyr::select(-dplyr::any_of(id_var)) |>
+                  is.na() |>
+                  all()
+              ) {
+                return(
+                  tibble::tibble(
+                    form_name = NA,
+                    repeating_form = NA,
+                    form_data = NA
+                  )
+                )
+              }
+              raw_result <- event_data |>
+                dplyr::select(
+                  # These variables are always selected.
+                  dplyr::all_of(id_var),
+                  redcap_repeat_instrument,
+                  redcap_instance_type, redcap_instance_number,
+                  # list of variables from the current form.
+                  dplyr::any_of(form_fields),
+                  # Possible checkbox original variables
+                  dplyr::any_of(
+                    tidyselect::starts_with(
+                      stringr::str_c(form_fields, "___")
+                    )
+                  )
+                ) |>
+                dplyr::mutate(
+                  dplyr::across(contains("___"), ~ as.logical(as.numeric(.)))
+                )
+              # Rows selection
+              is_repeating <- form %in% (
+                repeating |>
+                  dplyr::filter(
+                    event_name == redcap_event_name
+                  ) |>
+                  dplyr::pull(form_name)
+              )
+              if (is_repeating) {
+                filtered_result <- raw_result |>
+                  dplyr::filter(redcap_repeat_instrument == form) |>
+                  dplyr::select(-redcap_repeat_instrument)
+              } else {
+                filtered_result <- raw_result |>
+                  dplyr::filter(is.na(redcap_repeat_instrument)) |>
+                  dplyr::select(-redcap_repeat_instrument)
+              }
+              filtered_result |>
+                dplyr::mutate(
+                  form_name = form,
+                  repeating_form = is_repeating,
+                  .after = dplyr::all_of(id_var)
+                ) |>
+                tidyr::nest(form_data = c(-form_name, -repeating_form))
+            }
+          ) |>
+            dplyr::filter(!is.na(form_name))
+        }
+      )
+    ) |>
+    dplyr::select(-data_raw)
+
+  # Clean artifacts
+  redcap_data <- redcap_data |>
+    dplyr::mutate(
+      cleaned_data = purrr::map(
+        event_data,
+        function(rc_raw) {
+          rc_raw |>
+            dplyr::mutate(
+              empty_index = purrr::map(
+                form_data,
+                function(vars) {
+                  vars |>
+                    dplyr::select(
+                      -dplyr::any_of(
+                        c(
+                          id_var,
+                          "redcap_instance_type",
+                          "redcap_instance_number"
+                        )
+                      ),
+                      -where(is.logical)
+                    ) |>
+                    apply(1, function(x) all(labelled::is_regular_na(x)))
+                }
+              ),
+              variables_clean = purrr::map2(
+                form_data, empty_index,
+                ~ dplyr::filter(.x, !.y)
+              )
+            ) |>
+            dplyr::select(form_name, repeating_form, variables_clean) |>
+            dplyr::rename(form_data = variables_clean)
+        }
+      )
+    ) |>
+    dplyr::select(-event_data) |>
+    dplyr::rename(
+      event_data = cleaned_data,
+      event_name = redcap_event_name
+    )
+
+  # aAdd redcap_ preffix to reduce coincidence chances with vars names.
+  names(redcap_data) <- stringr::str_c("redcap_", names(redcap_data))
+  for (i in 1:nrow(redcap_data)) {
+    names(redcap_data$redcap_event_data[[i]]) <- stringr::str_c(
+      "redcap_", names(redcap_data$redcap_event_data[[i]])
+    )
+  }
+  redcap_data
+}
+
+# Helper function to pass the original import attibutes to the nested final
+# data base.
+restore_attributes <- function(rc_nested, rc_raw) {
+
+  attr_names <- names(attributes(rc_raw))[3:14]
+
+  for (attribute in attr_names) {
+    attr(rc_nested, attribute) <- attr(rc_raw, attribute)
+  }
+
+  rc_nested
+}
+

@@ -128,13 +128,15 @@ label_rc_import <- function(rc_import) {
 
   # Dictionaries of all labeled variables
   field_dictionaries <- metadata |>
-    dplyr::select(field_name, select_choices_or_calculations) |>
+    dplyr::select("field_name", "select_choices_or_calculations") |>
     dplyr::filter(
-      stringr::str_detect(select_choices_or_calculations, "\\d+,.+\\|")
+      stringr::str_detect(
+        .data[["select_choices_or_calculations"]], "\\d+,.+\\|"
+      )
     ) |>
     dplyr::mutate(
       dictionary = purrr::map(
-        select_choices_or_calculations,
+        .data[["select_choices_or_calculations"]],
         function(raw_dic) {
           codes <- stringr::str_replace_all(
             # trick to allow "|" inside the labels.
@@ -158,13 +160,13 @@ label_rc_import <- function(rc_import) {
         }
       )
     ) |>
-    dplyr::select(-select_choices_or_calculations)
+    dplyr::select(-"select_choices_or_calculations")
 
 
   # checkbox variables formating
   checkbox_fields <- metadata |>
-    dplyr::filter(field_type == "checkbox") |>
-    dplyr::pull(field_name)
+    dplyr::filter(.data[["field_type"]] == "checkbox") |>
+    dplyr::pull("field_name")
 
   for (checkbox_field in checkbox_fields) {
     print(stringr::str_c("Processing checkbox variable ", checkbox_field))
@@ -207,12 +209,12 @@ label_rc_import <- function(rc_import) {
 
     # Checkbox dictionaries update
     ini_dic <- field_dictionaries |>
-      dplyr::filter(field_name == checkbox_field) |>
-      dplyr::pull(dictionary) |>
+      dplyr::filter(.data[["field_name"]] == checkbox_field) |>
+      dplyr::pull("dictionary") |>
       as.character()
     raw_dic <- metadata |>
-      dplyr::filter(field_name == checkbox_field) |>
-      dplyr::pull(select_choices_or_calculations) |>
+      dplyr::filter(.data[["field_name"]] == checkbox_field) |>
+      dplyr::pull("select_choices_or_calculations") |>
       stringr::str_split("\\|") |>
       unlist() |>
       stringr::str_trim() |>
@@ -267,14 +269,14 @@ label_rc_import <- function(rc_import) {
     print(stringr::str_c("Labelling ", field))
     # Variable label
     form <- metadata |>
-      dplyr::filter(field_name == field) |>
-      dplyr::pull(form_name)
+      dplyr::filter(.data[["field_name"]] == field) |>
+      dplyr::pull("form_name")
     type <- metadata |>
-      dplyr::filter(field_name == field) |>
-      dplyr::pull(field_type)
+      dplyr::filter(.data[["field_name"]] == field) |>
+      dplyr::pull("field_type")
     format <- metadata |>
-      dplyr::filter(field_name == field) |>
-      dplyr::pull(text_validation_type_or_show_slider_number)
+      dplyr::filter(.data[["field_name"]] == field) |>
+      dplyr::pull("text_validation_type_or_show_slider_number")
     type_format <- stringr::str_c(na.omit(c(type, format)), collapse = ":")
     rc_import[[field]] <- labelled::labelled(
       rc_import[[field]],
@@ -289,15 +291,15 @@ label_rc_import <- function(rc_import) {
     ## Defined by dictionary
     if (field %in% field_dictionaries$field_name) {
       dic_to_use <- field_dictionaries |>
-        dplyr::filter(field_name == field) |>
-        dplyr::pull(dictionary)
+        dplyr::filter(.data[["field_name"]] == field) |>
+        dplyr::pull("dictionary")
       labelled::val_labels(rc_import[[field]]) <- eval(dic_to_use[[1]])
     }
 
     ## YesNo variables
     is_yes_no <- metadata |>
-      dplyr::filter(field_name == field) |>
-      dplyr::pull(field_type) == "yesno"
+      dplyr::filter(.data[["field_name"]] == field) |>
+      dplyr::pull("field_type") == "yesno"
     if (is_yes_no) {
       labelled::val_labels(rc_import[[field]]) <- c(No = "0", Yes = "1")
     }

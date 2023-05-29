@@ -21,12 +21,6 @@ import_rc <- function(
     token = NULL, url = "https://redcap.vhio.net/redcap/api/"
   ) {
 
-  if (is.null(token)) {
-    token <- rstudioapi::askForPassword(
-      prompt = "Please enter a RedCap token: "
-    )
-  }
-
   # Data import
   import_date <- Sys.time()
 
@@ -533,12 +527,12 @@ nest_rc_long <- function(rc_raw) {
   redcap_data <- redcap_data |>
     dplyr::mutate(
       cleaned_data = purrr::map(
-        event_data,
+        .data[["event_data"]],
         function(rc_raw) {
           rc_raw |>
             dplyr::mutate(
               empty_index = purrr::map(
-                form_data,
+                .data[["form_data"]],
                 function(vars) {
                   vars |>
                     dplyr::select(
@@ -549,25 +543,25 @@ nest_rc_long <- function(rc_raw) {
                           "redcap_instance_number"
                         )
                       ),
-                      -where(is.logical)
+                      -tidyselect::where(is.logical)
                     ) |>
                     apply(1, function(x) all(labelled::is_regular_na(x)))
                 }
               ),
               variables_clean = purrr::map2(
-                form_data, empty_index,
-                ~ dplyr::filter(.x, !.y)
+                .data[["form_data"]], .data[["empty_index"]],
+                function(x, y) dplyr::filter(x, !y)
               )
             ) |>
-            dplyr::select(form_name, repeating_form, variables_clean) |>
-            dplyr::rename(form_data = variables_clean)
+            dplyr::select("form_name", "repeating_form", "variables_clean") |>
+            dplyr::rename(form_data = "variables_clean")
         }
       )
     ) |>
-    dplyr::select(-event_data) |>
+    dplyr::select(-"event_data") |>
     dplyr::rename(
-      event_data = cleaned_data,
-      event_name = redcap_event_name
+      event_data = "cleaned_data",
+      event_name = "redcap_event_name"
     )
 
   # aAdd redcap_ preffix to reduce coincidence chances with vars names.
@@ -592,4 +586,54 @@ restore_attributes <- function(rc_nested, rc_raw) {
 
   rc_nested
 }
+
+
+#' Import a RedCap Proyect
+#'
+#' @param token Hi
+#' @param url Hi
+#' @param label Hi
+#' @param nest Hi
+#'
+#' @return A nested tibble
+#' @export
+ody_rc_import <- function(
+    token = NULL, url = "https://redcap.vhio.net/redcap/api/",
+    label = TRUE, nest = TRUE
+  ) {
+
+  if (is.null(token)) {
+    token <- rstudioapi::askForPassword(
+      prompt = "Please enter a RedCap token:"
+    )
+  }
+
+  message("Importing data from RedCap")
+  rc_raw_import <- import_rc(token, url)
+
+  if (!label && !nest) return(rc_raw_import)
+
+  if (label) {
+    rc_import <- label_rc_import(rc_raw_import)
+  } else {
+    rc_import <- rc_raw_import
+  }
+
+  if (nest) {
+    if (names(rc_import)[2] == "redcap_event_name") {
+      message("Nesting with events")
+      rc_import <- nest_rc_long(rc_import) |>
+        restore_attributes(rc_raw_import)
+    } else {
+      message("Nesting with no events")
+      rc_import <- nest_rc_classic(rc_import) |>
+        restore_attributes(rc_raw_import)
+    }
+  }
+
+  rc_import
+}
+
+
+
 

@@ -441,25 +441,25 @@ nest_rc_long <- function(rc_raw) {
     )
 
   redcap_data <- rc_raw |>
-    tidyr::nest(data_raw = -redcap_event_name) |>
+    tidyr::nest(data_raw = -"redcap_event_name") |>
     dplyr::mutate(
-      repeating_event = redcap_event_name %in% (
+      repeating_event = .data[["redcap_event_name"]] %in% (
         repeating |>
-          dplyr::filter(is.na(form_name)) |>
-          dplyr::pull(event_name)
+          dplyr::filter(is.na(.data[["form_name"]])) |>
+          dplyr::pull("event_name")
       ),
       .before = "data_raw"
     ) |>
     dplyr::mutate(
       event_data = purrr::map2(
-        data_raw, redcap_event_name,
+        .data[["data_raw"]], .data[["redcap_event_name"]],
         function(event_data, redcap_event_name) {
           purrr::map_dfr(
             unique(metadata$form_name),
             function(form) {
               form_fields <- metadata |>
-                dplyr::filter(form_name == form) |>
-                dplyr::pull(field_name)
+                dplyr::filter(.data[["form_name"]] == form) |>
+                dplyr::pull("field_name")
               # Variables selection
               if (event_data |>
                   dplyr::select(dplyr::any_of(form_fields)) |>
@@ -480,8 +480,8 @@ nest_rc_long <- function(rc_raw) {
                 dplyr::select(
                   # These variables are always selected.
                   dplyr::all_of(id_var),
-                  redcap_repeat_instrument,
-                  redcap_instance_type, redcap_instance_number,
+                  "redcap_repeat_instrument",
+                  "redcap_instance_type", "redcap_instance_number",
                   # list of variables from the current form.
                   dplyr::any_of(form_fields),
                   # Possible checkbox original variables
@@ -492,24 +492,27 @@ nest_rc_long <- function(rc_raw) {
                   )
                 ) |>
                 dplyr::mutate(
-                  dplyr::across(contains("___"), ~ as.logical(as.numeric(.)))
+                  dplyr::across(
+                    tidyselect::contains("___"),
+                    function(x) as.logical(as.numeric(x))
+                  )
                 )
               # Rows selection
               is_repeating <- form %in% (
                 repeating |>
                   dplyr::filter(
-                    event_name == redcap_event_name
+                    .data[["event_name"]] == redcap_event_name
                   ) |>
-                  dplyr::pull(form_name)
+                  dplyr::pull("form_name")
               )
               if (is_repeating) {
                 filtered_result <- raw_result |>
-                  dplyr::filter(redcap_repeat_instrument == form) |>
-                  dplyr::select(-redcap_repeat_instrument)
+                  dplyr::filter(.data[["redcap_repeat_instrument"]] == form) |>
+                  dplyr::select(-"redcap_repeat_instrument")
               } else {
                 filtered_result <- raw_result |>
-                  dplyr::filter(is.na(redcap_repeat_instrument)) |>
-                  dplyr::select(-redcap_repeat_instrument)
+                  dplyr::filter(is.na(.data[["redcap_repeat_instrument"]])) |>
+                  dplyr::select(-"redcap_repeat_instrument")
               }
               filtered_result |>
                 dplyr::mutate(
@@ -517,14 +520,14 @@ nest_rc_long <- function(rc_raw) {
                   repeating_form = is_repeating,
                   .after = dplyr::all_of(id_var)
                 ) |>
-                tidyr::nest(form_data = c(-form_name, -repeating_form))
+                tidyr::nest(form_data = c(-"form_name", -"repeating_form"))
             }
           ) |>
-            dplyr::filter(!is.na(form_name))
+            dplyr::filter(!is.na(.data[["form_name"]]))
         }
       )
     ) |>
-    dplyr::select(-data_raw)
+    dplyr::select(-"data_raw")
 
   # Clean artifacts
   redcap_data <- redcap_data |>

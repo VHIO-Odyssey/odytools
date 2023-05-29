@@ -554,8 +554,9 @@ ody_rc_import <- function(
 }
 
 
-# Helper function of ody_rc_select
-select_rc_one <- function(rc_data, var_name, metadata) {
+# Helper function of ody_rc_select to select variables in a longitudinal
+# project.
+select_rc_long <- function(rc_data, var_name, metadata) {
 
   if (sum(metadata$field_name == var_name) == 0) {
     stop(var_name, " does not exist.")
@@ -577,6 +578,30 @@ select_rc_one <- function(rc_data, var_name, metadata) {
       "redcap_instance_type", "redcap_instance_number", dplyr::all_of(var_name)
     )
 }
+# Helper function of ody_rc_select to select variables in a classic project
+# with no events
+select_rc_classic <- function(rc_data, var_name, metadata) {
+
+  if (sum(metadata$field_name == var_name) == 0) {
+    stop(var_name, " does not exist.")
+  }
+
+  id_var <- attr(rc_data, "id_var")
+
+  form_name <- metadata |>
+    dplyr::filter(.data[["field_name"]] == var_name) |>
+    dplyr::pull("form_name")
+
+  rc_data |>
+    dplyr::filter(.data[["redcap_form_name"]] == form_name) |>
+    tidyr::unnest(cols = "redcap_form_data") |>
+    dplyr::select(
+      dplyr::all_of(id_var),"redcap_form_name",
+      "redcap_instance_type", "redcap_instance_number", dplyr::all_of(var_name)
+    )
+
+}
+
 
 #' Select variables from a RedCap import
 #'
@@ -593,11 +618,19 @@ ody_rc_select <- function(rc_data, ...) {
   ) |>
     as.character()
 
+  if (names(rc_data)[1] == "redcap_event_name") {
+    select_rc_function <- select_rc_long
+  } else {
+    select_rc_function <- select_rc_classic
+  }
+
   metadata <- attr(rc_data, "metadata")
+
   purrr::map(
     sel_vars,
-    function(x) select_rc_one(rc_data, x, metadata)
+    function(x) select_rc_function(rc_data, x, metadata)
   ) |>
     purrr::reduce(dplyr::full_join)
+
 }
 

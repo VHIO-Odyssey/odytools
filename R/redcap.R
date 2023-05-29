@@ -185,7 +185,9 @@ label_rc_import <- function(rc_import) {
       ) |>
       purrr::map2_dfc(
         field_cols,
-        ~ ifelse(.x == "1", stringr::str_split(.y, "___")[[1]][2], NA)
+        function(x, y) {
+          ifelse(x == "1", stringr::str_split(y, "___")[[1]][2], NA)
+        }
       ) |>
       apply(1, stringr::str_c, simplify = FALSE)
 
@@ -220,12 +222,13 @@ label_rc_import <- function(rc_import) {
       stringr::str_trim() |>
       stringr::str_split(", ", n = 2) |>
       purrr::reduce(rbind)
-    present_combinations <- pulled_selections_char |>
+    present_combinations_v0 <- pulled_selections_char |>
       na.omit() |>
-      unique() %>%
-      {
-        .[stringr::str_detect(., ", ")]
-      }
+      unique()
+
+    present_combinations <- present_combinations_v0[
+      stringr::str_detect(present_combinations_v0, ", ")
+    ]
 
     if (length(present_combinations) != 0) {
       present_combinations_label <- purrr::map(
@@ -330,13 +333,13 @@ nest_rc_classic <- function(rc_raw) {
     function(form) {
       form_fields <- metadata |>
         dplyr::filter(form_name == form) |>
-        dplyr::pull(field_name)
+        dplyr::pull("field_name")
       # Variables selection
       raw_result <- rc_raw |>
         dplyr::select(
           # These 3 variables are always selected.
           dplyr::all_of(id_var),
-          redcap_repeat_instrument, redcap_repeat_instance,
+          "redcap_repeat_instrument", "redcap_repeat_instance",
           # list of variables from the current form.
           dplyr::any_of(form_fields),
           # Possible checbox original variables
@@ -347,18 +350,20 @@ nest_rc_classic <- function(rc_raw) {
           )
         ) |>
         dplyr::mutate(
-          dplyr::across(contains("___"), ~ as.logical(as.numeric(.)))
+          dplyr::across(
+            tidyselect::contains("___"), ~ as.logical(as.numeric(.))
+          )
         )
       # Rows selection
       is_repeating <- form %in% repeating$form_name
       if (is_repeating) {
         filtered_result <- raw_result |>
-          dplyr::filter(redcap_repeat_instrument == form) |>
-          dplyr::select(-redcap_repeat_instrument)
+          dplyr::filter(.data[["redcap_repeat_instrument"]] == form) |>
+          dplyr::select(-"redcap_repeat_instrument")
       } else {
         filtered_result <- raw_result |>
-          dplyr::filter(is.na(redcap_repeat_instrument)) |>
-          dplyr::select(-redcap_repeat_instance, -redcap_repeat_instrument)
+          dplyr::filter(is.na(.data[["redcap_repeat_instrument"]])) |>
+          dplyr::select(-"redcap_repeat_instance", -"redcap_repeat_instrument")
       }
 
       filtered_result |>
@@ -367,7 +372,7 @@ nest_rc_classic <- function(rc_raw) {
           is_repeating = is_repeating,
           .after = dplyr::all_of(id_var)
         ) |>
-        tidyr::nest(variables = c(-form_name, -is_repeating))
+        tidyr::nest(variables = c(-"form_name", -"is_repeating"))
     }
   )
 
@@ -375,28 +380,30 @@ nest_rc_classic <- function(rc_raw) {
   redcap_data <- redcap_data |>
     dplyr::mutate(
       empty_index = purrr::map(
-        variables,
+        .data[["variables"]],
         function(vars) {
           vars |>
             dplyr::select(
-              -dplyr::any_of(c(id_var, "redcap_repeat_instance", "redcap_event_name")),
-              -where(is.logical)
+              -dplyr::any_of(c(
+                id_var, "redcap_repeat_instance", "redcap_event_name"
+              )),
+              -tidyselect::where(is.logical)
             ) |>
             apply(1, function(x) all(labelled::is_regular_na(x)))
         }
       ),
       variables_clean = purrr::map2(
-        variables, empty_index,
-        ~ dplyr::filter(.x, !.y)
+        .data[["variables"]], .data[["empty_index"]],
+        function(x, y) dplyr::filter(x, !y)
       )
     ) |>
-    dplyr::select(form_name, is_repeating, variables_clean) |>
-    dplyr::rename(variables = variables_clean)
+    dplyr::select("form_name", "is_repeating", "variables_clean") |>
+    dplyr::rename(variables = "variables_clean")
 
   # redcap_repeat_instance labelling (must be done after nesting)
   repeating_forms <- redcap_data |>
-    dplyr::filter(is_repeating) |>
-    dplyr::pull(form_name)
+    dplyr::filter(.data[["is_repeating"]]) |>
+    dplyr::pull("form_name")
 
   for (form_name in repeating_forms) {
     redcap_repeat_instance <- redcap_data[
@@ -426,11 +433,11 @@ nest_rc_long <- function(rc_raw) {
   rc_raw <- rc_raw |>
     dplyr::mutate(
       redcap_instance_type = dplyr::case_when(
-        is.na(redcap_repeat_instance) ~ "unique",
-        is.na(redcap_repeat_instrument) ~ "event",
+        is.na(.data[["redcap_repeat_instance"]]) ~ "unique",
+        is.na(.data[["redcap_repeat_instrument"]]) ~ "event",
         TRUE ~ "form"
       ),
-      redcap_instance_number = redcap_repeat_instance
+      redcap_instance_number = .data[["redcap_repeat_instance"]]
     )
 
   redcap_data <- rc_raw |>

@@ -1,4 +1,4 @@
-# ody_rd_import helper to extract content
+# Helper function to extract content in import_rc
 extract_data <- function(content, token, url) {
   httr::POST(
     url,
@@ -112,7 +112,7 @@ import_rc <- function(
 
 }
 
-# Helper function to label the imported dataframe from ody_rc_import
+# Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
 
   metadata <- attr(rc_import, "metadata")
@@ -590,12 +590,12 @@ restore_attributes <- function(rc_nested, rc_raw) {
 
 #' Import a RedCap Proyect
 #'
-#' @param token Hi
-#' @param url Hi
-#' @param label Hi
-#' @param nest Hi
+#' @param token Project token. If not prived, a dialog promp will ask for it
+#' @param url URL of the RedCap server (VHIO server by default).
+#' @param label Logical. Should the variables be labelled according to the metadata?
+#' @param nest Logical. Should the data be nested?
 #'
-#' @return A nested tibble
+#' @return A Tibble wiht metadata attributes (nested if nest = TRUE)
 #' @export
 ody_rc_import <- function(
     token = NULL, url = "https://redcap.vhio.net/redcap/api/",
@@ -635,5 +635,50 @@ ody_rc_import <- function(
 }
 
 
+# Helper function of ody_rc_select
+select_rc_one <- function(rc_data, var_name, metadata) {
 
+  if (sum(metadata$field_name == var_name) == 0) {
+    stop(var_name, " does not exist.")
+  }
+
+  id_var <- attr(rc_data, "id_var")
+
+  form_name <- metadata |>
+    dplyr::filter(.data[["field_name"]] == var_name) |>
+    dplyr::pull("form_name")
+
+  rc_data |>
+    dplyr::select("redcap_event_name", "redcap_event_data") |>
+    tidyr::unnest(cols = "redcap_event_data") |>
+    dplyr::filter(.data[["redcap_form_name"]] == form_name) |>
+    tidyr::unnest(cols = "redcap_form_data") |>
+    dplyr::select(
+      dplyr::all_of(id_var), "redcap_event_name", "redcap_form_name",
+      "redcap_instance_type", "redcap_instance_number", dplyr::all_of(var_name)
+    )
+}
+
+#' Select variables from a RedCap import
+#'
+#' @param rc_data RedCap data imported with ody_rc_import.
+#' @param ... Variable names to select.
+#'
+#' @return A tibble with the selected variables.
+#' @export
+ody_rc_select <- function(rc_data, ...) {
+
+  sel_vars <- purrr::map(
+    rlang::enquos(...),
+    rlang::quo_get_expr
+  ) |>
+    as.character()
+
+  metadata <- attr(rc_data, "metadata")
+  purrr::map(
+    sel_vars,
+    function(x) select_rc_one(rc_data, x, metadata)
+  ) |>
+    purrr::reduce(dplyr::full_join)
+}
 

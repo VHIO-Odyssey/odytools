@@ -12,16 +12,16 @@ ody_rc_import(
 )
 }
 \arguments{
-\item{token}{Hi}
+\item{token}{Project token. If not prived, a dialog promp will ask for it}
 
-\item{url}{Hi}
+\item{url}{URL of the RedCap server (VHIO server by default).}
 
-\item{label}{Hi}
+\item{label}{Logical. Should the variables be labelled according to the metadata?}
 
-\item{nest}{Hi}
+\item{nest}{Logical. Should the data be nested?}
 }
 \value{
-A nested tibble
+A Tibble wiht metadata attributes (nested if nest = TRUE)
 }
 \description{
 Import a RedCap Proyect

@@ -315,114 +315,27 @@ label_rc_import <- function(rc_import) {
   rc_import
 }
 
-# Helper function to nest a classic project with no events
-nest_rc_classic <- function(rc_raw) {
+
+# Helper function to nest the imported project
+nest_rc <- function(rc_raw) {
 
   id_var <- attr(rc_raw, "id_var")
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
 
-  redcap_data <- purrr::map_df(
-    unique(metadata$form_name),
-    function(form) {
-      form_fields <- metadata |>
-        dplyr::filter(form_name == form) |>
-        dplyr::pull("field_name")
-      # Variables selection
-      raw_result <- rc_raw |>
-        dplyr::select(
-          # These 3 variables are always selected.
-          dplyr::all_of(id_var),
-          "redcap_repeat_instrument", "redcap_repeat_instance",
-          # list of variables from the current form.
-          dplyr::any_of(form_fields),
-          # Possible checbox original variables
-          dplyr::any_of(
-            tidyselect::starts_with(
-              stringr::str_c(form_fields, "___")
-            )
-          )
-        ) |>
-        dplyr::mutate(
-          dplyr::across(
-            tidyselect::contains("___"), ~ as.logical(as.numeric(.))
-          )
-        )
-      # Rows selection
-      is_repeating <- form %in% repeating$form_name
-      if (is_repeating) {
-        filtered_result <- raw_result |>
-          dplyr::filter(.data[["redcap_repeat_instrument"]] == form) |>
-          dplyr::select(-"redcap_repeat_instrument")
-      } else {
-        filtered_result <- raw_result |>
-          dplyr::filter(is.na(.data[["redcap_repeat_instrument"]])) |>
-          dplyr::select(-"redcap_repeat_instance", -"redcap_repeat_instrument")
-      }
-
-      filtered_result |>
-        dplyr::mutate(
-          form_name = form,
-          is_repeating = is_repeating,
-          .after = dplyr::all_of(id_var)
-        ) |>
-        tidyr::nest(variables = c(-"form_name", -"is_repeating"))
-    }
-  )
-
-  # Clean artifacts
-  redcap_data <- redcap_data |>
-    dplyr::mutate(
-      empty_index = purrr::map(
-        .data[["variables"]],
-        function(vars) {
-          vars |>
-            dplyr::select(
-              -dplyr::any_of(c(
-                id_var, "redcap_repeat_instance", "redcap_event_name"
-              )),
-              -tidyselect::where(is.logical)
-            ) |>
-            apply(1, function(x) all(labelled::is_regular_na(x)))
-        }
-      ),
-      variables_clean = purrr::map2(
-        .data[["variables"]], .data[["empty_index"]],
-        function(x, y) dplyr::filter(x, !y)
+  # If the project has no events, the dummy event "classic_project" is added.
+  if (names(rc_raw)[2] != "redcap_event_name") {
+    rc_raw <- rc_raw |>
+      dplyr::mutate(
+        redcap_event_name = "classic_project", .after = 1
       )
-    ) |>
-    dplyr::select("form_name", "is_repeating", "variables_clean") |>
-    dplyr::rename(variables = "variables_clean")
+    repeating <- repeating |>
+      dplyr::mutate(
+        event_name = "classic_project", .before = 1
+      )
 
-  # redcap_repeat_instance labelling (must be done after nesting)
-  repeating_forms <- redcap_data |>
-    dplyr::filter(.data[["is_repeating"]]) |>
-    dplyr::pull("form_name")
-
-  for (form_name in repeating_forms) {
-    redcap_repeat_instance <- redcap_data[
-      redcap_data$form_name == form_name,
-    ]$variables[[1]]$redcap_repeat_instance
-
-    redcap_repeat_instance <- labelled::labelled(
-      redcap_repeat_instance,
-      label = stringr::str_c(form_name, "/redcap_repeat_instance")
-    )
-
-    redcap_data[
-      redcap_data$form_name == form_name,
-    ]$variables[[1]]$redcap_repeat_instance <- redcap_repeat_instance
   }
 
-  redcap_data
-}
-
-# Helper function to nest a longitudinal project with events
-nest_rc_long <- function(rc_raw) {
-
-  id_var <- attr(rc_raw, "id_var")
-  metadata <- attr(rc_raw, "metadata")
-  repeating <- attr(rc_raw, "repeating")
 
   rc_raw <- rc_raw |>
     dplyr::mutate(
@@ -571,14 +484,26 @@ nest_rc_long <- function(rc_raw) {
       "redcap_", names(redcap_data$redcap_event_data[[i]])
     )
   }
-  redcap_data
+
+  if (nrow(redcap_data) == 1) {
+    return(
+      redcap_data |>
+        dplyr::select(redcap_event_data) |>
+        tidyr::unnest(cols = "redcap_event_data")
+    )
+  } else {
+    return(redcap_data)
+  }
 }
 
 # Helper function to pass the original import attibutes to the nested final
 # data base.
 restore_attributes <- function(rc_nested, rc_raw) {
 
-  attr_names <- names(attributes(rc_raw))[3:14]
+  attr_names <- names(attributes(rc_raw))[3:14] |>
+    # The na.omit is needed because, in case the project is classic, attributes
+    # would be from 3 to 12
+    na.omit()
 
   for (attribute in attr_names) {
     attr(rc_nested, attribute) <- attr(rc_raw, attribute)
@@ -620,15 +545,9 @@ ody_rc_import <- function(
   }
 
   if (nest) {
-    if (names(rc_import)[2] == "redcap_event_name") {
-      message("Nesting with events")
-      rc_import <- nest_rc_long(rc_import) |>
-        restore_attributes(rc_raw_import)
-    } else {
-      message("Nesting with no events")
-      rc_import <- nest_rc_classic(rc_import) |>
-        restore_attributes(rc_raw_import)
-    }
+    message("Nesting the project")
+    rc_import <- nest_rc(rc_import) |>
+      restore_attributes(rc_raw_import)
   }
 
   rc_import

@@ -34,6 +34,7 @@ Imports:
     rlang,
     rmarkdown,
     rstudioapi,
+    shiny,
     stringr,
     tibble,
     tidyr,

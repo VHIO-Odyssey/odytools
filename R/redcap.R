@@ -336,7 +336,6 @@ nest_rc <- function(rc_raw) {
 
   }
 
-
   rc_raw <- rc_raw |>
     dplyr::mutate(
       redcap_instance_type = dplyr::case_when(
@@ -488,7 +487,7 @@ nest_rc <- function(rc_raw) {
   if (nrow(redcap_data) == 1) {
     return(
       redcap_data |>
-        dplyr::select(redcap_event_data) |>
+        dplyr::select("redcap_event_data") |>
         tidyr::unnest(cols = "redcap_event_data")
     )
   } else {
@@ -641,7 +640,7 @@ ody_rc_select <- function(rc_data, ...) {
       dplyr::filter(
         .data[["form_name"]] == sel_vars
       ) |>
-      dplyr::pull(form_name) |>
+      dplyr::pull("form_name") |>
       unique()
 
       sel_vars <- metadata |>
@@ -652,13 +651,45 @@ ody_rc_select <- function(rc_data, ...) {
 
   }
 
-
   purrr::map(
     sel_vars,
     function(x) select_rc_function(rc_data, x, metadata)
   ) |>
     purrr::reduce(dplyr::full_join) |>
     suppressMessages()
+
+}
+
+
+#' View a RedCap project
+#'
+#' @param data_app Imported data by ody_rc_import (must be labelled and nested).
+#' @param raw  Logical. Show raw data with no labels?
+#'
+#' @return An html viewer
+#' @export
+ody_rc_view <- function(data_app = get("redcap_data"), raw = FALSE) {
+
+  # If the project has no events, data_app is restructured to shape properly
+  if (names(data_app)[1] == "redcap_form_name") {
+    data_app <- tibble::tibble(
+      redcap_event_name = "No events",
+      redcap_repeating_event = FALSE,
+      redcap_event_data = list(data_app)
+    )
+  }
+
+  viewer_location <- system.file("redcap_data_viewer", package = "odytools")
+  save(
+    data_app, raw,
+    file = stringr::str_c(viewer_location, "/data_app.RData")
+  )
+
+  rstudioapi::jobRunScript(
+    stringr::str_c(viewer_location, "/data_viewer_runner.R")
+  )
+
+  rstudioapi::viewer("http://127.0.0.1:5921")
 
 }
 

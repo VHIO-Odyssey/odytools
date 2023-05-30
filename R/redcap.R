@@ -500,17 +500,26 @@ nest_rc <- function(rc_raw) {
 # data base.
 restore_attributes <- function(rc_nested, rc_raw) {
 
-  attr_names <- names(attributes(rc_raw))[3:14] |>
-    # The na.omit is needed because, in case the project is classic, attributes
-    # would be from 3 to 12
-    na.omit()
+  present_attributes <- names(attributes(rc_raw))
 
-  for (attribute in attr_names) {
+  possible_attributes <- c(
+    "project_info", "metadata", "forms", "events",
+    "forms_events_mapping", "repeating", "arms",
+    "phantom_variables", "missing_codes", "id_var",
+    "subjects", "import_date"
+  )
+
+  needed_attributes <-  possible_attributes[
+    possible_attributes %in% present_attributes
+  ]
+
+  for (attribute in needed_attributes) {
     attr(rc_nested, attribute) <- attr(rc_raw, attribute)
   }
 
   rc_nested
 }
+
 
 
 #' Import a RedCap Proyect
@@ -626,7 +635,7 @@ ody_rc_select <- function(rc_data, ...) {
 
   metadata <- attr(rc_data, "metadata")
 
-  # If the name of
+  # If a form name is provided, all the variables of the form are extracted
   if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
     current_form <- metadata |>
       dplyr::filter(

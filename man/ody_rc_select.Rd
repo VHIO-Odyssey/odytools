@@ -2,18 +2,18 @@
 % Please edit documentation in R/redcap.R
 \name{ody_rc_select}
 \alias{ody_rc_select}
-\title{Title}
+\title{Select variables from a RedCap import}
 \usage{
 ody_rc_select(rc_data, ...)
 }
 \arguments{
 \item{rc_data}{RedCap data imported with ody_rc_import.}
 
-\item{...}{Variable names to select.}
+\item{...}{Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.}
 }
 \value{
 A tibble with the selected variables.
 }
 \description{
-Title
+Select variables from a RedCap import
 }

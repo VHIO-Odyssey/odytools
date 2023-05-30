@@ -25,6 +25,7 @@ Imports:
     lubridate,
     magrittr,
     multcomp,
+    openxlsx,
     purrr,
     reactable,
     reactablefmtr,

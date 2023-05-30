@@ -606,7 +606,7 @@ select_rc_classic <- function(rc_data, var_name, metadata) {
 #' Select variables from a RedCap import
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
-#' @param ... Variable names to select.
+#' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
 #'
 #' @return A tibble with the selected variables.
 #' @export
@@ -626,11 +626,30 @@ ody_rc_select <- function(rc_data, ...) {
 
   metadata <- attr(rc_data, "metadata")
 
+  # If the name of
+  if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
+    current_form <- metadata |>
+      dplyr::filter(
+        .data[["form_name"]] == sel_vars
+      ) |>
+      dplyr::pull(form_name) |>
+      unique()
+
+      sel_vars <- metadata |>
+      dplyr::filter(
+        .data[["form_name"]] == current_form
+      ) |>
+      dplyr::pull("field_name")
+
+  }
+
+
   purrr::map(
     sel_vars,
     function(x) select_rc_function(rc_data, x, metadata)
   ) |>
-    purrr::reduce(dplyr::full_join)
+    purrr::reduce(dplyr::full_join) |>
+    suppressMessages()
 
 }
 

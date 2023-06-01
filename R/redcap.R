@@ -643,9 +643,15 @@ ody_rc_select <- function(rc_data, ...) {
       dplyr::pull("form_name") |>
       unique()
 
-      sel_vars <- metadata |>
+  # If the form contains phantom variables, the must be excluded since they do
+  # not actuallly exist and the selection function would fail.
+  phantom_vars <- attr(rc_data, "phantom_variables") |>
+    dplyr::pull(field_name)
+
+  sel_vars <- metadata |>
       dplyr::filter(
-        .data[["form_name"]] == current_form
+        .data[["form_name"]] == current_form,
+        !(.data[["field_name"]] %in% phantom_vars)
       ) |>
       dplyr::pull("field_name")
 

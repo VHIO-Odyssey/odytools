@@ -646,7 +646,7 @@ ody_rc_select <- function(rc_data, ...) {
   # If the form contains phantom variables, the must be excluded since they do
   # not actuallly exist and the selection function would fail.
   phantom_vars <- attr(rc_data, "phantom_variables") |>
-    dplyr::pull(field_name)
+    dplyr::pull("field_name")
 
   sel_vars <- metadata |>
       dplyr::filter(
@@ -666,6 +666,67 @@ ody_rc_select <- function(rc_data, ...) {
 
 }
 
+
+
+#' Format RedCap variables
+#'
+#' Format all variables from an ody_rc_select dataframe according to the
+#' variable metadata.
+#'
+#' @param rc_df Dataframe derived from a RedCap import with ody_rc_select
+#'
+#' @details
+#' Formating proceeds as follows:
+#' - Values defined as numeric in redcap -> as.numeric (also redcap_repeat_instance).
+#' - Values defined as date in redcap -> ymd
+#' - Values defined as datetime in redcap -> ymd_hm
+#' - Values labelled in redcap -> to_factor
+#' - Other -> as.character
+#' - User defined missing values -> NA
+#'
+#' @return A tibble
+#' @export
+ody_rc_format <- function(rc_df) {
+
+  dplyr::mutate(
+    rc_df,
+    dplyr::across(
+      tidyselect::everything(),
+      function(x) {
+        label <- attr(x, "label")
+        labels <- labelled::val_labels(x)
+
+        if (is.null(label)) {
+          return(x)
+        }
+
+        x_no_user_na <- labelled::user_na_to_na(x)
+
+        if (
+          stringr::str_detect(label, "(number\\)$)|(integer\\)$)|(calc\\)$)")
+        ) {
+          result <- labelled::unlabelled(x_no_user_na) |>
+            as.numeric()
+        } else if (!is.null(labels)) {
+          result <- labelled::to_factor(x_no_user_na)
+          attr(result, "label") <- NULL
+        } else if (stringr::str_detect(label, ":date_.+\\)$")) {
+          result <- lubridate::ymd(x_no_user_na)
+        } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
+          result <- stringr::str_c(x_no_user_na, ":00") |>
+            lubridate::ymd_hms()
+        } else if (stringr::str_detect(label, "truefalse\\)$")) {
+          result <- unclass(x_no_user_na) |>
+            as.numeric() |>
+            as.logical()
+        } else {
+          result <- as.character(x_no_user_na)
+        }
+        result
+      }
+    )
+  )
+}
 
 #' View a RedCap project
 #'

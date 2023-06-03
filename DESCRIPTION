@@ -1,6 +1,6 @@
 Package: odytools
 Title: Oncology Data Science Group (ODysSey) tools
-Version: 0.2.2
+Version: 0.3.0
 Authors@R: 
     person("Eduardo", "García-Galea", , "eduardogarcia@vhio.net", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4699-0786"))
@@ -18,9 +18,11 @@ Imports:
     forcats,
     ggplot2,
     htmltools,
+    httr,
     janitor,
     kableExtra,
     knitr,
+    labelled,
     lme4,
     lubridate,
     magrittr,
@@ -29,8 +31,11 @@ Imports:
     purrr,
     reactable,
     reactablefmtr,
+    readr,
     rlang,
     rmarkdown,
+    rstudioapi,
+    shiny,
     stringr,
     tibble,
     tidyr,

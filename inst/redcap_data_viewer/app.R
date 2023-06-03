@@ -8,6 +8,9 @@ library(lubridate)
 library(DT)
 library(purrr)
 load("data_app.RData")
+# After data loading, the file is removed so the residual copy with potential
+# sensible information does not remain hiden in the package folder.
+file.remove("data_app.RData")
 app_title <- str_c(
   attr(data_app, "project_info")$project_title, " ",
   attr(data_app, "export_date")

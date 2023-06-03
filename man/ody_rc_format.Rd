@@ -24,6 +24,6 @@ Formating proceeds as follows:
 \item Values defined as datetime in redcap -> ymd_hm
 \item Values labelled in redcap -> to_factor
 \item Other -> as.character
-\item User defined missing values -> NA.
+\item User defined missing values -> NA
 }
 }

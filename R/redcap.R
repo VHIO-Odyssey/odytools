@@ -760,3 +760,89 @@ ody_rc_view <- function(data_app = get("redcap_data"), raw = FALSE) {
 
 }
 
+
+ody_rc_completeness <- function(
+    data_frame,
+    id_var = {attr(redcap_data, "id_var")},
+    count_user_na = FALSE,
+    conditions_list = "from_metadata",
+    metadata = {attr(redcap_data, "metadata")},
+    missing_codes = {attr(redcap_data, "missing")}
+) {
+
+  data_frame <- data_frame |>
+    dplyr::select(-dplyr::starts_with("redcap_"))
+
+  if (!count_user_na) {
+    # easy trick, if user NAs must be counted, all variables are set as simple
+    # character so user NAs become a character.
+    data_frame <- data_frame |>
+      dplyr::mutate(
+        dplyr::across(dplyr::everything(), as.character)
+      )
+  }
+
+  if (!is.null(conditions_list) && conditions_list == "from_metadata") {
+
+    needed_meta <- metadata |>
+      dplyr::filter(
+        .data$field_name %in% names(data_frame),
+        !is.na(.data$branching_logic)
+      )
+
+    missing_codes <- stringr::str_c(missing_codes$raw_value, collapse = "|")
+
+    if (nrow(needed_meta) > 0) {
+
+      pre_list <- needed_meta |>
+        dplyr::select("field_name", "branching_logic") |>
+        dplyr::mutate(
+          # RedCap logic is translated into R languaje
+          r_branch = stringr::str_replace_all(
+            branching_logic,  missing_codes, "user_na"
+          ) |>
+            stringr::str_replace_all(
+              # RedCap empty to regular R na
+              "\\[([^\\[]+)\\] *<> *['\"]{2}",
+              "!labelled::is_regular_na\\(\\1\\)"
+            ) |>
+            stringr::str_replace_all(
+              # RedCap declared missing to user defined R na
+              "\\[([^\\[]+)\\] *<> *['\"]user_na['\"]",
+              "!labelled::is_user_na\\(\\1\\)"
+            ) |>
+            #Some easy symbol translations
+            stringr::str_remove_all("\\[|\\]|\\(\\d+\\)") |>
+            stringr::str_replace_all("=", "==") |>
+            stringr::str_replace_all("<>", "!=") |>
+            stringr::str_replace_all(" or ", " | ") |>
+            stringr::str_replace_all(" and ", " & ") |>
+            # Delete possible duplicates of is_user_na
+            stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
+          cond = stringr::str_c(field_name, " = ", "\"", r_branch, "\"")
+        ) |>
+        dplyr::pull(cond)
+
+      conditions_list <- stringr::str_c(
+        "list(",
+        stringr::str_c(pre_list, collapse = ", "),
+        ")"
+      ) |> str2lang() |> eval()
+
+    } else {
+
+      conditions_list <- NULL
+
+    }
+
+  }
+
+  ody_verify_completeness(
+    data_frame,
+    conditions_list = conditions_list,
+    id_var = id_var
+  ) |>
+    report_completeness()
+
+}
+

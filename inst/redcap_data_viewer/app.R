@@ -99,18 +99,18 @@ server <- function(input, output, session) {
                   as_factor()
               )
             }
-
-            if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
-              return(as.numeric(unclass(x)))
-            }
-
-            if (str_detect(var_label(x), "(text:date_dmy)")) {
-              return(ymd(unclass(x)))
-            }
-
-            if (str_detect(var_label(x), "(text:datetime_dmy)")) {
-              return(ymd_hm(unclass(x)))
-            }
+#  If numbers and dates are formatted, missing codes are lost.
+#             if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
+#               return(as.numeric(unclass(x)))
+#             }
+#
+#             if (str_detect(var_label(x), "(text:date_dmy)")) {
+#               return(ymd(unclass(x)))
+#             }
+#
+#             if (str_detect(var_label(x), "(text:datetime_dmy)")) {
+#               return(ymd_hm(unclass(x)))
+#             }
 
             return(x)
 
@@ -155,17 +155,18 @@ server <- function(input, output, session) {
                 )
               }
 
-              if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
-                return(as.numeric(unclass(x)))
-              }
-
-              if (str_detect(var_label(x), "(text:date_dmy)")) {
-                return(ymd(unclass(x)))
-              }
-
-              if (str_detect(var_label(x), "(text:datetime_dmy)")) {
-                return(ymd_hm(unclass(x)))
-              }
+              #  If numbers and dates are formatted, missing codes are lost.
+              # if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
+              #   return(as.numeric(unclass(x)))
+              # }
+              #
+              # if (str_detect(var_label(x), "(text:date_dmy)")) {
+              #   return(ymd(unclass(x)))
+              # }
+              #
+              # if (str_detect(var_label(x), "(text:datetime_dmy)")) {
+              #   return(ymd_hm(unclass(x)))
+              # }
 
               return(x)
 

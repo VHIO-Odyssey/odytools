@@ -790,16 +790,31 @@ ody_rc_completeness <- function(
         !is.na(.data$branching_logic)
       )
 
-    missing_codes <- stringr::str_c(missing_codes$raw_value, collapse = "|")
+    missing_value <- stringr::str_c(
+      missing_codes$raw_value, collapse = "|")
 
     if (nrow(needed_meta) > 0) {
 
+      external_branching <- needed_meta |>
+        dplyr::filter(
+          stringr::str_detect(.data$branching_logic, "\\[.+\\]\\[.+\\]")
+        ) |> dplyr::pull("field_name")
+
+      if(length(external_branching) > 0) {
+        warning(
+          "External branching detected for variables\n",
+          stringr::str_c(external_branching, collapse = "\n"),
+          "\nExternal branching is still not implemented"
+        )
+      }
+
       pre_list <- needed_meta |>
+        dplyr::filter(!(.data$field_name %in% external_branching)) |>
         dplyr::select("field_name", "branching_logic") |>
         dplyr::mutate(
           # RedCap logic is translated into R languaje
           r_branch = stringr::str_replace_all(
-            branching_logic,  missing_codes, "user_na"
+            branching_logic,  missing_value, "user_na"
           ) |>
             stringr::str_replace_all(
               # RedCap empty to regular R na

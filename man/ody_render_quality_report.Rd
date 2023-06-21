@@ -8,6 +8,9 @@ ody_render_quality_report(
   data_frame,
   project_name = "project",
   missing_values = "",
+  project_date = {
+     stringr::str_remove_all(lubridate::today(), "-")
+ },
   id_var = "row_number",
   conditions_list = "no",
   add_data = FALSE,
@@ -21,6 +24,8 @@ ody_render_quality_report(
 \item{project_name}{Name to use in the file name.}
 
 \item{missing_values}{vector with the values (apart from the regular NA and "") used as missing. Default is NULL.}
+
+\item{project_date}{Date to show in the file name. Defaults to the day the report is run.}
 
 \item{id_var}{ID variable.}
 

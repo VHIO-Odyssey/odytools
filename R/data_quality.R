@@ -607,6 +607,7 @@ report_conformance <- function(conformance_table) {
 #' @param project_name Name to use in the file name.
 #' @param data_frame data frame to report.
 #' @param missing_values vector with the values (apart from the regular NA and "") used as missing. Default is NULL.
+#' @param project_date Date to show in the file name. Defaults to the day the report is run.
 #' @param id_var ID variable.
 #' @param conditions_list List of conditions used as argument of verify_completeness.
 #' @param add_data If TRUE, raw data is added to the report.

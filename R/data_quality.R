@@ -617,6 +617,7 @@ report_conformance <- function(conformance_table) {
 #' @export
 ody_render_quality_report <- function(
     data_frame, project_name = "project", missing_values = "",
+    project_date = {lubridate::today() |> stringr::str_remove_all("-")},
     id_var = "row_number", conditions_list = "no", add_data = FALSE,
     max_integer_distinct = 10, output_dir = getwd()) {
   parameters <- list(
@@ -629,8 +630,7 @@ ody_render_quality_report <- function(
   )
 
   report_name <- stringr::str_c(
-    lubridate::today() |> stringr::str_remove_all("-"),
-    "_", project_name, "_data_quality.html"
+    project_name, "_quality_", project_date, ".html"
   )
 
   if (add_data) {

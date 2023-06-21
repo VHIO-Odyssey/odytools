@@ -20,7 +20,7 @@ library(flexdashboard)
 library(janitor)
 library(dplyr)
 library(openxlsx)
-library(reactable)
+library(DT)
 
 ```
 
@@ -55,17 +55,14 @@ Column
 --------------------------------------------------------------------------------
 
 ###
-```{r}
+```{r data}
 params$data |>
   mutate(
     row_number = 1:n(), .before = 1
   ) |>
-  reactable(
-    columns = list(
-      row_number = colDef(sticky = "left")
-    ),
-    filterable = TRUE, pagination = FALSE,
-    searchable = TRUE, highlight = TRUE, resizable = TRUE
+  datatable(
+    filter = "top", 
+    options = list(paging = FALSE)
   )
 
 ```
@@ -77,7 +74,7 @@ Column
 --------------------------------------------------------------------------------
 
 ###
-```{r}
+```{r completeness}
 report_completeness(completeness_table)
 
 ```
@@ -89,7 +86,7 @@ Column
 --------------------------------------------------------------------------------
 
 ###
-```{r}
+```{r conformance}
 report_conformance(conformance_table)
 
 ```

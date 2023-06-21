@@ -55,7 +55,7 @@ Column
 --------------------------------------------------------------------------------
 
 ###
-```{r}
+```{r completeness}
 report_completeness(completeness_table)
 
 ```
@@ -67,7 +67,7 @@ Column
 --------------------------------------------------------------------------------
 
 ###
-```{r}
+```{r conformance}
 report_conformance(conformance_table)
 
 ```

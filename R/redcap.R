@@ -93,7 +93,8 @@ import_rc <- function(
   }
   attr(redcap_data, "phantom_variables") <- metadata |>
     dplyr::mutate(
-      present = .data[["field_name"]] %in% colnames(redcap_data)
+      present = .data[["field_name"]] %in%
+        stringr::str_remove(colnames(redcap_data), "___\\d+$")
     ) |>
     dplyr::filter(!.data[["present"]]) |>
     dplyr::select("field_name", "field_type", "form_name")

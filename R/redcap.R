@@ -761,13 +761,26 @@ ody_rc_view <- function(data_app = get("redcap_data"), raw = FALSE) {
 }
 
 
+#' Verify Completeness of a RedCap-derived dataframe
+#'
+#' @param data_frame The data frame to verify.
+#' @param id_var Variable used as ID. By default the functions looks at the "id_var" attribute of redcap_data.
+#' @param count_user_na If FALSE (the default) only regular missing values are count as missing values. Set this argument to TRUE to also take into account the explicit user defined missing values.
+#' @param conditions_list A list to define the conditional presence of the variables. Needed when the presence of a variable depends on the value of other variable. By default the list is based on the branching logic defined in the metadata.
+#' @param metadata Used metadata if conditions_list = "from_metadata". By default, the function gets it from the attribute "metadata" of the redcap_data.
+#' @param missing_codes Redcap_data missing codes. Only needed if conditions_list is based on the metadata. By default is the attribute "missing_codes".
+#' @param report Render a report or output a tibble?
+#'
+#' @return An html report or a tibble
+#' @export
 ody_rc_completeness <- function(
     data_frame,
-    id_var = {attr(redcap_data, "id_var")},
+    id_var = {attr(get("redcap_data"), "id_var")},
     count_user_na = FALSE,
     conditions_list = "from_metadata",
-    metadata = {attr(redcap_data, "metadata")},
-    missing_codes = {attr(redcap_data, "missing")}
+    metadata = {attr(get("redcap_data"), "metadata")},
+    missing_codes = {attr(get("redcap_data"), "missing")},
+    report = TRUE
 ) {
 
   data_frame <- data_frame |>
@@ -814,7 +827,7 @@ ody_rc_completeness <- function(
         dplyr::mutate(
           # RedCap logic is translated into R languaje
           r_branch = stringr::str_replace_all(
-            branching_logic,  missing_value, "user_na"
+            .data$branching_logic,  missing_value, "user_na"
           ) |>
             stringr::str_replace_all(
               # RedCap empty to regular R na
@@ -834,9 +847,11 @@ ody_rc_completeness <- function(
             stringr::str_replace_all(" and ", " & ") |>
             # Delete possible duplicates of is_user_na
             stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
-          cond = stringr::str_c(field_name, " = ", "\"", r_branch, "\"")
+          cond = stringr::str_c(
+            .data$field_name, " = ", "\"", .data$r_branch, "\""
+          )
         ) |>
-        dplyr::pull(cond)
+        dplyr::pull("cond")
 
       conditions_list <- stringr::str_c(
         "list(",
@@ -852,12 +867,17 @@ ody_rc_completeness <- function(
 
   }
 
-  ody_verify_completeness(
+  completeness <- ody_verify_completeness(
     data_frame,
     conditions_list = conditions_list,
     id_var = id_var
-  ) |>
-    report_completeness()
+  )
+
+  if (report) {
+    report_completeness(completeness)
+  } else {
+    completeness
+  }
 
 }
 

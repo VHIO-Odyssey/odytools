@@ -3,6 +3,7 @@
 export("%>%")
 export(ody_define_timepoints)
 export(ody_pdx_model_sensitivity)
+export(ody_rc_completeness)
 export(ody_rc_format)
 export(ody_rc_import)
 export(ody_rc_select)

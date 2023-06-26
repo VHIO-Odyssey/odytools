@@ -4,7 +4,7 @@
 \alias{ody_rc_select}
 \title{Select variables from a RedCap import}
 \usage{
-ody_rc_select(rc_data, ...)
+ody_rc_select(rc_data, ..., .include_aux = FALSE)
 }
 \arguments{
 \item{rc_data}{RedCap data imported with ody_rc_import.}

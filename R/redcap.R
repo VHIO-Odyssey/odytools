@@ -98,6 +98,8 @@ import_rc <- function(
     ) |>
     dplyr::filter(!.data[["present"]]) |>
     dplyr::select("field_name", "field_type", "form_name")
+  attr(redcap_data, "checkbox_aux") <- names(redcap_data) |>
+    stringr::str_subset("___.+$")
   attr(redcap_data, "missing_codes") <- missing_codes
   attr(redcap_data, "id_var") <- id_var
   attr(redcap_data, "subjects") <- redcap_data |>
@@ -505,7 +507,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
   possible_attributes <- c(
     "project_info", "metadata", "forms", "events",
     "forms_events_mapping", "repeating", "arms",
-    "phantom_variables", "missing_codes", "id_var",
+    "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
     "subjects", "import_date"
   )
 
@@ -565,16 +567,20 @@ ody_rc_import <- function(
 
 # Helper function of ody_rc_select to select variables in a longitudinal
 # project.
-select_rc_long <- function(rc_data, var_name, metadata) {
+select_rc_long <- function(rc_data, var_name, metadata, checkbox_aux) {
 
-  if (sum(metadata$field_name == var_name) == 0) {
+  if (
+    sum(metadata$field_name == var_name) == 0 &&
+    sum(checkbox_aux == var_name) == 0
+  ) {
     stop(var_name, " does not exist.")
   }
 
   id_var <- attr(rc_data, "id_var")
 
   form_name <- metadata |>
-    dplyr::filter(.data[["field_name"]] == var_name) |>
+    dplyr::filter(
+      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")) |>
     dplyr::pull("form_name")
 
   rc_data |>
@@ -589,16 +595,20 @@ select_rc_long <- function(rc_data, var_name, metadata) {
 }
 # Helper function of ody_rc_select to select variables in a classic project
 # with no events
-select_rc_classic <- function(rc_data, var_name, metadata) {
+select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 
-  if (sum(metadata$field_name == var_name) == 0) {
+  if (
+    sum(metadata$field_name == var_name) == 0 &&
+    sum(checkbox_aux == var_name) == 0
+  ) {
     stop(var_name, " does not exist.")
   }
 
   id_var <- attr(rc_data, "id_var")
 
   form_name <- metadata |>
-    dplyr::filter(.data[["field_name"]] == var_name) |>
+    dplyr::filter(
+      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")) |>
     dplyr::pull("form_name")
 
   rc_data |>
@@ -616,10 +626,11 @@ select_rc_classic <- function(rc_data, var_name, metadata) {
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
 #' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
+#' @.include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
 #'
 #' @return A tibble with the selected variables.
 #' @export
-ody_rc_select <- function(rc_data, ...) {
+ody_rc_select <- function(rc_data, ..., .include_aux = FALSE) {
 
   sel_vars <- purrr::map(
     rlang::enquos(...),
@@ -634,6 +645,7 @@ ody_rc_select <- function(rc_data, ...) {
   }
 
   metadata <- attr(rc_data, "metadata")
+  checkbox_aux <- attr(rc_data, "checkbox_aux")
 
   # If a form name is provided, all the variables of the form are extracted
   if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
@@ -644,23 +656,38 @@ ody_rc_select <- function(rc_data, ...) {
       dplyr::pull("form_name") |>
       unique()
 
-  # If the form contains phantom variables, the must be excluded since they do
-  # not actuallly exist and the selection function would fail.
-  phantom_vars <- attr(rc_data, "phantom_variables") |>
-    dplyr::pull("field_name")
+    # If the form contains phantom variables, the must be excluded since they do
+    # not actually exist and the selection function would fail.
+    phantom_vars <- attr(rc_data, "phantom_variables") |>
+      dplyr::pull("field_name")
 
-  sel_vars <- metadata |>
+    sel_vars <- metadata |>
       dplyr::filter(
         .data[["form_name"]] == current_form,
         !(.data[["field_name"]] %in% phantom_vars)
       ) |>
       dplyr::pull("field_name")
 
+    if (.include_aux) {
+      checkbox_vars <- metadata |>
+        dplyr::filter(
+          .data$field_name %in% sel_vars,
+          .data$field_type == "checkbox"
+        ) |>
+        dplyr::pull("field_name") |>
+        stringr::str_c(collapse = "|")
+
+      needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars)
+
+      sel_vars <- c(sel_vars, needed_aux)
+
+    }
+
   }
 
   purrr::map(
     sel_vars,
-    function(x) select_rc_function(rc_data, x, metadata)
+    function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
   ) |>
     purrr::reduce(dplyr::full_join) |>
     suppressMessages()
@@ -785,7 +812,13 @@ ody_rc_completeness <- function(
 ) {
 
   data_frame <- data_frame |>
-    dplyr::select(-dplyr::starts_with("redcap_"))
+    dplyr::select(-dplyr::starts_with("redcap_")) |>
+    dplyr::mutate(
+      # All auxiliary checkbox variables (which are the only pure logical
+      # variables) must be set as numeric so the condition filtering is done
+      # properly.
+      dplyr::across(dplyr::where(is.logical), as.numeric)
+    )
 
   if (!count_user_na) {
     # easy trick, if user NAs must be counted, all variables are set as simple
@@ -840,8 +873,10 @@ ody_rc_completeness <- function(
               "\\[([^\\[]+)\\] *<> *['\"]user_na['\"]",
               "!labelled::is_user_na\\(\\1\\)"
             ) |>
+            # Checkbox variables to especific check box column
+            stringr::str_replace( "\\((.+)\\)", "___\\1") |>
             #Some easy symbol translations
-            stringr::str_remove_all("\\[|\\]|\\(\\d+\\)") |>
+            stringr::str_remove_all("\\[|\\]") |>
             stringr::str_replace_all("=", "==") |>
             stringr::str_replace_all("<>", "!=") |>
             stringr::str_replace_all(" or ", " | ") |>
@@ -873,6 +908,13 @@ ody_rc_completeness <- function(
     conditions_list = conditions_list,
     id_var = id_var
   )
+
+  # We exclude auxiliary checkbox variables
+  completeness_final_vars <- completeness$variable |>
+    stringr::str_remove("___.+$") |>
+    unique()
+  completeness <- completeness |>
+    dplyr::filter(.data$variable %in% completeness_final_vars)
 
   if (report) {
     report_completeness(completeness)

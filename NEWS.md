@@ -29,3 +29,11 @@
 
 -   Added **ody_rc_completeness**. This functions verifies the completeness of a RedCap derived dataframe. The conditions list is based on the branching logic of the project.
 -   Added the *.include_aux* (TRUE/FALSE) argument to **ody_rc_select**. If TRUE, the function also returns the auxiliar logic variables of a multiple selection variable.
+
+# odytools 0.3.2
+
+-   Added other_utils functions:
+
+    -   **ody_add_version**: This function creates a file name with a date version at the end. It takes care no repeated file names exist in the same folder.
+
+    -   **ody_change_names**: It changes the names of a data frame according to the names provided by a second data frame.

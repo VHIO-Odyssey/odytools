@@ -44,6 +44,8 @@ import_rc <- function(
       na = "", col_types = readr::cols(.default = readr::col_character())
     )
 
+  if (!is.data.frame(redcap_data)) stop(redcap_data)
+
   # Metadata imports
   project_info <- extract_data("project", token, url)
   metadata <- extract_data("metadata", token, url)

@@ -19,7 +19,7 @@ ody_add_version <- function(file_name, extension = "html") {
     any()
 
   if (today_present & !today_present_mult) {
-    version_date <- stringr::str_c("_", today_num, "_2")
+    current_ver <- stringr::str_c("_", today_num, "_2")
   } else if (today_present_mult) {
     current_ver <- list.files() |>
       stringr::str_extract(stringr::str_c(today_num, "_\\d")) |>

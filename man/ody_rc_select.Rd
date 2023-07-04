@@ -10,6 +10,8 @@ ody_rc_select(rc_data, ..., .include_aux = FALSE)
 \item{rc_data}{RedCap data imported with ody_rc_import.}
 
 \item{...}{Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.}
+
+\item{.include_aux}{When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE}
 }
 \value{
 A tibble with the selected variables.

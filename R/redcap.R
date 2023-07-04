@@ -628,7 +628,7 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
 #' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
-#' @.include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
+#' @param .include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
 #'
 #' @return A tibble with the selected variables.
 #' @export

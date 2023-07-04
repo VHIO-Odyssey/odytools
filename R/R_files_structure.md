@@ -61,3 +61,7 @@
     -   ody_rc_view
 
     -   ody_rc_completeness [ody_verify_completeness]
+
+-   **other_utils**: Miscelaneous utilities.
+
+    -   ody_add_version

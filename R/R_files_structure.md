@@ -58,6 +58,8 @@
 
     -   ody_rc_select [select_rc_long, select_rc_classic]
 
+    -   ody_rc_format
+
     -   ody_rc_view
 
     -   ody_rc_completeness [ody_verify_completeness]

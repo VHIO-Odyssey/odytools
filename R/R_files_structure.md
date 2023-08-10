@@ -67,3 +67,5 @@
 -   **other_utils**: Miscelaneous utilities.
 
     -   ody_add_version
+
+-   **aes** Adverse Events related functions

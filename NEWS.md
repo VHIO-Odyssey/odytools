@@ -37,3 +37,7 @@
     -   **ody_add_version**: This function creates a file name with a date version at the end. It takes care no repeated file names exist in the same folder.
 
     -   **ody_change_names**: It changes the names of a data frame according to the names provided by a second data frame.
+
+# odytools 0.4.0
+
+-   Adding AEs functions... (branch aes)

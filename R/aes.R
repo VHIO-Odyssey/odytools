@@ -28,8 +28,8 @@ count_ae_max_grade <- function(ae_data, term) {
       .after = 1
     ) |>
     dplyr::ungroup() |>
-    dplyr::select(!any_of("NA")) |>
-    dplyr::arrange(desc(.data$`Any Grade`))
+    dplyr::select(!dplyr::any_of("NA")) |>
+    dplyr::arrange(dplyr::desc(.data$`Any Grade`))
 
 }
 
@@ -90,6 +90,19 @@ make_ae_tbl <- function(
 
 }
 
+#' Make an Adverse Events Table
+#'
+#' @param ae_data Data frame of Adverse Events
+#' @param pac_id Patients identrifier column in ae_data
+#' @param grade_num Numeric column indicating the grade of each AE
+#' @param grade_fct Factor column indicating how to group the AEs in the output table.
+#' @param term Charachter column with the AE name.
+#' @param upper_term Optional, a higher level name.
+#' @param group_fct Optional, additional grouping factor.
+#' @param add_overall If there is a group_fct, add_overall = TRUE adds an overall count to the by group_fct list.
+#'
+#' @return A tibble if group_fct = NULL. Otherwise, a list of tibbles
+#' @export
 ody_make_ae_tbl <- function(
   ae_data,
   pac_id,
@@ -97,7 +110,8 @@ ody_make_ae_tbl <- function(
   grade_fct,
   term,
   upper_term = NULL,
-  group_fct = NULL) {
+  group_fct = NULL,
+  add_overall = FALSE) {
 
   grade_fct <- rlang::enquo(grade_fct)
 
@@ -138,12 +152,23 @@ ody_make_ae_tbl <- function(
     )
   )
 
-   all_tables <- c(list(full_table), by_var_tables)
-   names(all_tables) <- c(
-     "full_data",
-     stringr::str_c(rlang::as_name(group_fct),"=", group_levels)
+  if (add_overall) {
+
+    all_tables <- c(list(full_table), by_var_tables)
+    names(all_tables) <- c(
+      "overall",
+      stringr::str_c(rlang::as_name(group_fct),"=", group_levels)
     )
-   all_tables
+    all_tables
+
+  } else {
+
+    names(by_var_tables) <-stringr::str_c(
+      rlang::as_name(group_fct),"=", group_levels
+    )
+    by_var_tables
+
+  }
 }
 
 
@@ -161,6 +186,15 @@ add_pct <- function(data_frame, n, dec = 1) {
 }
 
 
+#' Make a gt table of Adverse Events
+#'
+#' @param ae_tbl Adverse Events table. The output of ody_make_ae_tbl.
+#' @param total_n Optional, if presents, a percentage is added to the count
+#' @param spanner_names Optional, if ae_tbl is a list, the names of the spanners on the table.
+#' @param dec Number of decimals of the percentages.
+#'
+#' @return A gt table
+#' @export
 ody_make_ae_gt <- function(
     ae_tbl,
     total_n = NULL,
@@ -173,11 +207,19 @@ ody_make_ae_gt <- function(
     n_terms <- sum(purrr::map_lgl(ae_tbl[[1]], is.character))
 
     if (is.null(spanner_names)) {
+
       spanner_names <- names(ae_tbl)
+
+    }
+
+    if (!is.null(total_n)) {
+
+      ae_tbl <- purrr::map2(ae_tbl, total_n, add_pct, dec)
+
     }
 
     ae_tbl_join <- purrr::map2(
-      1:length(ae_tbl),spanner_names,
+      1:length(ae_tbl), spanner_names,
       function(x, y) {
 
         names(ae_tbl[[x]])[-(1:n_terms)] <- stringr::str_c(
@@ -189,19 +231,36 @@ ody_make_ae_gt <- function(
       }
     ) |>
       purrr::reduce(dplyr::full_join) |>
-      dplyr::mutate(
-        dplyr::across(dplyr::where(is.integer), ~tidyr::replace_na(., 0))
-      )
+      suppressMessages()
+
+
+    if (!is.null(total_n)) {
+
+      ae_tbl_join <- ae_tbl_join |>
+        dplyr::mutate(
+          dplyr::across(
+            dplyr::contains("___"),
+            ~tidyr::replace_na(., "0 (0%)"))
+        )
+
+    } else {
+
+      ae_tbl_join <- ae_tbl_join |>
+        dplyr::mutate(
+          dplyr::across(dplyr::where(is.integer), ~tidyr::replace_na(., 0))
+        )
+
+    }
 
   } else {
     n_terms <- sum(purrr::map_lgl(ae_tbl, is.character))
 
     ae_tbl_join <- ae_tbl
-  }
 
+    if (!is.null(total_n)) {
+      ae_tbl_join <- add_pct(ae_tbl_join, total_n, dec)
+    }
 
-  if (!is.null(total_n)) {
-    ae_tbl_join <- add_pct(ae_tbl_join, total_n, dec)
   }
 
 
@@ -249,7 +308,7 @@ ody_make_ae_gt <- function(
         style = gt::cell_text(indent = gt::pct(5)),
         locations = gt::cells_body(rows = !is.na(.data[[term_name]]))
       ) |>
-      gt::cols_hide(all_of(c(upper_term_name, term_name)))
+      gt::cols_hide(dplyr::all_of(c(upper_term_name, term_name)))
 
   }
 

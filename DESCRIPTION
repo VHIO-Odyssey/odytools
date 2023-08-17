@@ -17,6 +17,7 @@ Imports:
     flexdashboard,
     forcats,
     ggplot2,
+    gt,
     htmltools,
     httr,
     janitor,

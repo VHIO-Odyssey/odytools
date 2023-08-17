@@ -308,7 +308,8 @@ ody_make_ae_gt <- function(
         style = gt::cell_text(indent = gt::pct(5)),
         locations = gt::cells_body(rows = !is.na(.data[[term_name]]))
       ) |>
-      gt::cols_hide(dplyr::all_of(c(upper_term_name, term_name)))
+      gt::cols_hide(dplyr::all_of(c(upper_term_name, term_name))) |>
+      gt::opt_row_striping()
 
   }
 

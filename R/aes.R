@@ -275,9 +275,10 @@ ody_make_ae_gt <- function(
         style = gt::cell_text(weight = "bold"),
         locations = list(
           gt::cells_column_labels(),
-          gt::cells_body(rows = 1)
+          gt::cells_body(rows = .data[[term_name]] =="Any Adverse Event")
         )
-      )
+      ) |>
+      gt::opt_row_striping()
 
   } else if (n_terms == 2){
 

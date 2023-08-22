@@ -767,12 +767,12 @@ ody_rc_format <- function(rc_df) {
 #' @export
 ody_rc_view <- function(data_app = NULL, raw = FALSE) {
 
-  if (is.null(data_app) & exists("redcap_data")) {
-    data_app <- redcap_data
-  }
-
-  if (is.null(data_app) & !exists("redcap_data")) {
-    data_app <- ody_rc_import()
+  if (is.null(data_app)) {
+    if (exists("redcap_data")) {
+      data_app <- redcap_data
+    } else {
+      data_app <- ody_rc_import()
+    }
   }
 
   # If the project has no events, data_app is restructured to shape properly

@@ -12,8 +12,8 @@ load("data_app.RData")
 # sensible information does not remain hiden in the package folder.
 file.remove("data_app.RData")
 app_title <- str_c(
-  attr(data_app, "project_info")$project_title, " ",
-  attr(data_app, "export_date")
+  attr(data_app, "project_info")$project_title, " - Export date: ",
+  str_extract(attr(data_app, "import_date"), "....-..-.. ..:..")
 )
 
 # Puede haber events 100% vacíos. Se eliminan.
@@ -178,9 +178,21 @@ server <- function(input, output, session) {
     }
   })
 
-  output$table <- renderDT(DT::datatable(
-    table_to_show(), filter = "top", fillContainer = FALSE, options = list(paging = FALSE)
-  ))
+output$table <- renderDT(
+  datatable(
+    table_to_show(),
+    filter = "top",
+    fillContainer = FALSE,
+    extensions = "Buttons",
+    options = list(
+      paging = FALSE,
+      dom = "Bt",
+      buttons = c("copy", "csv", "excel")
+    ),
+    class = "display"
+  )
+)
+
 
 }
 

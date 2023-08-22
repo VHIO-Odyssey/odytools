@@ -765,7 +765,15 @@ ody_rc_format <- function(rc_df) {
 #'
 #' @return An html viewer
 #' @export
-ody_rc_view <- function(data_app = get("redcap_data"), raw = FALSE) {
+ody_rc_view <- function(data_app = NULL, raw = FALSE) {
+
+  if (is.null(data_app) & exists("redcap_data")) {
+    data_app <- redcap_data
+  }
+
+  if (is.null(data_app) & !exists("redcap_data")) {
+    data_app <- ody_rc_import()
+  }
 
   # If the project has no events, data_app is restructured to shape properly
   if (names(data_app)[1] == "redcap_form_name") {

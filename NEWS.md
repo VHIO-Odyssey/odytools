@@ -44,3 +44,7 @@
 
     -   **ody_make_ae_tbl**: It makes a "max grade" count of patients.
     -   **ody_make_ae_gt**: It inputs the output of ody_make_ae_tbl and makes a gt display table.
+
+# odytools 0.4.1
+
+bla, bla

@@ -68,7 +68,7 @@ server <- function(input, output, session) {
     }
   )
 
-  table_to_show <- reactive({
+  raw_table <- reactive({
 
     if (input$event != "All") {
 
@@ -81,11 +81,17 @@ server <- function(input, output, session) {
 
     }
 
-    selected_form <- event_data |>
+    event_data |>
       unnest(cols = redcap_event_data) |>
       filter(redcap_form_name == input$form) |>
       select(redcap_event_name, redcap_form_name, redcap_form_data) |>
-      unnest(cols = redcap_form_data) |>
+      unnest(cols = redcap_form_data)
+
+  })
+
+  table_to_show <- reactive({
+
+    formatted_form <- raw_table() |>
       mutate(
         across(
           everything(),
@@ -141,7 +147,7 @@ server <- function(input, output, session) {
       ) |>
       select(where(~ !is.logical(.)))
 
-    if (data_app[1, 1] == "No events") selected_form[ ,-1] else selected_form
+    if (data_app[1, 1] == "No events") formatted_form[ ,-1] else formatted_form
 
 
   })

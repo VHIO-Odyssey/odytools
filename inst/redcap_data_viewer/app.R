@@ -38,7 +38,8 @@ ui <- page_sidebar(
         pull(redcap_form_name) |>
         unique(),
       width = "100%"
-    )
+    ),
+    width = "33%"
   ),
   card(
     DTOutput("table")

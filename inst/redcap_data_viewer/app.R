@@ -39,7 +39,7 @@ ui <- page_sidebar(
         unique(),
       width = "100%"
     ),
-    width = "33%"
+    width = "25%"
   ),
   card(
     DTOutput("table")

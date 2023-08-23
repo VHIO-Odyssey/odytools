@@ -13,8 +13,9 @@ load("data_app.RData")
 # sensible information does not remain hiden in the package folder.
 file.remove("data_app.RData")
 app_title <- str_c(
-  attr(data_app, "project_info")$project_title, " - Export date: ",
-  str_extract(attr(data_app, "import_date"), "....-..-.. ..:..")
+  attr(data_app, "project_info")$project_title, " - ",
+  str_extract(attr(data_app, "import_date"), "....-..-.. ..:..") |>
+    str_replace_all("-", "/")
 )
 
 # Puede haber events 100% vacíos. Se eliminan.
@@ -42,8 +43,7 @@ ui <- page_sidebar(
     width = "25%"
   ),
   card(
-    DTOutput("table"),
-    full_screen = TRUE
+    DTOutput("table")
   )
 )
 

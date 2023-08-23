@@ -42,7 +42,8 @@ ui <- page_sidebar(
     width = "25%"
   ),
   card(
-    DTOutput("table")
+    DTOutput("table"),
+    full_screen = TRUE
   )
 )
 

@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(shiny)
+library(bslib)
 library(forcats)
 library(labelled)
 library(stringr)
@@ -19,35 +20,31 @@ app_title <- str_c(
 # Puede haber events 100% vacíos. Se eliminan.
 data_app <- data_app[map_dbl(data_app[[3]], nrow) != 0, ]
 
-ui <- fluidPage(
-  titlePanel(app_title),
-  fluidRow(
-    column(2,
-           selectInput(
-             "data_type", "Data", c("Labels", "Raw", "Raw + Labels"),
-             width = "100%"
-           )
 
+ui <- page_sidebar(
+  title = app_title,
+  sidebar = sidebar(
+    selectInput(
+      "data_type", "Field Type", c("Labels", "Raw", "Raw + Labels"),
+      width = "100%"
     ),
-    column(4,
-           selectInput(
-             "event", "Event", c("All", data_app$redcap_event_name),
-             width = "100%"
-           )
-
+    selectInput(
+      "event", "Event", c("All", data_app$redcap_event_name),
+      width = "100%"
     ),
-    column(4,
-           selectInput(
-             "form", "Form", data_app |>
-               unnest(cols = redcap_event_data) |>
-               pull(redcap_form_name) |>
-               unique(),
-             width = "100%"
-           )
-    ),
-    column(12, DTOutput("table"))
+    selectInput(
+      "form", "Form", data_app |>
+        unnest(cols = redcap_event_data) |>
+        pull(redcap_form_name) |>
+        unique(),
+      width = "100%"
+    )
+  ),
+  card(
+    DTOutput("table")
   )
 )
+
 
 server <- function(input, output, session) {
 
@@ -151,14 +148,14 @@ output$table <- renderDT(
   datatable(
     table_to_show(),
     filter = "top",
-    fillContainer = FALSE,
+    fillContainer = TRUE,
     extensions = "Buttons",
+    class = "compact hover",
     options = list(
       paging = FALSE,
       dom = "Bt",
       buttons = c("copy", "csv", "excel")
-    ),
-    class = "display"
+    )
   )
 )
 

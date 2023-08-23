@@ -22,14 +22,21 @@ data_app <- data_app[map_dbl(data_app[[3]], nrow) != 0, ]
 ui <- fluidPage(
   titlePanel(app_title),
   fluidRow(
-    column(3,
+    column(2,
+           selectInput(
+             "data_type", "Data", c("Labels", "Raw", "Raw + Labels"),
+             width = "100%"
+           )
+
+    ),
+    column(4,
            selectInput(
              "event", "Event", c("All", data_app$redcap_event_name),
              width = "100%"
            )
 
     ),
-    column(6,
+    column(4,
            selectInput(
              "form", "Form", data_app |>
                unnest(cols = redcap_event_data) |>
@@ -63,22 +70,49 @@ server <- function(input, output, session) {
   )
 
   table_to_show <- reactive({
+
     if (input$event != "All") {
 
-    data_app |>
-      filter(redcap_event_name == input$event) |>
+      event_data <- data_app |>
+        filter(redcap_event_name == input$event)
+
+    } else {
+
+      event_data <- data_app
+
+    }
+
+    selected_form <- event_data |>
       unnest(cols = redcap_event_data) |>
       filter(redcap_form_name == input$form) |>
-      select(redcap_form_data) |>
+      select(redcap_event_name, redcap_form_name, redcap_form_data) |>
       unnest(cols = redcap_form_data) |>
       mutate(
         across(
           everything(),
           function(x) {
 
-            if(raw) return(x)
+            if (input$data_type == "Raw" | is.null(var_label(x))) return(x)
 
-            if(is.null(var_label(x))) return(x)
+            if (input$data_type == "Labels") {
+
+              if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
+                return(as.numeric(unclass(x)))
+              }
+
+              if (str_detect(var_label(x), "(text:date_dmy)")) {
+                return(ymd(unclass(x)))
+              }
+
+              if (str_detect(var_label(x), "(text:datetime_dmy)")) {
+                return(ymd_hm(unclass(x)))
+              }
+
+              if (!is.null(val_labels(x))) return(to_factor(x))
+
+              return(x)
+
+            }
 
             if (!is.null(val_labels(x))) {
               # truco para que los missings declarados salgan sin etiqueta
@@ -99,83 +133,18 @@ server <- function(input, output, session) {
                   as_factor()
               )
             }
-#  If numbers and dates are formatted, missing codes are lost.
-#             if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
-#               return(as.numeric(unclass(x)))
-#             }
-#
-#             if (str_detect(var_label(x), "(text:date_dmy)")) {
-#               return(ymd(unclass(x)))
-#             }
-#
-#             if (str_detect(var_label(x), "(text:datetime_dmy)")) {
-#               return(ymd_hm(unclass(x)))
-#             }
 
             return(x)
 
           }
         ),
-        across(1:3, factor)
+        across(1:5, factor)
       ) |>
       select(where(~ !is.logical(.)))
-    } else {
 
-      data_app |>
-        unnest(cols = redcap_event_data) |>
-        filter(redcap_form_name == input$form) |>
-        select(redcap_event_name, redcap_form_data) |>
-        unnest(cols = redcap_form_data) |>
-        mutate(
-          across(
-            everything(),
-            function(x) {
+    if (data_app[1, 1] == "No events") selected_form[ ,-1] else selected_form
 
-              if(raw) return(x)
 
-              if(is.null(var_label(x))) return(x)
-
-              if (!is.null(val_labels(x))) {
-                # truco para que los missings declarados salgan sin etiqueta
-                x_labels <- as_factor(x) |> as.character()
-                x_labels2 <- ifelse(
-                  is.na(x) & !is.na(as_factor(x)), "", x_labels
-                )
-                return(
-                  str_c(
-                    x,
-                    str_c(
-                      " [",
-                      as_factor(x_labels2),
-                      "]"
-                    )
-                  ) |>
-                    str_remove(" \\[\\]$") |>
-                    as_factor()
-                )
-              }
-
-              #  If numbers and dates are formatted, missing codes are lost.
-              # if (str_detect(var_label(x), "(text:integer)|(text:number)")) {
-              #   return(as.numeric(unclass(x)))
-              # }
-              #
-              # if (str_detect(var_label(x), "(text:date_dmy)")) {
-              #   return(ymd(unclass(x)))
-              # }
-              #
-              # if (str_detect(var_label(x), "(text:datetime_dmy)")) {
-              #   return(ymd_hm(unclass(x)))
-              # }
-
-              return(x)
-
-            }
-          ),
-          across(1:4, factor)
-        ) |>
-        select(where(~ !is.logical(.)))
-    }
   })
 
 output$table <- renderDT(

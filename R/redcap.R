@@ -760,12 +760,10 @@ ody_rc_format <- function(rc_df) {
 
 #' View a RedCap project
 #'
-#' @param data_app Imported data by ody_rc_import (must be labelled and nested).
-#' @param raw  Logical. Show raw data with no labels?
-#'
+#' @param data_app Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.
 #' @return An html viewer
 #' @export
-ody_rc_view <- function(data_app = NULL, raw = FALSE) {
+ody_rc_view <- function(data_app = NULL) {
 
   if (is.null(data_app)) {
     if (exists("redcap_data")) {
@@ -775,7 +773,7 @@ ody_rc_view <- function(data_app = NULL, raw = FALSE) {
     }
   }
 
-  # If the project has no events, data_app is restructured to shape properly
+  # If the project has no events, data_app is restructured to fit
   if (names(data_app)[1] == "redcap_form_name") {
     data_app <- tibble::tibble(
       redcap_event_name = "No events",
@@ -786,8 +784,7 @@ ody_rc_view <- function(data_app = NULL, raw = FALSE) {
 
   viewer_location <- system.file("redcap_data_viewer", package = "odytools")
   save(
-    data_app, raw,
-    file = stringr::str_c(viewer_location, "/data_app.RData")
+    data_app, file = stringr::str_c(viewer_location, "/data_app.RData")
   )
 
   rstudioapi::jobRunScript(

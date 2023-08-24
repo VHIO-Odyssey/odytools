@@ -8,6 +8,9 @@ library(stringr)
 library(lubridate)
 library(DT)
 library(purrr)
+library(reactable)
+library(odytools)
+
 load("data_app.RData")
 # After data loading, the file is removed so the residual copy with potential
 # sensible information does not remain hiden in the package folder.
@@ -44,7 +47,8 @@ ui <- page_sidebar(
   ),
   navset_card_tab(
     nav_panel("Data", DTOutput("table")),
-    nav_panel("Metadata", dataTableOutput("metadata"))
+    nav_panel("Metadata", dataTableOutput("metadata")),
+    nav_panel("Completeness", reactableOutput("completeness"))
   )
 )
 
@@ -189,8 +193,20 @@ output$metadata <- renderDataTable({
       class = "compact hover",
       options = list(paging = FALSE)
     )
+
 })
 
+output$completeness <- renderReactable({
+  ody_rc_completeness(
+    raw_table(),
+    id_var = attr(data_app, "id_var"),
+    count_user_na = FALSE,
+    conditions_list = "from_metadata",
+    metadata = attr(data_app, "metadata"),
+    missing_codes = attr(data_app, "missing"),
+    report = TRUE
+  )
+})
 
 }
 

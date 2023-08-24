@@ -767,7 +767,7 @@ ody_rc_view <- function(data_app = NULL) {
 
   if (is.null(data_app)) {
     if (exists("redcap_data")) {
-      data_app <- redcap_data
+      data_app <- get("redcap_data")
     } else {
       data_app <- ody_rc_import()
     }

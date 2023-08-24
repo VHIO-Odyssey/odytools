@@ -26,24 +26,25 @@ ui <- page_sidebar(
   title = app_title,
   sidebar = sidebar(
     selectInput(
-      "data_type", "Field Type", c("Labels", "Raw", "Raw + Labels"),
+      "event", HTML("<b>Event</b>"), c("All", data_app$redcap_event_name),
       width = "100%"
     ),
     selectInput(
-      "event", "Event", c("All", data_app$redcap_event_name),
-      width = "100%"
-    ),
-    selectInput(
-      "form", "Form", data_app |>
+      "form", HTML("<b>Form</b>"), data_app |>
         unnest(cols = redcap_event_data) |>
         pull(redcap_form_name) |>
         unique(),
       width = "100%"
     ),
+    selectInput(
+      "data_type", HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
+      width = "100%"
+    ),
     width = "25%"
   ),
-  card(
-    DTOutput("table")
+  navset_card_tab(
+    nav_panel("Data", DTOutput("table")),
+    nav_panel("Metadata", dataTableOutput("metadata"))
   )
 )
 
@@ -166,6 +167,29 @@ output$table <- renderDT(
     )
   )
 )
+
+output$metadata <- renderDataTable({
+  attr(data_app, "metadata") |>
+    filter(field_name %in% names(raw_table())[-(1:5)]) |>
+    select(
+      field_name, field_label, field_type,
+      choices_calculations = select_choices_or_calculations,
+      branching_logic,
+      validation_type = text_validation_type_or_show_slider_number,
+      validation_min = text_validation_min,
+      validation_max = text_validation_max
+    ) |>
+    mutate(
+      choices_calculations = str_replace_all(
+        choices_calculations, "\\|", "<br>"
+      )
+    ) |>
+    datatable(
+      escape = FALSE, fillContainer = TRUE,
+      class = "compact hover",
+      options = list(paging = FALSE)
+    )
+})
 
 
 }

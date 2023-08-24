@@ -1,0 +1,4 @@
+Name: RedCap Viewer
+Description: Explore the data and metadata of a RedCap project.
+Binding: ody_rc_view
+Interactive: true

@@ -501,7 +501,7 @@ nest_rc <- function(rc_raw) {
 }
 
 # Helper function to pass the original import attibutes to the nested final
-# data base.
+# data base. Also used in ody_rc_view to restore attributes to clasic projects.
 restore_attributes <- function(rc_nested, rc_raw) {
 
   present_attributes <- names(attributes(rc_raw))
@@ -779,7 +779,8 @@ ody_rc_view <- function(data_app = NULL) {
       redcap_event_name = "No events",
       redcap_repeating_event = FALSE,
       redcap_event_data = list(data_app)
-    )
+    ) |>
+      restore_attributes(data_app)
   }
 
   viewer_location <- system.file("redcap_data_viewer", package = "odytools")

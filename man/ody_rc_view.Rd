@@ -4,12 +4,10 @@
 \alias{ody_rc_view}
 \title{View a RedCap project}
 \usage{
-ody_rc_view(data_app = get("redcap_data"), raw = FALSE)
+ody_rc_view(data_app = NULL)
 }
 \arguments{
-\item{data_app}{Imported data by ody_rc_import (must be labelled and nested).}
-
-\item{raw}{Logical. Show raw data with no labels?}
+\item{data_app}{Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.}
 }
 \value{
 An html viewer

@@ -47,4 +47,4 @@
 
 # odytools 0.4.1
 
--   Improved **ody_rc_view.** It does not need a pre-downloded redcap_data object anymore. Now, if it is not present, the function downloads it by itself (if a token is provided). Download buttons have been added as well as a tab with metadata of the selected variables.
+-   Improved **ody_rc_view.** It does not need a pre-downloded redcap_data object anymore. Now, if it is not present, the function downloads it by itself (if a token is provided). Download buttons have been added as well as a tab with metadata of the selected variables. THis function can now bw called from a RStudio addin.

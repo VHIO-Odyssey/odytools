@@ -887,8 +887,8 @@ ody_rc_completeness <- function(
             stringr::str_remove_all("\\[|\\]") |>
             stringr::str_replace_all("=", "==") |>
             stringr::str_replace_all("<>", "!=") |>
-            stringr::str_replace_all(" or ", " | ") |>
-            stringr::str_replace_all(" and ", " & ") |>
+            stringr::str_replace_all(" ?or ?", " | ") |>
+            stringr::str_replace_all(" ?and ?", " & ") |>
             # Delete possible duplicates of is_user_na
             stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
           cond = stringr::str_c(

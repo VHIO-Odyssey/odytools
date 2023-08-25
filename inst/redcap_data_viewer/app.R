@@ -39,16 +39,25 @@ ui <- page_sidebar(
         unique(),
       width = "100%"
     ),
-    selectInput(
-      "data_type", HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
-      width = "100%"
+    radioButtons(
+      "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
+      inline = TRUE
     ),
     width = "25%"
   ),
   navset_card_tab(
     nav_panel("Data", DTOutput("table")),
     nav_panel("Metadata", dataTableOutput("metadata")),
-    nav_panel("Completeness", reactableOutput("completeness"))
+    nav_panel(
+      "Completeness",
+      checkboxInput(
+        "count_user_na",
+        "Consider user-defined missing values as regular missing values",
+        width = "100%",
+        value = FALSE
+      ),
+      reactableOutput("completeness")
+    )
   )
 )
 
@@ -229,7 +238,7 @@ output$completeness <- renderReactable({
   ody_rc_completeness(
     raw_table_comp(),
     id_var = attr(data_app, "id_var"),
-    count_user_na = FALSE,
+    count_user_na = input$count_user_na,
     conditions_list = "from_metadata",
     metadata = attr(data_app, "metadata"),
     missing_codes = attr(data_app, "missing"),

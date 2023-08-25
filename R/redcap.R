@@ -829,8 +829,8 @@ ody_rc_completeness <- function(
     )
 
   if (!count_user_na) {
-    # easy trick, if user NAs must be counted, all variables are set as simple
-    # character so user NAs become a character.
+    # easy trick, if user NAs must not be counted, all variables are set as
+    # simple character so user NAs become a character.
     data_frame <- data_frame |>
       dplyr::mutate(
         dplyr::across(dplyr::everything(), as.character)

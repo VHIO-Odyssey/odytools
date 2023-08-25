@@ -196,9 +196,38 @@ output$metadata <- renderDataTable({
 
 })
 
+
+raw_table_comp <- reactive({
+
+  id_var <- attr(data_app, "id_var")
+
+  id_column <- raw_table() |>
+    dplyr::select(dplyr::all_of(id_var))
+
+  id_rep <- nrow(id_column) != nrow(unique(id_column))
+
+  if (id_rep) {
+
+    comp_table <- raw_table() |>
+      mutate(
+        "{id_var}" := str_c(
+          .data[[id_var]], "(", redcap_instance_number, ")"
+        )
+      )
+
+  } else {
+
+    raw_table()
+
+  }
+
+})
+
+
 output$completeness <- renderReactable({
+
   ody_rc_completeness(
-    raw_table(),
+    raw_table_comp(),
     id_var = attr(data_app, "id_var"),
     count_user_na = FALSE,
     conditions_list = "from_metadata",
@@ -206,6 +235,7 @@ output$completeness <- renderReactable({
     missing_codes = attr(data_app, "missing"),
     report = TRUE
   )
+
 })
 
 }

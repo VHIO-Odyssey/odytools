@@ -852,7 +852,10 @@ ody_rc_completeness <- function(
 
       external_branching <- needed_meta |>
         dplyr::filter(
-          stringr::str_detect(.data$branching_logic, "\\[.+\\]\\[.+\\]")
+          stringr::str_detect(
+            .data$branching_logic,
+            "\\[.+\\]\\[.+\\]|event-name|current-instance"
+          )
         ) |> dplyr::pull("field_name")
 
       if(length(external_branching) > 0) {
@@ -871,6 +874,8 @@ ody_rc_completeness <- function(
           r_branch = stringr::str_replace_all(
             .data$branching_logic,  missing_value, "user_na"
           ) |>
+            # Checkbox variables to especific check box column
+            stringr::str_replace( "\\((\\d+)\\)", "___\\1") |>
             stringr::str_replace_all(
               # RedCap empty to regular R na
               "\\[([^\\[]+)\\] *<> *['\"]{2}",
@@ -881,14 +886,12 @@ ody_rc_completeness <- function(
               "\\[([^\\[]+)\\] *<> *['\"]user_na['\"]",
               "!labelled::is_user_na\\(\\1\\)"
             ) |>
-            # Checkbox variables to especific check box column
-            stringr::str_replace( "\\((.+)\\)", "___\\1") |>
             #Some easy symbol translations
             stringr::str_remove_all("\\[|\\]") |>
             stringr::str_replace_all("=", "==") |>
             stringr::str_replace_all("<>", "!=") |>
-            stringr::str_replace_all(" ?or ?", " | ") |>
-            stringr::str_replace_all(" ?and ?", " & ") |>
+            stringr::str_replace_all(" or ?| ?or ", " | ") |>
+            stringr::str_replace_all(" and ?| ?and ", " & ") |>
             # Delete possible duplicates of is_user_na
             stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
           cond = stringr::str_c(
@@ -923,6 +926,22 @@ ody_rc_completeness <- function(
     unique()
   completeness <- completeness |>
     dplyr::filter(.data$variable %in% completeness_final_vars)
+
+  # Change R translated conditions to RedCapian
+  if (nrow(needed_meta) > 0) {
+
+    completeness <- completeness |>
+      dplyr::left_join(
+        needed_meta |>
+          dplyr::select("field_name", "branching_logic"),
+        by = c("variable" = "field_name")
+      ) |>
+      dplyr::mutate(
+        condition = .data$branching_logic
+      ) |>
+      dplyr::select(-"branching_logic")
+
+  }
 
   if (report) {
     report_completeness(completeness)

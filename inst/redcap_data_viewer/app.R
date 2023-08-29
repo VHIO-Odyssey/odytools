@@ -39,22 +39,27 @@ ui <- page_sidebar(
         unique(),
       width = "100%"
     ),
-    radioButtons(
-      "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
-      inline = TRUE
-    ),
     width = "25%"
   ),
   navset_card_tab(
-    nav_panel("Data", DTOutput("table")),
+    nav_panel(
+      popover(
+        tagList("Data", bsicons::bs_icon("gear", class = "ms-auto")),
+        radioButtons(
+          "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
+          inline = TRUE
+        )
+      ), DTOutput("table")
+    ),
     nav_panel("Metadata", dataTableOutput("metadata")),
     nav_panel(
-      "Completeness",
-      checkboxInput(
-        "count_user_na",
-        "Consider user-defined missing values as regular missing values",
-        width = "100%",
-        value = FALSE
+      popover(
+        tagList("Completeness", bsicons::bs_icon("gear", class = "ms-auto")),
+        checkboxInput(
+          "count_user_na",
+          "Consider user-defined missing values as regular missing values.",
+          value = FALSE
+        )
       ),
       reactableOutput("completeness")
     )

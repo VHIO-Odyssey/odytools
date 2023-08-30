@@ -8,6 +8,9 @@ library(stringr)
 library(lubridate)
 library(DT)
 library(purrr)
+library(reactable)
+library(odytools)
+
 load("data_app.RData")
 # After data loading, the file is removed so the residual copy with potential
 # sensible information does not remain hiden in the package folder.
@@ -36,15 +39,30 @@ ui <- page_sidebar(
         unique(),
       width = "100%"
     ),
-    selectInput(
-      "data_type", HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
-      width = "100%"
-    ),
     width = "25%"
   ),
   navset_card_tab(
-    nav_panel("Data", DTOutput("table")),
-    nav_panel("Metadata", dataTableOutput("metadata"))
+    nav_panel(
+      popover(
+        tagList("Data", bsicons::bs_icon("gear", class = "ms-auto")),
+        radioButtons(
+          "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
+          inline = TRUE
+        )
+      ), DTOutput("table")
+    ),
+    nav_panel("Metadata", dataTableOutput("metadata")),
+    nav_panel(
+      popover(
+        tagList("Completeness", bsicons::bs_icon("gear", class = "ms-auto")),
+        checkboxInput(
+          "count_user_na",
+          "Consider user-defined missing values as regular missing values.",
+          value = FALSE
+        )
+      ),
+      reactableOutput("completeness")
+    )
   )
 )
 
@@ -189,8 +207,50 @@ output$metadata <- renderDataTable({
       class = "compact hover",
       options = list(paging = FALSE)
     )
+
 })
 
+
+raw_table_comp <- reactive({
+
+  id_var <- attr(data_app, "id_var")
+
+  id_column <- raw_table() |>
+    dplyr::select(dplyr::all_of(id_var))
+
+  id_rep <- nrow(id_column) != nrow(unique(id_column))
+
+  if (id_rep) {
+
+    comp_table <- raw_table() |>
+      mutate(
+        "{id_var}" := str_c(
+          .data[[id_var]], "(", redcap_instance_number, ")"
+        )
+      )
+
+  } else {
+
+    raw_table()
+
+  }
+
+})
+
+
+output$completeness <- renderReactable({
+
+  ody_rc_completeness(
+    raw_table_comp(),
+    id_var = attr(data_app, "id_var"),
+    count_user_na = input$count_user_na,
+    conditions_list = "from_metadata",
+    metadata = attr(data_app, "metadata"),
+    missing_codes = attr(data_app, "missing"),
+    report = TRUE
+  )
+
+})
 
 }
 

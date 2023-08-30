@@ -52,3 +52,7 @@
 # odytools 0.4.2
 
 -   Added a Completeness tab to **ody_rc_view**.
+
+# odytools 0.4.3
+
+-   **ody_pdx_model_sensitivity** improved. Added a model validation section.

@@ -263,7 +263,7 @@ ody_pdx_model_sensitivity <- function(
       stringr::str_sub(sys_time_num, 9, 12), sep = "_")
 
     file_name <-stringr::str_c(
-      date_time, "_", names_df[4], "_", model_type, ".html"
+      names_df[4], "_", model_type, "_", date_time, ".html"
     )
 
   }

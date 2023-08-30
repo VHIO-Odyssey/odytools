@@ -103,19 +103,27 @@ if (params$model_type == "glmm") {
   ) |> suppressMessages()
 }
 
-# Model comparison, when running a LMM, refiting from REML to ML is not needed
-# since the fixed part is the same in both models.
-# (https://stats.stackexchange.com/questions/465879/different-results-for-model-comparison-using-anova-function-for-reml-and-ml)
-comp_models <- anova(model1, model2, refit = FALSE)
 
-# If both models are different, we choose the best. If not, we choose the less
-# complex (random intercepts only)
-if (comp_models$`Pr(>Chisq)`[2] <= 0.05) {
-  # The best model is allways on the second row.
-  model <- get(rownames(comp_models)[2])
-} else {
+
+# If model2 is singular ( treatment | pdx random efectt is too complex), the
+# simplest model is directly choosen
+if (isSingular(model2)) {
   model <- model1
+} else {
+  # Model comparison, when running a LMM, refiting from REML to ML is not needed
+  # since the fixed part is the same in both models.
+  # (https://stats.stackexchange.com/questions/465879/different-results-for-model-comparison-using-anova-function-for-reml-and-ml)
+  comp_models <- anova(model1, model2, refit = FALSE)
+  # If both models are different, we choose the best. If not, we choose the less
+  # complex (random intercepts only)
+  if (comp_models$`Pr(>Chisq)`[2] <= 0.05) {
+    # The best model is allways on the second row.
+    model <- get(rownames(comp_models)[2])
+  } else {
+    model <- model1
+  }
 }
+
 
 ```
 

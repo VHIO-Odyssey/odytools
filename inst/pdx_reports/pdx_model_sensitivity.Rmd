@@ -21,6 +21,7 @@ knitr::opts_chunk$set(echo = FALSE, comment = NA)
 library(dplyr)
 library(stringr)
 library(lme4)
+library(DHARMa)
 library(purrr)
 library(tidyr)
 library(ggplot2)
@@ -407,7 +408,12 @@ bind_rows(trt1_plot, trt2_plot) |>
   labs(x = "")
 ```
 
+## Validation
 
+```{r DHARMa_plot}
+
+simulateResiduals(model) |> plot()
+```
 
 ## Result
 
@@ -429,24 +435,6 @@ summary(model)
 ```
 
 
-## Validation
-
-```{r res_plot}
-
-plot(model)
-
-```
-
-```{r qqnorm}
-
-model_res <- residuals(model)
-
-qqnorm(model_res)
-qqline(model_res)
-
-```
-
-
 ## References
 
 ### R
@@ -460,6 +448,13 @@ Package used to perform the `r str_to_upper(params$model_type)` model.
 citation("lme4")
 ```
 
+### DHARMa
+Package used for model validation
+
+```{r ref-dharma}
+citation("DHARMa")
+```
+
 ### multcomp
 Package used for simultaneous hypothesis testing.
 ```{r ref-multcomp}
@@ -467,7 +462,6 @@ citation("multcomp")
 ```
 
 ## Session Info
-
 ```{r session}
 sessionInfo()
 ```

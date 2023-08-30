@@ -90,17 +90,17 @@ form2 <- call(
 
 
 if (params$model_type == "lmm") {
-  model1 <- lmer(eval(form1), data = data_model)
-  model2 <- lmer(eval(form2), data = data_model)
+  model1 <- lmer(eval(form1), data = data_model) |> suppressMessages()
+  model2 <- lmer(eval(form2), data = data_model) |> suppressMessages()
 }
 
 if (params$model_type == "glmm") {
   model1 <- glmer(
     eval(form1), data = data_model, family = "binomial", weights = weight_100
-  )
+  ) |> suppressMessages()
   model2 <- glmer(
     eval(form2), data = data_model, family = "binomial", weights = weight_100
-  )
+  ) |> suppressMessages()
 }
 
 # Model comparison, when running a LMM, refiting from REML to ML is not needed

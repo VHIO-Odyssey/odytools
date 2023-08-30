@@ -359,7 +359,7 @@ eval_graph2 <- !is.na(treatment1_level)
 trt1_plot <- paired_data |>
   mutate(
     control_treatment = case_when(
-      group == levels(.data[[df_names[3]]])[1] ~ "Control",
+      .data[[df_names[3]]] == levels(.data[[df_names[3]]])[1] ~ "Control",
       TRUE ~ "Treatment"
     ),
     plot_treatment = levels(.data[[df_names[3]]])[2]
@@ -373,7 +373,7 @@ trt1_plot <- paired_data |>
 trt2_plot <- paired_data |>
   mutate(
     control_treatment = case_when(
-      group == levels(.data[[df_names[3]]])[1] ~ "Control",
+      .data[[df_names[3]]] == levels(.data[[df_names[3]]])[1] ~ "Control",
       TRUE ~ "Treatment"
     ),
     plot_treatment = levels(.data[[df_names[3]]])[3]

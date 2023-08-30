@@ -421,6 +421,24 @@ summary(model)
 ```
 
 
+## Validation
+
+```{r res_plot}
+
+plot(model)
+
+```
+
+```{r qqnorm}
+
+model_res <- residuals(model)
+
+qqnorm(model_res)
+qqline(model_res)
+
+```
+
+
 ## References
 
 ### R

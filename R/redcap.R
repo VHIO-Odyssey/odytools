@@ -875,7 +875,7 @@ ody_rc_completeness <- function(
             .data$branching_logic,  missing_value, "user_na"
           ) |>
             # Checkbox variables to especific check box column
-            stringr::str_replace( "\\((\\d+)\\)", "___\\1") |>
+            stringr::str_replace_all( "\\((\\d+)\\)", "___\\1") |>
             stringr::str_replace_all(
               # RedCap empty to regular R na
               "\\[([^\\[]+)\\] *<> *['\"]{2}",

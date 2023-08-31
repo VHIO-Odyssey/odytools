@@ -1,71 +1,95 @@
--   **data_quality:** Data quality reports.
+## **data_quality**
 
-    -   count_grouped_cases
+Data quality reports.
 
-    -   ody_verify_completeness
+-   count_grouped_cases
 
-    -   ody_verify_conformance [count_grouped_cases]
+-   ody_verify_completeness
 
-    -   report_completeness
+-   ody_verify_conformance [count_grouped_cases]
 
-    -   report_conformance
+-   report_completeness
 
-    -   ody_render_quality_report [ody_verify_completeness, ody_verify_conformance, report_completeness, report_conformance]
+-   report_conformance
 
--   **data_summary:** Functions to summarise dataframes.
+-   ody_render_quality_report [ody_verify_completeness, ody_verify_conformance, report_completeness, report_conformance]
 
-    -   complete_list
+## **data_summary**
 
-    -   make_var_list
+Functions to summarise dataframes.
 
-    -   summary_tibble
+-   complete_list
 
-    -   summarise_continuos_var [summary_tibble]
+-   make_var_list
 
-    -   summarise_discrete_var
+-   summary_tibble
 
-    -   ody_summarise_df [complete_list, make_var_list, summarise_continuos_var, summarise_discrete_var]
+-   summarise_continuos_var [summary_tibble]
 
--   **data_wrangling:** Data wrangling functions.
+-   summarise_discrete_var
 
-    -   get_timepoint
+-   ody_summarise_df [complete_list, make_var_list, summarise_continuos_var, summarise_discrete_var]
 
-    -   ody_define_timepoint [get_timepoint]
+## **data_wrangling**
 
--   **pdx:** Functions for the Experimental Therapeutics Group.
+Data wrangling functions.
 
-    -   ody_ody_pdx_model_percentage_response (Deprecated)
+-   get_timepoint
 
-    -   ody_pdx_model_sensitivity
+-   ody_define_timepoint [get_timepoint]
 
--   **redcap:** Functions to export and work on redcap projects.
+## **pdx**
 
-    -   extract_data
+Functions for the Experimental Therapeutics Group.
 
-    -   import_rc [extract_data]
+-   ody_ody_pdx_model_percentage_response (Deprecated)
 
-    -   label_rc_import
+-   ody_pdx_model_sensitivity
 
-    -   nest_rc
+## **redcap**
 
-    -   restore_attributes
+Functions to export and work on redcap projects.
 
-    -   ody_rc_import [import_rc, label_rc_import, nest_rc, restore_attributes]
+-   extract_data
 
-    -   select_rc_long
+-   import_rc [extract_data]
 
-    -   select_rc_classic
+-   label_rc_import
 
-    -   ody_rc_select [select_rc_long, select_rc_classic]
+-   nest_rc
 
-    -   ody_rc_format
+-   restore_attributes
 
-    -   ody_rc_view
+-   ody_rc_import [import_rc, label_rc_import, nest_rc, restore_attributes]
 
-    -   ody_rc_completeness [ody_verify_completeness]
+-   select_rc_long
 
--   **other_utils**: Miscelaneous utilities.
+-   select_rc_classic
 
-    -   ody_add_version
+-   ody_rc_select [select_rc_long, select_rc_classic]
 
--   **aes** Adverse Events related functions
+-   ody_rc_format
+
+-   ody_rc_view
+
+-   ody_rc_completeness [ody_verify_completeness]
+
+## **other_utils**
+
+Miscelaneous utilities.
+
+-   ody_add_version
+
+## **aes**
+
+Adverse Events related functions.
+
+-   count_ae_max_grade
+
+-   make_ae_tbl [count_ae_max_grade]
+
+-   ody_make_ae_tbl [make_ae_table]
+
+-   add_pct
+
+-   ody_make_ae_gt [add_pct]

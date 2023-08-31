@@ -148,7 +148,7 @@ summarise_continous_var <- function(cont_var,
   if (ncol(cont_var) == 2) {
     # Grouping var (which is in column 2 of cont_var) is forced as a factor to
     # have control over the order its levels are shown.
-    cont_var[, 2] <- factor(cont_var[, 2])
+    cont_var[, 2] <- factor(cont_var[[2]])
     overall_data <- cont_var[[1]]
     by_group_data <- tidyr::nest(cont_var, data = 1) |>
       dplyr::filter(!is.na(.data[[names(cont_var)[2]]]))

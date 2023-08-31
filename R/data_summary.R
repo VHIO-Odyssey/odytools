@@ -286,6 +286,9 @@ summarise_discrete_var <- function(disc_var,
 #' @param exclude Variables that should be excluded
 #' @param compare_groups Compare groups?
 #' @param use_NA Add missing values in the report?
+#' @param min_distinct Minimal number of distinct cases in a numeric variable to be
+#' described as numeric. If the number of distinct cases is lower, the variable
+#' is described as it was a factor.
 #'
 #' @return A list
 #' @details
@@ -297,13 +300,22 @@ ody_summarise_df <- function(data_frame,
                              conditions_list = NULL,
                              exclude = NULL,
                              compare_groups = FALSE,
-                             use_NA = c("no", "ifany", "always")) {
+                             use_NA = c("no", "ifany", "always"),
+                             min_distinct = 5) {
 
   use_NA <- rlang::arg_match(use_NA)
 
   if (!is.null(conditions_list)) {
     conditions_list <- complete_list(conditions_list)
   }
+
+  data_frame <- data_frame |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::where(is.numeric),
+        \(x) if (length(unique(x)) >= min_distinct) x else factor(x)
+      )
+    )
 
   var_list <- make_var_list(
     data_frame, conditions_list, grouping_var, exclude

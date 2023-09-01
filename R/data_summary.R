@@ -286,9 +286,9 @@ summarise_discrete_var <- function(disc_var,
 #' @param exclude Variables that should be excluded
 #' @param compare_groups Compare groups?
 #' @param use_NA Add missing values in the report?
-#' @param min_distinct Minimal number of distinct cases in a numeric variable to be
-#' described as numeric. If the number of distinct cases is lower, the variable
-#' is described as it was a factor.
+#' @param min_distinct Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.
+#' @param raw_summary If TRUE, the function returns a raw summary instead of the defaiult reactable report.
+#' @param opt_reactable Reactable options:
 #'
 #' @return A list
 #' @details
@@ -301,7 +301,15 @@ ody_summarise_df <- function(data_frame,
                              exclude = NULL,
                              compare_groups = FALSE,
                              use_NA = c("no", "ifany", "always"),
-                             min_distinct = 5) {
+                             min_distinct = 5,
+                             raw_summary = FALSE,
+                             opt_reactable = list(
+                               label_size = 1,
+                               minwidth_var = 200,
+                               n_dec = 1,
+                               minwidth_level = 100,
+                               width_density_plot = 600),
+                             ...) {
 
   use_NA <- rlang::arg_match(use_NA)
 
@@ -321,7 +329,7 @@ ody_summarise_df <- function(data_frame,
     data_frame, conditions_list, grouping_var, exclude
   )
 
-  purrr::map(
+  raw_details_tbl <- purrr::map(
     var_list,
     function(x) {
 
@@ -349,6 +357,166 @@ ody_summarise_df <- function(data_frame,
         descriptive
       }
     }
+  )
+
+  if (raw_summary) return(raw_details_tbl)
+
+  main_tbl <- purrr::map2_dfr(
+    names(var_list), var_list,
+    ~dplyr::tibble(
+      Variable = .x,
+      Observed = sum(!is.na(.y[[1]])),
+      Missing = sum(is.na(.y[[1]])),
+      Completeness = Observed / nrow(.y)
+    )
+  ) |>
+    dplyr::mutate(
+      labels = labelled::var_label(
+        dplyr::select(data_frame, dplyr::all_of(names(var_list))), unlist = TRUE
+      ),
+      No = 1:dplyr::n(), .before = 1
+    )
+
+  # Tables used as expandable etails
+  details_tbl <- purrr::map2(
+    names(raw_details_tbl), raw_details_tbl,
+    function(x, y) {
+      if (x == names(y)[1]) {
+        y |>
+          dplyr::rename(
+            Level = 1,
+            N = n,
+            Percentage = prop
+          ) |>
+          dplyr::mutate(
+            No = 1:dplyr::n(), .before = 1
+          )
+      } else {
+        tbl <- y |>
+          dplyr::mutate(
+            dplyr::across(dplyr::where(is.numeric), ~round(., opt_reactable$n_dec))
+          )
+
+        names(tbl) <- stringr::str_to_title(names(tbl))
+
+        tbl
+      }
+    }
+  )
+
+  # Definición de que se ha de tratar como descriptivo y qué como continuo
+  details_type <- purrr::map2(
+    names(raw_details_tbl), raw_details_tbl,
+    ~dplyr::if_else(.x == names(.y)[1], "discrete", "continuous")
+  )
+
+  reactable::reactable(
+    main_tbl,
+    columns = list(
+      No = reactable::colDef(width = 50),
+      Variable = reactable::colDef(
+        cell = function(value, index) {
+          label_text <- main_tbl$labels[[index]]
+          if (label_text == "") {
+            htmltools::div(style = "font-weight: 600", value)
+          } else {
+            htmltools::div(
+              htmltools::div(style = "font-weight: 600", value),
+              htmltools::div(
+                style = stringr::str_c("font-size:", opt_reactable$label_size, "rem"),
+                label_text
+              )
+            )
+          }
+        },
+        resizable = TRUE, minWidth = opt_reactable$minwidth_var
+      ),
+      Observed = reactable::colDef(width = 90),
+      Missing =  reactable::colDef(width = 90),
+      Completeness = reactable::colDef(
+        cell = reactablefmtr::data_bars(
+          main_tbl, text_position = "above",
+          max_value = 1, number_fmt = scales::percent
+        ), width = 150
+      ),
+      labels = reactable::colDef(show = FALSE)
+    ),
+    details = function(index) {
+
+      if (details_type[[index]] == "discrete") {
+
+        details_reactable <- details_tbl[[index]] |>
+          reactable::reactable(
+            columns = list(
+              No = reactable::colDef(minWidth = 60),
+              Level = reactable::colDef(
+                minWidth = opt_reactable$minwidth_level, resizable = TRUE
+              ),
+              N = reactable::colDef(minWidth = 50),
+              Percentage = reactable::colDef(
+                cell = reactablefmtr::data_bars(
+                  details_tbl[[index]], text_position = "above",
+                  number_fmt = scales::percent, max_value = 1
+                ), width = 200
+              )
+            ),
+            fullWidth = FALSE, highlight = TRUE,
+            pagination = FALSE, wrap = FALSE
+          )
+
+        htmltools::div(style = list(margin = "12px 45px"), details_reactable)
+
+      } else {
+
+        details_reactable <- details_tbl[[index]] |>
+          reactable::reactable(
+            defaultColDef = reactable::colDef(
+              minWidth = opt_reactable$width_density_plot / ncol(details_tbl[[index]])
+            ), fullWidth = FALSE, sortable = FALSE
+          )
+
+        density_tbl <- dplyr::tibble(
+          Density = NA,
+          values = var_list[index]
+        )
+
+        density_reactable <- reactable::reactable(
+          density_tbl,
+          columns = list(
+            Density =  reactable::colDef(
+              cell = function() {
+
+                values <- na.omit(density_tbl$values[[1]])
+                density_curve <- density(
+                  values[[1]],
+                  from = min(values),
+                  to = max(values)
+                )
+
+                sparkline::sparkline(
+                  density_curve$y,
+                  xvalues =  density_curve$x |> round(2),
+                  tooltipFormat =  '{{x}}',
+                  maxSpotColor = "", minSpotColor = "",
+                  highlightSpotColor = "",
+                  width = opt_reactable$width_density_plot,
+                  height = 125, type = "line"
+                )
+              },width = opt_reactable$width_density_plot
+            ),
+            values = reactable::colDef(show = FALSE)
+          )
+        )
+
+        htmltools::div(
+          htmltools::div(style = list(margin = "12px 45px"), details_reactable),
+          htmltools::div(style = list(margin = "12px 45px"), density_reactable)
+        )
+      }
+
+    },
+    theme = reactable::reactableTheme(borderWidth = 1, borderColor =c("#000000")),
+    onClick = "expand", highlight = TRUE, wrap = FALSE, ...
   )
 
 }

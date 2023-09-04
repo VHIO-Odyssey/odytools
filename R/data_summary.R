@@ -390,6 +390,9 @@ ody_summarise_df <- function(data_frame,
           ) |>
           dplyr::mutate(
             No = 1:dplyr::n(), .before = 1
+          ) |>
+          dplyr::mutate(
+            Level = dplyr::if_else(Level == "<NA>", "Missing", Level)
           )
       } else {
         tbl <- y |>
@@ -398,7 +401,8 @@ ody_summarise_df <- function(data_frame,
           )
 
         names(tbl) <- stringr::str_to_title(names(tbl)) |>
-          stringr::str_replace("^Sd$", "SD")
+          stringr::str_replace("^Sd$", "SD") |>
+          stringr::str_replace("^<Na>$", "Missing")
 
         tbl
       }

@@ -104,7 +104,6 @@ summary_tibble <- function(x) {
       min = min(x, na.rm = TRUE),
       q1 = stats::quantile(x, 0.25, na.rm = TRUE, type = 1),
       median = stats::median(x, na.rm = TRUE),
-      mean = mean(x, na.rm = TRUE),
       q3 = stats::quantile(x, 0.75, na.rm = TRUE, type = 1),
       max = max(x, na.rm = TRUE),
       `<NA>` = sum(is.na(x))
@@ -308,7 +307,8 @@ ody_summarise_df <- function(data_frame,
                                minwidth_var = 200,
                                n_dec = 1,
                                minwidth_level = 100,
-                               width_density_plot = 600),
+                               width_density_plot = 600
+                             ),
                              ...) {
 
   use_NA <- rlang::arg_match(use_NA)
@@ -377,7 +377,7 @@ ody_summarise_df <- function(data_frame,
       No = 1:dplyr::n(), .before = 1
     )
 
-  # Tables used as expandable etails
+  # Tables used as expandable details
   details_tbl <- purrr::map2(
     names(raw_details_tbl), raw_details_tbl,
     function(x, y) {
@@ -397,7 +397,8 @@ ody_summarise_df <- function(data_frame,
             dplyr::across(dplyr::where(is.numeric), ~round(., opt_reactable$n_dec))
           )
 
-        names(tbl) <- stringr::str_to_title(names(tbl))
+        names(tbl) <- stringr::str_to_title(names(tbl)) |>
+          stringr::str_replace("^Sd$", "SD")
 
         tbl
       }
@@ -486,9 +487,16 @@ ody_summarise_df <- function(data_frame,
             Density =  reactable::colDef(
               cell = function() {
 
-                values <- na.omit(density_tbl$values[[1]])
+                values <- na.omit(density_tbl$values[[1]])[[1]]
+
+                if (lubridate::is.Date(values)) {
+
+                  values <- as.numeric(values) / 365.25 + 1970
+
+                }
+
                 density_curve <- density(
-                  values[[1]],
+                  values,
                   from = min(values),
                   to = max(values)
                 )

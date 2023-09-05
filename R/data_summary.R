@@ -136,9 +136,9 @@ summarise_continous_var <- function(cont_var,
 
   if (ncol(cont_var) == 1) {
     full_summary <- summary_tibble(cont_var[[1]]) |>
-      dplyr::select(-.data$n)
+      dplyr::select(-"n")
     if (use_NA == "no" | (use_NA == "ifany" & full_summary[["<NA>"]] == 0)) {
-      return(dplyr::select(full_summary, -.data$`<NA>`))
+      return(dplyr::select(full_summary, -"<NA>"))
     } else {
        return(full_summary)
     }
@@ -277,6 +277,193 @@ summarise_discrete_var <- function(disc_var,
     )
 }
 
+
+# Helper function to create the detail subtable of a discrete variable in the
+# reactable summary. It handles both unique and by var tables.
+make_discrete_detail_tbl <- function(detail_tbl,
+                                     details_tbl,
+                                     var_list_case,
+                                     grouping_var,
+                                     opt_reactable = opt_reactable) {
+
+  prop_names <- names(detail_tbl) |>
+    stringr::str_subset("^Percentage") |>
+    purrr::map_chr(
+      ~stringr::str_c("`", ., "`")
+    )
+  n_names <- names(detail_tbl) |>
+    stringr::str_subset("^N_|^N$") |>
+    purrr::map_chr(
+      ~stringr::str_c("`", ., "`")
+    )
+
+  # Código para hacer barras
+  detail_tbl_code <- stringr::str_c(
+    "list(",
+    "No = reactable::colDef(minWidth = 60), Level = reactable::colDef(minWidth = opt_reactable$minwidth_level, resizable = TRUE), ",
+    stringr::str_c(n_names, " = ", "reactable::colDef(name = 'N', minWidth = 70)") |>
+      stringr::str_c(collapse = ", "),
+    ", ",
+    stringr::str_c(
+      prop_names, " = ",
+      "reactable::colDef(name = 'Percentage', cell = reactablefmtr::data_bars(detail_tbl, text_position = 'above',number_fmt = scales::percent, max_value = 1), width = opt_reactable$width_bar)"
+    ) |>
+      stringr::str_c(collapse = ", "),
+    ")"
+  ) |>
+    str2lang()
+
+  if (ncol(detail_tbl) > 4) {
+
+    grouping_var_levels <- c("Overall", var_list_case[[2]] |> levels())
+
+    grouping_var_num <- detail_tbl |>
+      dplyr::select(dplyr::starts_with("N_")) |>
+      purrr::map_dbl(sum)
+
+    grouping_var_cols <- purrr::map(
+      grouping_var_levels,
+      ~ detail_tbl |>
+        dplyr::select(
+          dplyr::matches(stringr::str_c("_", ., "$"))
+        ) |>
+        names() %>%
+        {stringr::str_c("'", ., "'")} |>
+        stringr::str_c(collapse = ", ") %>%
+        {stringr::str_c("c(", ., ")")}
+    )
+    grouping_colGroups <- stringr::str_c(
+      "reactable::colGroup(name = ", stringr::str_c("'", stringr::str_c(grouping_var, ": ", grouping_var_levels, " (", grouping_var_num, ")"), "'"), ", columns = ", grouping_var_cols, ")"
+    ) |>
+      stringr::str_c(collapse = ", ")
+
+    if (opt_reactable$full_group_label) {
+
+      grouping_colGroups <- grouping_colGroups |>
+        stringr::str_remove(stringr::str_c(grouping_var, ": "))
+
+    } else {
+
+      grouping_colGroups <- grouping_colGroups |>
+        stringr::str_remove_all(stringr::str_c(grouping_var, ": "))
+
+    }
+
+    grouping_colGroups_code <- stringr::str_c(
+      "list(", grouping_colGroups, ")") |>
+      str2lang()
+
+  } else {
+
+    grouping_colGroups_code <- NULL
+
+  }
+
+  reactable::reactable(
+    detail_tbl,
+    columns = eval(detail_tbl_code),
+    columnGroups = eval(grouping_colGroups_code),
+    fullWidth = FALSE, highlight = TRUE,
+    pagination = FALSE, wrap = FALSE
+  )
+
+}
+
+# Helper function to create the detail subtable of a continuous variable in the
+# reactable summary. It handles both unique and by var tables.
+make_continuous_detail_table <- function(detail_tbl,
+                                         var_list_case,
+                                         opt_reactable = opt_reactable,
+                                         output) {
+
+  if (output == "table") {
+
+    detail_tbl |>
+      reactable::reactable(
+        defaultColDef = reactable::colDef(
+          minWidth = opt_reactable$width_density_plot / ncol(detail_tbl)
+        ), fullWidth = FALSE, highlight = TRUE, resizable = TRUE
+      )
+
+  } else {
+
+    if (ncol(var_list_case[[1]]) == 1) {
+
+    # The commented code is the previous sparkline density plot.
+    # density_tbl <- dplyr::tibble(
+    #   Density = NA,
+    #   values = var_list_case
+    # )
+    #
+    # reactable::reactable(
+    #   density_tbl,
+    #   columns = list(
+    #     Density =  reactable::colDef(
+    #       cell = function() {
+    #
+    #         values <- na.omit(density_tbl$values[[1]])[[1]]
+    #
+    #         if (lubridate::is.Date(values)) {
+    #
+    #           values <- as.numeric(values) / 365.25 + 1970
+    #
+    #         }
+    #
+    #         density_curve <- density(
+    #           values,
+    #           from = min(values),
+    #           to = max(values)
+    #         )
+    #
+    #         sparkline::sparkline(
+    #           density_curve$y,
+    #           xvalues =  density_curve$x |> round(2),
+    #           tooltipFormat =  '{{x}}',
+    #           maxSpotColor = "", minSpotColor = "",
+    #           highlightSpotColor = "",
+    #           width = opt_reactable$width_density_plot,
+    #           height = 125, type = "line"
+    #         )
+    #       },width = opt_reactable$width_density_plot
+    #     ),
+    #     values = reactable::colDef(show = FALSE)
+    #   )
+    # )
+
+      plot_data <-  var_list_case[[1]] |>
+        dplyr::rename(x = 1) |>
+        na.omit()
+
+      ggplot2::ggplot(plot_data,ggplot2::aes(x)) +
+        ggridges::geom_density_line() +
+        ggplot2::labs(x = "", y = "") +
+        ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
+        ggridges::theme_ridges(font_size = 18) +
+        ggplot2::theme(axis.text.y = ggplot2::element_blank())
+
+    } else {
+
+      plot_data <- var_list_case[[1]] |>
+      dplyr::rename(x = 1, y = 2) |>
+      na.omit()
+
+      ggplot2::ggplot(
+        plot_data,
+        ggplot2::aes(x, y, fill = ggplot2::after_stat(quantile))) +
+        ggridges::stat_density_ridges(quantile_lines = FALSE,
+                                      calc_ecdf = TRUE, scale = 2,
+                                      geom = "density_ridges_gradient",
+                                      show.legend = FALSE) +
+        ggplot2::scale_fill_brewer(name = "")+
+        ggplot2::labs(x = "", y = "") +
+        ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
+        ggridges::theme_ridges(font_size = 18)
+
+    }
+
+  }
+}
+
 #' ody_summarise_df
 #'
 #' @param data_frame data frame
@@ -287,7 +474,7 @@ summarise_discrete_var <- function(disc_var,
 #' @param use_NA Add missing values in the report?
 #' @param min_distinct Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.
 #' @param raw_summary If TRUE, the function returns a raw summary instead of the defaiult reactable report.
-#' @param opt_reactable Reactable options:
+#' @param opt_reactable Reactable options. A call to ody_options
 #'
 #' @return A list
 #' @details
@@ -299,16 +486,10 @@ ody_summarise_df <- function(data_frame,
                              conditions_list = NULL,
                              exclude = NULL,
                              compare_groups = FALSE,
-                             use_NA = c("no", "ifany", "always"),
+                             use_NA = c("ifany", "no", "always"),
                              min_distinct = 5,
                              raw_summary = FALSE,
-                             opt_reactable = list(
-                               label_size = 1,
-                               minwidth_var = 200,
-                               n_dec = 1,
-                               minwidth_level = 100,
-                               width_density_plot = 600
-                             ),
+                             opt_reactable = ody_options(),
                              ...) {
 
   use_NA <- rlang::arg_match(use_NA)
@@ -349,9 +530,9 @@ ody_summarise_df <- function(data_frame,
           )
         )
 
-      group_comparison <- compareGroups::compareGroups(eval(form), x)
+        group_comparison <- compareGroups::compareGroups(eval(form), x)
 
-      list(descriptive = descriptive, comparison = group_comparison)
+        list(descriptive = descriptive, comparison = group_comparison)
 
       } else {
         descriptive
@@ -382,29 +563,39 @@ ody_summarise_df <- function(data_frame,
     names(raw_details_tbl), raw_details_tbl,
     function(x, y) {
       if (x == names(y)[1]) {
+
+        names(y) <- names(y) |> stringr::str_replace("^n", "N") |>
+          stringr::str_replace("^prop", "Percentage") |>
+          stringr::str_replace("overall$", "Overall")
+
         y |>
           dplyr::rename(
-            Level = 1,
-            N = n,
-            Percentage = prop
+            Level = 1
           ) |>
           dplyr::mutate(
             No = 1:dplyr::n(), .before = 1
-          ) |>
-          dplyr::mutate(
-            Level = dplyr::if_else(Level == "<NA>", "Missing", Level)
           )
+
       } else {
         tbl <- y |>
           dplyr::mutate(
-            dplyr::across(dplyr::where(is.numeric), ~round(., opt_reactable$n_dec))
+            dplyr::across(
+              dplyr::where(is.numeric), ~round(., opt_reactable$n_dec)
+            )
           )
 
         names(tbl) <- stringr::str_to_title(names(tbl)) |>
-          stringr::str_replace("^Sd$", "SD") |>
-          stringr::str_replace("^<Na>$", "Missing")
+          stringr::str_replace("^Sd$", "SD")
 
-        tbl
+        if (names(tbl)[1] != "Min") {
+
+          tbl |>
+            dplyr::mutate(No = 1:dplyr::n(), .before = 1)
+
+        } else {
+
+          tbl
+        }
       }
     }
   )
@@ -428,7 +619,9 @@ ody_summarise_df <- function(data_frame,
             htmltools::div(
               htmltools::div(style = "font-weight: 600", value),
               htmltools::div(
-                style = stringr::str_c("font-size:", opt_reactable$label_size, "rem"),
+                style = stringr::str_c(
+                  "font-size:", opt_reactable$label_size, "rem"
+                ),
                 label_text
               )
             )
@@ -450,80 +643,59 @@ ody_summarise_df <- function(data_frame,
 
       if (details_type[[index]] == "discrete") {
 
-        details_reactable <- details_tbl[[index]] |>
-          reactable::reactable(
-            columns = list(
-              No = reactable::colDef(minWidth = 60),
-              Level = reactable::colDef(
-                minWidth = opt_reactable$minwidth_level, resizable = TRUE
-              ),
-              N = reactable::colDef(minWidth = 50),
-              Percentage = reactable::colDef(
-                cell = reactablefmtr::data_bars(
-                  details_tbl[[index]], text_position = "above",
-                  number_fmt = scales::percent, max_value = 1
-                ), width = 200
-              )
-            ),
-            fullWidth = FALSE, highlight = TRUE,
-            pagination = FALSE, wrap = FALSE
-          )
+        details_reactable <- make_discrete_detail_tbl(
+          details_tbl[[index]],
+          details_tbl,
+          var_list[[index]],
+          grouping_var,
+          opt_reactable = opt_reactable
+        )
 
         htmltools::div(style = list(margin = "12px 45px"), details_reactable)
 
       } else {
 
-        details_reactable <- details_tbl[[index]] |>
-          reactable::reactable(
-            defaultColDef = reactable::colDef(
-              minWidth = opt_reactable$width_density_plot / ncol(details_tbl[[index]])
-            ), fullWidth = FALSE, sortable = FALSE
-          )
-
-        density_tbl <- dplyr::tibble(
-          Density = NA,
-          values = var_list[index]
+        details_reactable <- make_continuous_detail_table(
+          details_tbl[[index]], var_list[index],
+          opt_reactable = opt_reactable, output = "table"
         )
 
-        density_reactable <- reactable::reactable(
-          density_tbl,
-          columns = list(
-            Density =  reactable::colDef(
-              cell = function() {
+        density_reactable <- make_continuous_detail_table(
+          details_tbl[[index]], var_list[index],
+          opt_reactable = opt_reactable, output = "plot"
+        )
 
-                values <- na.omit(density_tbl$values[[1]])[[1]]
-
-                if (lubridate::is.Date(values)) {
-
-                  values <- as.numeric(values) / 365.25 + 1970
-
-                }
-
-                density_curve <- density(
-                  values,
-                  from = min(values),
-                  to = max(values)
-                )
-
-                sparkline::sparkline(
-                  density_curve$y,
-                  xvalues =  density_curve$x |> round(2),
-                  tooltipFormat =  '{{x}}',
-                  maxSpotColor = "", minSpotColor = "",
-                  highlightSpotColor = "",
-                  width = opt_reactable$width_density_plot,
-                  height = 125, type = "line"
-                )
-              },width = opt_reactable$width_density_plot
+        # The cancelled "if" is needed when there is no grouping_var and
+        # make_continuous_detail_table returns a sparkline
+        #if (is.null(grouping_var)) {
+        if (FALSE) {
+          htmltools::div(
+            htmltools::div(
+              style = list(margin = "12px 45px"), details_reactable
             ),
-            values = reactable::colDef(show = FALSE)
+            htmltools::div(
+              style = list(margin = "12px 45px"), density_reactable,
+            )
           )
-        )
 
-        htmltools::div(
-          htmltools::div(style = list(margin = "12px 45px"), details_reactable),
-          htmltools::div(style = list(margin = "12px 45px"), density_reactable)
-        )
+        } else {
+
+          htmltools::div(
+            htmltools::div(
+              style = list(margin = "12px 45px"), details_reactable
+            ),
+            htmltools::div(
+              style = list(margin = "12px 45px"),
+              htmltools::plotTag(
+                density_reactable, alt = "by_var_plot",
+                height = opt_reactable$groups_plot_height,
+                width = opt_reactable$width_density_plot
+              )
+            )
+          )
+
+        }
+
       }
 
     },

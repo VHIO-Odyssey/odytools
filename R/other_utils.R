@@ -75,3 +75,39 @@ ody_change_names <- function(data_frame, names_df) { #CANDIDATE
 
 }
 
+
+#' Extra options for some odytools functions
+#'
+#' @param label_size ody_summarise_df: If the variable is labelled, ody_summarise_df shows the label below the var name. This argument controls its relative size.
+#' @param minwidth_var ody_summarise_df: Minimum width of the Variable column.
+#' @param n_dec ody_summarise_df: Number of decimals shown in a continuous variable description.
+#' @param minwidth_level ody_summarise_df: Minimum width of the Level column in the details of a discrete variable.
+#' @param width_density_plot ody_summarise_df: Total width of the details of continuous variable.
+#' @param width_bar ody_summarise_df: Width of the percentage bars.
+#' @param groups_plot_height ody_summarise_df: density plot height whem grouping_var != NULL
+#' @param full_group_label ody_summarise_df: Add or not the grouping var name to the group name.
+#'
+#' @return An list of arguments internaly used in some odytools functions
+#' @export
+ody_options <- function(label_size = 1,
+                        minwidth_var = 200,
+                        n_dec = 1,
+                        minwidth_level = 100,
+                        width_density_plot = 700,
+                        width_bar = 100,
+                        groups_plot_height = 300,
+                        full_group_label = FALSE) {
+
+  list(
+    label_size = label_size,                 # ody_summarise_df
+    minwidth_var = minwidth_var,             # ody_summarise_df
+    n_dec = n_dec,                           # ody_summarise_df
+    minwidth_level = minwidth_level,         # ody_summarise_df
+    width_density_plot = width_density_plot, # ody_summarise_df
+    width_bar = width_bar,                   # ody_summarise_df
+    groups_plot_height = groups_plot_height, # ody_summarise_df
+    full_group_label = full_group_label      # ody_summarise_df
+  )
+
+
+}

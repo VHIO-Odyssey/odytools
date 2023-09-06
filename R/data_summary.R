@@ -438,9 +438,11 @@ make_continuous_detail_table <- function(detail_tbl,
 
       ggplot2::ggplot(plot_data, ggplot2::aes(.data$x)) +
         ggridges::geom_density_line() +
-        ggplot2::labs(x = "", y = "") +
+        ggplot2::labs(
+          x = names(var_list_case[[1]])[1]
+        ) +
         ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
-        ggridges::theme_ridges(font_size = 18) +
+        ggridges::theme_ridges(font_size = 16) +
         ggplot2::theme(axis.text.y = ggplot2::element_blank())
 
     } else {
@@ -457,9 +459,12 @@ make_continuous_detail_table <- function(detail_tbl,
                                       geom = "density_ridges_gradient",
                                       show.legend = FALSE) +
         ggplot2::scale_fill_brewer(name = "")+
-        ggplot2::labs(x = "", y = "") +
+        ggplot2::labs(
+          x = names(var_list_case[[1]])[1],
+          y = names(var_list_case[[1]])[2]
+        ) +
         ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
-        ggridges::theme_ridges(font_size = 18)
+        ggridges::theme_ridges(font_size = 16)
 
     }
 

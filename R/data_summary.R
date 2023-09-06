@@ -302,7 +302,7 @@ make_discrete_detail_tbl <- function(detail_tbl,
   # Código para hacer barras
   detail_tbl_code <- stringr::str_c(
     "list(",
-    "No = reactable::colDef(minWidth = 60), Level = reactable::colDef(minWidth = opt_reactable$minwidth_level, resizable = TRUE), ",
+    "No = reactable::colDef(minWidth = 50), Level = reactable::colDef(minWidth = opt_reactable$minwidth_level, resizable = TRUE), ",
     stringr::str_c(n_names, " = ", "reactable::colDef(name = 'N', minWidth = 70)") |>
       stringr::str_c(collapse = ", "),
     ", ",
@@ -390,7 +390,9 @@ make_continuous_detail_table <- function(detail_tbl,
           ),
         ")") |>  str2lang() |> eval(),
         defaultColDef = reactable::colDef(
-          minWidth = opt_reactable$width_density_plot / ncol(detail_tbl)
+          minWidth = (
+            opt_reactable$width_density_plot - opt_reactable$minwidth_level
+            ) / (ncol(detail_tbl) - 1)
         ),
         fullWidth = FALSE, highlight = TRUE, resizable = TRUE
       )

@@ -385,7 +385,7 @@ make_continuous_detail_table <- function(detail_tbl,
         columns = stringr::str_c(
           "list(",
           names(detail_tbl)[2],
-          " = reactable::colDef(minWidth = opt_reactable$minwidth_level), No = reactable::colDef(minWidth = 40), Median = reactable::colDef(minWidth = 70))"
+          " = reactable::colDef(minWidth = opt_reactable$minwidth_level), No = reactable::colDef(minWidth = 40), Median = reactable::colDef(minWidth = 75))"
           ) |>  str2lang() |> eval(),
         defaultColDef = reactable::colDef(
           minWidth = (

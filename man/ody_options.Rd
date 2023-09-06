@@ -9,8 +9,9 @@ ody_options(
   minwidth_var = 200,
   n_dec = 1,
   minwidth_level = 100,
-  width_density_plot = 650,
+  width_density_plot = 700,
   width_bar = 100,
+  groups_plot_height = 300,
   full_group_label = FALSE
 )
 }
@@ -26,6 +27,8 @@ ody_options(
 \item{width_density_plot}{ody_summarise_df: Total width of the details of continuous variable.}
 
 \item{width_bar}{ody_summarise_df: Width of the percentage bars.}
+
+\item{groups_plot_height}{ody_summarise_df: density plot height whem grouping_var != NULL}
 
 \item{full_group_label}{ody_summarise_df: Add or not the grouping var name to the group name.}
 }

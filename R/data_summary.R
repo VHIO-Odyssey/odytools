@@ -1,4 +1,6 @@
 #' @importFrom rlang .data :=
+#' @importFrom stats quantile
+
 
 # Helper function to complete a list. Useful to complete a conditions_list.
 # It returns the same list with any empty ("") value replaced by the previous
@@ -434,7 +436,7 @@ make_continuous_detail_table <- function(detail_tbl,
         dplyr::rename(x = 1) |>
         na.omit()
 
-      ggplot2::ggplot(plot_data,ggplot2::aes(x)) +
+      ggplot2::ggplot(plot_data, ggplot2::aes(.data$x)) +
         ggridges::geom_density_line() +
         ggplot2::labs(x = "", y = "") +
         ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
@@ -449,7 +451,7 @@ make_continuous_detail_table <- function(detail_tbl,
 
       ggplot2::ggplot(
         plot_data,
-        ggplot2::aes(x, y, fill = ggplot2::after_stat(quantile))) +
+        ggplot2::aes(.data$x, .data$y, fill = ggplot2::after_stat(quantile))) +
         ggridges::stat_density_ridges(quantile_lines = FALSE,
                                       calc_ecdf = TRUE, scale = 2,
                                       geom = "density_ridges_gradient",
@@ -475,6 +477,7 @@ make_continuous_detail_table <- function(detail_tbl,
 #' @param min_distinct Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.
 #' @param raw_summary If TRUE, the function returns a raw summary instead of the defaiult reactable report.
 #' @param opt_reactable Reactable options. A call to ody_options
+#' @param ... Further aditional options to be directly passed to reactable
 #'
 #' @return A list
 #' @details

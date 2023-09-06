@@ -35,6 +35,8 @@ ody_summarise_df(
 \item{raw_summary}{If TRUE, the function returns a raw summary instead of the defaiult reactable report.}
 
 \item{opt_reactable}{Reactable options. A call to ody_options}
+
+\item{...}{Further aditional options to be directly passed to reactable}
 }
 \value{
 A list

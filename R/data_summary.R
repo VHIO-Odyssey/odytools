@@ -493,7 +493,9 @@ ody_summarise_df <- function(data_frame,
                              grouping_var = NULL,
                              conditions_list = NULL,
                              exclude = NULL,
-                             compare_groups = FALSE,
+                             compare_groups = c(
+                               "no", "p_value", "q_value", "both"
+                              ),
                              use_NA = c("ifany", "no", "always"),
                              min_distinct = 5,
                              raw_summary = FALSE,
@@ -501,6 +503,7 @@ ody_summarise_df <- function(data_frame,
                              ...) {
 
   use_NA <- rlang::arg_match(use_NA)
+  compare_groups <- rlang::arg_match(compare_groups)
 
   if (!is.null(conditions_list)) {
     conditions_list <- complete_list(conditions_list)
@@ -529,23 +532,8 @@ ody_summarise_df <- function(data_frame,
         descriptive <- summarise_discrete_var(x, use_NA)
       }
 
-      #Groups comparison
-      if (ncol(x) == 2 & compare_groups) {
-        form <- call(
-          "as.formula",
-          stringr::str_c(
-            colnames(x)[2], " ~ ", colnames(x)[1]
-          )
-        )
-
-        group_comparison <- compareGroups::compareGroups(eval(form), x)
-
-        list(descriptive = descriptive, comparison = group_comparison)
-
-      } else {
-        descriptive
-      }
     }
+
   )
 
   if (raw_summary) return(raw_details_tbl)
@@ -565,6 +553,52 @@ ody_summarise_df <- function(data_frame,
       ),
       No = 1:dplyr::n(), .before = 1
     )
+
+  # Group comparisons
+  if (!is.null(grouping_var) && compare_groups != "no") {
+
+    gt_summary <- gtsummary::tbl_summary(data_frame, by = grouping_var) |>
+      gtsummary::add_p()
+
+    comparisons <- gt_summary$meta_data$test_result |>
+      purrr::map_dfr(
+        ~.$df_result |>
+          dplyr::select(method, p.value)
+      ) |>
+      dplyr::mutate(
+        variable = gt_summary$meta_data$variable, .before = 1
+      ) |>
+      dplyr::mutate(
+        q.value = p.adjust(p.value, "fdr"),
+        dplyr::across(
+          dplyr::where(is.numeric),
+          ~dplyr::if_else(. < 0.001, "<0.001", round(., 3) |> as.character())
+        )
+      ) |>
+      dplyr::rename(
+        Test = "method",
+        `p-value` = "p.value",
+        `q-value` = "q.value"
+      )
+
+    if (compare_groups == "both") {
+      selected_vars <- c("variable", "Test", "p-value", "q-value")
+    }
+
+    if (compare_groups == "p_value") {
+      selected_vars <- c("variable", "Test", "p-value")
+    }
+
+    if (compare_groups == "q_value") {
+      selected_vars <- c("variable", "Test", "q-value")
+    }
+
+    comparisons <- comparisons |>
+      dplyr::select(tidyselect::all_of(selected_vars))
+
+  } else {
+    comparisons <- NULL
+  }
 
   # Tables used as expandable details
   details_tbl <- purrr::map2(
@@ -656,6 +690,33 @@ ody_summarise_df <- function(data_frame,
     ),
     details = function(index) {
 
+      if (!is.null(comparisons)) {
+
+        comparison <- comparisons |>
+          dplyr::filter(
+            variable == names(var_list)[index]
+          ) |>
+          dplyr::select(
+            -variable
+          )
+
+        if (nrow(comparison) == 0) {
+          comparison <- NULL
+        } else {
+          comparison <- reactable::reactable(
+            comparison,
+            columns = list(
+              Test = reactable::colDef(minWidth = 200, resizable = TRUE)
+            ), highlight = TRUE, sortable = FALSE, fullWidth = FALSE
+          )
+        }
+
+      } else {
+
+        comparison <- NULL
+
+      }
+
       if (details_type[[index]] == "discrete") {
 
         details_reactable <- make_discrete_detail_tbl(
@@ -666,7 +727,14 @@ ody_summarise_df <- function(data_frame,
           opt_reactable = opt_reactable
         )
 
-        htmltools::div(style = list(margin = "12px 45px"), details_reactable)
+        htmltools::div(
+          htmltools::div(
+            style = list(margin = "12px 45px"), details_reactable
+          ),
+          htmltools::div(
+            style = list(margin = "12px 45px"), comparison
+          )
+        )
 
       } else {
 
@@ -680,21 +748,6 @@ ody_summarise_df <- function(data_frame,
           opt_reactable = opt_reactable, output = "plot"
         )
 
-        # The cancelled "if" is needed when there is no grouping_var and
-        # make_continuous_detail_table returns a sparkline
-        #if (is.null(grouping_var)) {
-        if (FALSE) {
-          htmltools::div(
-            htmltools::div(
-              style = list(margin = "12px 45px"), details_reactable
-            ),
-            htmltools::div(
-              style = list(margin = "12px 45px"), density_reactable,
-            )
-          )
-
-        } else {
-
           htmltools::div(
             htmltools::div(
               style = list(margin = "12px 45px"), details_reactable
@@ -706,15 +759,18 @@ ody_summarise_df <- function(data_frame,
                 height = opt_reactable$groups_plot_height,
                 width = opt_reactable$width_density_plot
               )
+            ),
+            htmltools::div(
+              style = list(margin = "12px 45px"), comparison
             )
           )
-
-        }
 
       }
 
     },
-    theme = reactable::reactableTheme(borderWidth = 1, borderColor =c("#000000")),
+    theme = reactable::reactableTheme(
+      borderWidth = 1, borderColor =c("#000000")
+    ),
     onClick = "expand", highlight = TRUE, wrap = FALSE, ...
   )
 

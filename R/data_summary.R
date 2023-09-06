@@ -382,6 +382,12 @@ make_continuous_detail_table <- function(detail_tbl,
 
     detail_tbl |>
       reactable::reactable(
+        columns = list(
+          stringr::str_c(
+            names(detail_tbl)[2],
+            " = reactable::colDef(minWidth = opt_reactable$minwidth_level)"
+          ) |>  str2lang() |> eval()
+        ),
         defaultColDef = reactable::colDef(
           minWidth = opt_reactable$width_density_plot / ncol(detail_tbl)
         ), fullWidth = FALSE, highlight = TRUE, resizable = TRUE
@@ -390,47 +396,6 @@ make_continuous_detail_table <- function(detail_tbl,
   } else {
 
     if (ncol(var_list_case[[1]]) == 1) {
-
-    # The commented code is the previous sparkline density plot.
-    # density_tbl <- dplyr::tibble(
-    #   Density = NA,
-    #   values = var_list_case
-    # )
-    #
-    # reactable::reactable(
-    #   density_tbl,
-    #   columns = list(
-    #     Density =  reactable::colDef(
-    #       cell = function() {
-    #
-    #         values <- na.omit(density_tbl$values[[1]])[[1]]
-    #
-    #         if (lubridate::is.Date(values)) {
-    #
-    #           values <- as.numeric(values) / 365.25 + 1970
-    #
-    #         }
-    #
-    #         density_curve <- density(
-    #           values,
-    #           from = min(values),
-    #           to = max(values)
-    #         )
-    #
-    #         sparkline::sparkline(
-    #           density_curve$y,
-    #           xvalues =  density_curve$x |> round(2),
-    #           tooltipFormat =  '{{x}}',
-    #           maxSpotColor = "", minSpotColor = "",
-    #           highlightSpotColor = "",
-    #           width = opt_reactable$width_density_plot,
-    #           height = 125, type = "line"
-    #         )
-    #       },width = opt_reactable$width_density_plot
-    #     ),
-    #     values = reactable::colDef(show = FALSE)
-    #   )
-    # )
 
       plot_data <-  var_list_case[[1]] |>
         dplyr::rename(x = 1) |>

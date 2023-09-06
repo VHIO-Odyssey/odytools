@@ -382,15 +382,17 @@ make_continuous_detail_table <- function(detail_tbl,
 
     detail_tbl |>
       reactable::reactable(
-        columns = list(
+        columns = stringr::str_c(
+          "list(",
           stringr::str_c(
             names(detail_tbl)[2],
             " = reactable::colDef(minWidth = opt_reactable$minwidth_level)"
-          ) |>  str2lang() |> eval()
-        ),
+          ),
+        ")") |>  str2lang() |> eval(),
         defaultColDef = reactable::colDef(
           minWidth = opt_reactable$width_density_plot / ncol(detail_tbl)
-        ), fullWidth = FALSE, highlight = TRUE, resizable = TRUE
+        ),
+        fullWidth = FALSE, highlight = TRUE, resizable = TRUE
       )
 
   } else {

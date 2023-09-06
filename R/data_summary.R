@@ -592,10 +592,17 @@ ody_summarise_df <- function(data_frame,
             )
           )
 
-        names(tbl) <- stringr::str_to_title(names(tbl)) |>
-          stringr::str_replace("^Sd$", "SD")
+        names(tbl) <- names(tbl) |>
+          stringr::str_replace("^min$", "Min.") |>
+          stringr::str_replace("^n$", "N") |>
+          stringr::str_replace("^q1$", "Q1") |>
+          stringr::str_replace("^median$", "Median") |>
+          stringr::str_replace("^mean$", "Mean") |>
+          stringr::str_replace("^sd$", "SD") |>
+          stringr::str_replace("^q3$", "Q3") |>
+          stringr::str_replace("^max$", "Max.")
 
-        if (names(tbl)[1] != "Min") {
+        if (names(tbl)[1] != "Min.") {
 
           tbl |>
             dplyr::mutate(No = 1:dplyr::n(), .before = 1)

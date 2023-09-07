@@ -448,6 +448,7 @@ make_continuous_detail_table <- function(detail_tbl,
 #' @param use_NA Add missing values in the report?
 #' @param min_distinct Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.
 #' @param raw_summary If TRUE, the function returns a raw summary instead of the defaiult reactable report.
+#' @param show_conditions If TRUE, the filtering conditions defined by conditions_list ( if any) appear at each filtered variable.
 #' @param opt_reactable Reactable options. A call to ody_options
 #' @param ... Further aditional options to be directly passed to reactable
 #'
@@ -463,9 +464,10 @@ ody_summarise_df <- function(data_frame,
                              compare_groups = c(
                                "no", "p_value", "q_value", "both"
                               ),
-                             use_NA = c("ifany", "no", "always"),
+                             use_NA = c("no", "ifany", "always"),
                              min_distinct = 5,
                              raw_summary = FALSE,
+                             show_conditions = TRUE,
                              opt_reactable = ody_options(),
                              ...) {
 
@@ -567,6 +569,20 @@ ody_summarise_df <- function(data_frame,
     comparisons <- NULL
   }
 
+  # Conditions df to show in details
+  if (!is.null(conditions_list) && show_conditions) {
+
+    conditions_df <- purrr::map2_dfr(
+      names(conditions_list), conditions_list,
+      ~dplyr::tibble(variable = .x, Condition = .y)
+    )
+
+  } else {
+
+    conditions_df <- NULL
+
+  }
+
   # Tables used as expandable details
   details_tbl <- purrr::map2(
     names(raw_details_tbl), raw_details_tbl,
@@ -657,6 +673,33 @@ ody_summarise_df <- function(data_frame,
     ),
     details = function(index) {
 
+      # Condition to show if any
+      if (!is.null(conditions_df)) {
+
+        condition <- conditions_df |>
+          dplyr::filter(
+            variable == names(var_list)[index]
+          ) |>
+          dplyr::select(
+            -variable
+          )
+
+        if (nrow(condition) == 0) {
+          condition <- NULL
+        } else {
+          condition <- reactable::reactable(
+            condition,
+            highlight = TRUE, sortable = FALSE, fullWidth = FALSE
+          )
+        }
+
+      } else {
+
+        condition <- NULL
+
+      }
+
+      # Comparison to show if any
       if (!is.null(comparisons)) {
 
         comparison <- comparisons |>
@@ -684,6 +727,7 @@ ody_summarise_df <- function(data_frame,
 
       }
 
+
       if (details_type[[index]] == "discrete") {
 
         details_reactable <- make_discrete_detail_tbl(
@@ -694,14 +738,15 @@ ody_summarise_df <- function(data_frame,
           opt_reactable = opt_reactable
         )
 
-        htmltools::div(
+        details_expr <- htmltools::div(
+          style = list(margin = "12px 45px"), details_reactable
+        ) |> dplyr::expr()
+
+        density_expr <- htmltools::div(
           htmltools::div(
-            style = list(margin = "12px 45px"), details_reactable
-          ),
-          htmltools::div(
-            style = list(margin = "12px 45px"), comparison
+            style = list(margin = "12px 45px"), NULL
           )
-        )
+        ) |> dplyr::expr()
 
       } else {
 
@@ -715,30 +760,40 @@ ody_summarise_df <- function(data_frame,
           opt_reactable = opt_reactable, output = "plot"
         )
 
+        details_expr <- htmltools::div(
+          style = list(margin = "12px 45px"), details_reactable
+        ) |> dplyr::expr()
+
+        density_expr <- htmltools::div(
           htmltools::div(
-            htmltools::div(
-              style = list(margin = "12px 45px"), details_reactable
-            ),
-            htmltools::div(
-              style = list(margin = "12px 45px"),
-              htmltools::plotTag(
-                density_reactable, alt = "by_var_plot",
-                height = opt_reactable$groups_plot_height,
-                width = opt_reactable$width_density_plot
-              )
-            ),
-            htmltools::div(
-              style = list(margin = "12px 45px"), comparison
+            style = list(margin = "12px 45px"),
+            htmltools::plotTag(
+              density_reactable, alt = "by_var_plot",
+              height = opt_reactable$groups_plot_height,
+              width = opt_reactable$width_density_plot
             )
           )
+        ) |> dplyr::expr()
 
       }
+
+      htmltools::div(
+        htmltools::div(
+          style = list(margin = "12px 45px"), condition
+        ),
+        eval(details_expr),
+        eval(density_expr),
+        htmltools::div(
+          style = list(margin = "12px 45px"), comparison
+        )
+      )
+
 
     },
     theme = reactable::reactableTheme(
       borderWidth = 1, borderColor =c("#000000")
     ),
-    onClick = "expand", highlight = TRUE, wrap = FALSE, ...
+    onClick = "expand", highlight = TRUE, wrap = FALSE,...
   )
 
 }

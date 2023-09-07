@@ -56,3 +56,7 @@
 # odytools 0.4.3
 
 -   **ody_pdx_model_sensitivity** improved. Added a model validation section.
+
+# odytools 0.5.0
+
+-   Drastic improvement of **ody_summarise_df**. Now it reports a reactable.

@@ -1,5 +1,5 @@
 #' @importFrom rlang .data :=
-#' @importFrom stats quantile
+#' @importFrom stats quantile p.adjust
 
 
 # Helper function to complete a list. Useful to complete a conditions_list.
@@ -467,7 +467,7 @@ ody_summarise_df <- function(data_frame,
                              use_NA = c("no", "ifany", "always"),
                              min_distinct = 5,
                              raw_summary = FALSE,
-                             show_conditions = TRUE,
+                             show_conditions = FALSE,
                              opt_reactable = ody_options(),
                              ...) {
 
@@ -532,13 +532,13 @@ ody_summarise_df <- function(data_frame,
     comparisons <- gt_summary$meta_data$test_result |>
       purrr::map_dfr(
         ~.$df_result |>
-          dplyr::select(method, p.value)
+          dplyr::select("method", "p.value")
       ) |>
       dplyr::mutate(
         variable = gt_summary$meta_data$variable, .before = 1
       ) |>
       dplyr::mutate(
-        q.value = p.adjust(p.value, "fdr"),
+        q.value = p.adjust(.data$p.value, "fdr"),
         dplyr::across(
           dplyr::where(is.numeric),
           ~dplyr::if_else(. < 0.001, "<0.001", round(., 3) |> as.character())
@@ -574,7 +574,7 @@ ody_summarise_df <- function(data_frame,
 
     conditions_df <- purrr::map2_dfr(
       names(conditions_list), conditions_list,
-      ~dplyr::tibble(variable = .x, Condition = .y)
+      ~dplyr::tibble("variable" = .x, Condition = .y)
     )
 
   } else {
@@ -678,18 +678,22 @@ ody_summarise_df <- function(data_frame,
 
         condition <- conditions_df |>
           dplyr::filter(
-            variable == names(var_list)[index]
+            .data$variable == names(var_list)[index]
           ) |>
           dplyr::select(
-            -variable
+            -"variable"
           )
 
         if (nrow(condition) == 0) {
           condition <- NULL
         } else {
           condition <- reactable::reactable(
-            condition, width = opt_reactable$width_density_plot,
-            highlight = TRUE, sortable = FALSE, fullWidth = FALSE
+            condition,
+            columns = list(
+              Condition = reactable::colDef(minWidth = 200)
+            ),
+            highlight = TRUE, resizable = TRUE,
+            sortable = FALSE, fullWidth = FALSE
           )
         }
 
@@ -704,10 +708,10 @@ ody_summarise_df <- function(data_frame,
 
         comparison <- comparisons |>
           dplyr::filter(
-            variable == names(var_list)[index]
+            .data$variable == names(var_list)[index]
           ) |>
           dplyr::select(
-            -variable
+            -"variable"
           )
 
         if (nrow(comparison) == 0) {
@@ -778,13 +782,13 @@ ody_summarise_df <- function(data_frame,
       }
 
       htmltools::div(
-        htmltools::div(
-          style = list(margin = "12px 45px"), condition
-        ),
         eval(details_expr),
         eval(density_expr),
         htmltools::div(
           style = list(margin = "12px 45px"), comparison
+        ),
+        htmltools::div(
+          style = list(margin = "12px 45px"), condition
         )
       )
 

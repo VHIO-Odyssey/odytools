@@ -9,10 +9,11 @@ ody_summarise_df(
   grouping_var = NULL,
   conditions_list = NULL,
   exclude = NULL,
-  compare_groups = FALSE,
-  use_NA = c("ifany", "no", "always"),
+  compare_groups = c("no", "p_value", "q_value", "both"),
+  use_NA = c("no", "ifany", "always"),
   min_distinct = 5,
   raw_summary = FALSE,
+  show_conditions = FALSE,
   opt_reactable = ody_options(),
   ...
 )
@@ -33,6 +34,8 @@ ody_summarise_df(
 \item{min_distinct}{Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.}
 
 \item{raw_summary}{If TRUE, the function returns a raw summary instead of the defaiult reactable report.}
+
+\item{show_conditions}{If TRUE, the filtering conditions defined by conditions_list ( if any) appear at each filtered variable.}
 
 \item{opt_reactable}{Reactable options. A call to ody_options}
 

@@ -720,7 +720,7 @@ ody_summarise_df <- function(data_frame,
           comparison <- reactable::reactable(
             comparison,
             columns = list(
-              Test = reactable::colDef(minWidth = 200, resizable = TRUE)
+              Test = reactable::colDef(minWidth = 250, resizable = TRUE)
             ), highlight = TRUE, sortable = FALSE, fullWidth = FALSE
           )
         }

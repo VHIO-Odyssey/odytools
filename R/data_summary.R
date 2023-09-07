@@ -454,7 +454,7 @@ make_continuous_detail_table <- function(detail_tbl,
 #'
 #' @return A list
 #' @details
-#' If grouping_var exists and compare_groups = TRUE, the code runs compareGroups::compareGroups(grouping_var ~ variable).
+#' If grouping_var exists and compare_groups = TRUE, the code runs gtsummary::tbl_summary and extracts the p-values.
 #'
 #' @export
 ody_summarise_df <- function(data_frame,

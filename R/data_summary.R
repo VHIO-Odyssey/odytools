@@ -688,7 +688,7 @@ ody_summarise_df <- function(data_frame,
           condition <- NULL
         } else {
           condition <- reactable::reactable(
-            condition, opt_reactable$width_density_plot,
+            condition, width = opt_reactable$width_density_plot,
             highlight = TRUE, sortable = FALSE, fullWidth = FALSE
           )
         }

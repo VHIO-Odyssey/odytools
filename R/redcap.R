@@ -796,6 +796,91 @@ ody_rc_view <- function(data_app = NULL) {
 
 }
 
+# Helper functions to create a conditions_list from redcap metadata.
+# It returns a list. The first element is the conditions list and the second
+#  one is the metadata actually used.
+get_conditions_from_metadata <- function(data_frame,
+                                         metadata,
+                                         missing_codes) {
+
+  needed_meta <- metadata |>
+    dplyr::filter(
+      .data$field_name %in% names(data_frame),
+      !is.na(.data$branching_logic)
+    )
+
+  missing_value <- stringr::str_c(
+    missing_codes$raw_value, collapse = "|")
+
+  if (nrow(needed_meta) > 0) {
+
+    external_branching <- needed_meta |>
+      dplyr::filter(
+        stringr::str_detect(
+          .data$branching_logic,
+          "\\[.+\\]\\[.+\\]|event-name|current-instance"
+        )
+      ) |> dplyr::pull("field_name")
+
+    if(length(external_branching) > 0) {
+      warning(
+        "External branching detected for variables\n",
+        stringr::str_c(external_branching, collapse = "\n"),
+        "\nExternal branching is still not implemented"
+      )
+    }
+
+    pre_list <- needed_meta |>
+      dplyr::filter(!(.data$field_name %in% external_branching)) |>
+      dplyr::select("field_name", "branching_logic") |>
+      dplyr::mutate(
+        # RedCap logic is translated into R languaje
+        r_branch = stringr::str_replace_all(
+          .data$branching_logic,  missing_value, "user_na"
+        ) |>
+          # Checkbox variables to especific check box column
+          stringr::str_replace_all( "\\((\\d+)\\)", "___\\1") |>
+          stringr::str_replace_all(
+            # RedCap empty to regular R na
+            "\\[([^\\[]+)\\] *<> *['\"]{2}",
+            "!labelled::is_regular_na\\(\\1\\)"
+          ) |>
+          stringr::str_replace_all(
+            # RedCap declared missing to user defined R na
+            "\\[([^\\[]+)\\] *<> *['\"]user_na['\"]",
+            "!labelled::is_user_na\\(\\1\\)"
+          ) |>
+          #Some easy symbol translations
+          stringr::str_remove_all("\\[|\\]") |>
+          stringr::str_replace_all("=", "==") |>
+          stringr::str_replace_all("<>", "!=") |>
+          stringr::str_replace_all(" or ?| ?or ", " | ") |>
+          stringr::str_replace_all(" and ?| ?and ", " & ") |>
+          # Delete possible duplicates of is_user_na
+          stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
+        cond = stringr::str_c(
+          .data$field_name, " = ", "\"", .data$r_branch, "\""
+        )
+      ) |>
+      dplyr::pull("cond")
+
+    conditions_list <- stringr::str_c(
+      "list(",
+      stringr::str_c(pre_list, collapse = ", "),
+      ")"
+    ) |> str2lang() |> eval()
+
+  } else {
+
+    conditions_list <- NULL
+
+  }
+
+
+  conditions_list
+
+}
+
 
 #' Verify Completeness of a RedCap-derived dataframe
 #'
@@ -811,11 +896,11 @@ ody_rc_view <- function(data_app = NULL) {
 #' @export
 ody_rc_completeness <- function(
     data_frame,
-    id_var = {attr(get("redcap_data"), "id_var")},
+    id_var = attr(redcap_data, "id_var"),
     count_user_na = FALSE,
     conditions_list = "from_metadata",
-    metadata = {attr(get("redcap_data"), "metadata")},
-    missing_codes = {attr(get("redcap_data"), "missing")},
+    metadata = attr(redcap_data, "metadata"),
+    missing_codes = attr(redcap_data, "missing"),
     report = TRUE
 ) {
 
@@ -839,78 +924,9 @@ ody_rc_completeness <- function(
 
   if (!is.null(conditions_list) && conditions_list == "from_metadata") {
 
-    needed_meta <- metadata |>
-      dplyr::filter(
-        .data$field_name %in% names(data_frame),
-        !is.na(.data$branching_logic)
-      )
-
-    missing_value <- stringr::str_c(
-      missing_codes$raw_value, collapse = "|")
-
-    if (nrow(needed_meta) > 0) {
-
-      external_branching <- needed_meta |>
-        dplyr::filter(
-          stringr::str_detect(
-            .data$branching_logic,
-            "\\[.+\\]\\[.+\\]|event-name|current-instance"
-          )
-        ) |> dplyr::pull("field_name")
-
-      if(length(external_branching) > 0) {
-        warning(
-          "External branching detected for variables\n",
-          stringr::str_c(external_branching, collapse = "\n"),
-          "\nExternal branching is still not implemented"
-        )
-      }
-
-      pre_list <- needed_meta |>
-        dplyr::filter(!(.data$field_name %in% external_branching)) |>
-        dplyr::select("field_name", "branching_logic") |>
-        dplyr::mutate(
-          # RedCap logic is translated into R languaje
-          r_branch = stringr::str_replace_all(
-            .data$branching_logic,  missing_value, "user_na"
-          ) |>
-            # Checkbox variables to especific check box column
-            stringr::str_replace_all( "\\((\\d+)\\)", "___\\1") |>
-            stringr::str_replace_all(
-              # RedCap empty to regular R na
-              "\\[([^\\[]+)\\] *<> *['\"]{2}",
-              "!labelled::is_regular_na\\(\\1\\)"
-            ) |>
-            stringr::str_replace_all(
-              # RedCap declared missing to user defined R na
-              "\\[([^\\[]+)\\] *<> *['\"]user_na['\"]",
-              "!labelled::is_user_na\\(\\1\\)"
-            ) |>
-            #Some easy symbol translations
-            stringr::str_remove_all("\\[|\\]") |>
-            stringr::str_replace_all("=", "==") |>
-            stringr::str_replace_all("<>", "!=") |>
-            stringr::str_replace_all(" or ?| ?or ", " | ") |>
-            stringr::str_replace_all(" and ?| ?and ", " & ") |>
-            # Delete possible duplicates of is_user_na
-            stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
-          cond = stringr::str_c(
-            .data$field_name, " = ", "\"", .data$r_branch, "\""
-          )
-        ) |>
-        dplyr::pull("cond")
-
-      conditions_list <- stringr::str_c(
-        "list(",
-        stringr::str_c(pre_list, collapse = ", "),
-        ")"
-      ) |> str2lang() |> eval()
-
-    } else {
-
-      conditions_list <- NULL
-
-    }
+    conditions_list <-  get_conditions_from_metadata(
+      data_frame, metadata, missing_codes
+    )
 
   }
 
@@ -927,7 +943,12 @@ ody_rc_completeness <- function(
   completeness <- completeness |>
     dplyr::filter(.data$variable %in% completeness_final_vars)
 
-  # Change R translated conditions to RedCapian
+  # Change back R translated conditions to RedCapian
+  needed_meta <- metadata |>
+    dplyr::filter(
+      .data$field_name %in% names(data_frame),
+      !is.na(.data$branching_logic)
+    )
   if (nrow(needed_meta) > 0) {
 
     completeness <- completeness |>

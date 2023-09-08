@@ -901,7 +901,8 @@ ody_rc_completeness <- function(
     conditions_list = "from_metadata",
     metadata = attr(redcap_data, "metadata"),
     missing_codes = attr(redcap_data, "missing"),
-    report = TRUE
+    report = TRUE,
+    opt_reactable = ody_options()
 ) {
 
   data_frame <- data_frame |>

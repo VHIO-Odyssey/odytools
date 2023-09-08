@@ -326,7 +326,9 @@ ody_verify_conformance <- function(
 #     center of the filled bars ("center"), above the filled bars ("above"), or
 #     not displayed at all ("none").
 #   ]
-report_completeness <- function(completeness_table, text_pos = "above") {
+report_completeness <- function(
+    completeness_table, text_pos = "above", opt_reactable = ody_options()
+  ) {
   wrong_bar_color <- "#FF0000"
   ok_bar_color <- "#00CC11"
 
@@ -477,9 +479,12 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           ),
           uncompleteness_color = reactable::colDef(show = FALSE)
         ),
-        borderless = TRUE, highlight = TRUE,
+        highlight = TRUE,
         wrap = TRUE, pagination = FALSE,
-        searchable = TRUE, onClick = "expand"
+        searchable = TRUE, onClick = "expand",
+        theme = reactable::reactableTheme(
+          borderWidth = 1, borderColor =opt_reactable$border_color
+        )
       )
   } else {
     report_table |>
@@ -546,8 +551,11 @@ report_completeness <- function(completeness_table, text_pos = "above") {
           uncompleteness = reactable::colDef(show = FALSE),
           uncompleteness_color = reactable::colDef(show = FALSE)
         ),
-        borderless = TRUE, highlight = TRUE, onClick = "expand",
-        wrap = TRUE, pagination = FALSE, searchable = TRUE
+        highlight = TRUE, onClick = "expand",
+        wrap = TRUE, pagination = FALSE, searchable = TRUE,
+        theme = reactable::reactableTheme(
+          borderWidth = 1, borderColor = opt_reactable$border_color
+        )
       )
   }
 }

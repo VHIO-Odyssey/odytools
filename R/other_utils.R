@@ -96,7 +96,8 @@ ody_options <- function(label_size = 1,
                         width_density_plot = 700,
                         width_bar = 100,
                         groups_plot_height = 300,
-                        full_group_label = FALSE) {
+                        full_group_label = FALSE,
+                        border_color = "#DEDEDE") {
 
   list(
     label_size = label_size,                 # ody_summarise_df
@@ -106,7 +107,8 @@ ody_options <- function(label_size = 1,
     width_density_plot = width_density_plot, # ody_summarise_df
     width_bar = width_bar,                   # ody_summarise_df
     groups_plot_height = groups_plot_height, # ody_summarise_df
-    full_group_label = full_group_label      # ody_summarise_df
+    full_group_label = full_group_label,     # ody_summarise_df
+    border_color = border_color              # ody_summarise_df
   )
 
 

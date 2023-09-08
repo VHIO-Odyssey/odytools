@@ -62,7 +62,8 @@ ui <- page_sidebar(
         )
       ),
       reactableOutput("completeness")
-    )
+    ),
+    nav_panel("Descriptive", reactableOutput("descriptive"))
   )
 )
 
@@ -249,6 +250,26 @@ output$completeness <- renderReactable({
     missing_codes = attr(data_app, "missing"),
     report = TRUE
   )
+
+})
+
+output$descriptive <- renderReactable({
+
+  raw_table_v0 <- raw_table() |>
+    dplyr::select(-(1:5))
+
+  # 100% empty vars can not be descrived
+  empty_vars_index <- raw_table_v0 |>
+    purrr::map_lgl(~all(is.na(.)))
+  needed_vars <- names(raw_table_v0)[!empty_vars_index]
+
+  raw_table_v0 |>
+    dplyr::select(dplyr::all_of(needed_vars)) |>
+    ody_rc_format() |>
+    ody_summarise_df(
+      show_completeness = FALSE, searchable = TRUE,
+      pagination = FALSE
+    )
 
 })
 

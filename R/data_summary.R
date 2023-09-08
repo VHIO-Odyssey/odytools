@@ -467,6 +467,7 @@ ody_summarise_df <- function(data_frame,
                              use_NA = c("no", "ifany", "always"),
                              min_distinct = 5,
                              raw_summary = FALSE,
+                             show_completeness = TRUE,
                              show_conditions = FALSE,
                              opt_reactable = ody_options(),
                              ...) {
@@ -662,12 +663,12 @@ ody_summarise_df <- function(data_frame,
         resizable = TRUE, minWidth = opt_reactable$minwidth_var
       ),
       Observed = reactable::colDef(width = 90),
-      Missing =  reactable::colDef(width = 90),
+      Missing =  reactable::colDef(width = 90, show = show_completeness),
       Completeness = reactable::colDef(
         cell = reactablefmtr::data_bars(
           main_tbl, text_position = "above",
           max_value = 1, number_fmt = scales::percent
-        ), width = 150
+        ), width = 150, show = show_completeness
       ),
       labels = reactable::colDef(show = FALSE)
     ),
@@ -795,7 +796,7 @@ ody_summarise_df <- function(data_frame,
 
     },
     theme = reactable::reactableTheme(
-      borderWidth = 1, borderColor =c("#000000")
+      borderWidth = 1, borderColor =opt_reactable$border_color
     ),
     onClick = "expand", highlight = TRUE, wrap = FALSE,...
   )

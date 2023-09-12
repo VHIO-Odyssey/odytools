@@ -628,11 +628,19 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
 #' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
+#' @param .if_different_forms What action take if the selected variables belong to different forms.
+#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joinned in the same data frame.
+#'    - join: Join all variables creating artifact NAs.
 #' @param .include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
 #'
 #' @return A tibble with the selected variables.
 #' @export
-ody_rc_select <- function(rc_data, ..., .include_aux = FALSE) {
+ody_rc_select <- function(rc_data,
+                          ...,
+                          .if_different_forms = c("list", "join"),
+                          .include_aux = FALSE) {
+
+  .if_different_forms <- rlang::arg_match(.if_different_forms)
 
   sel_vars <- purrr::map(
     rlang::enquos(...),
@@ -695,12 +703,43 @@ ody_rc_select <- function(rc_data, ..., .include_aux = FALSE) {
 
   }
 
-  purrr::map(
-    sel_vars,
-    function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
-  ) |>
-    purrr::reduce(dplyr::full_join) |>
-    suppressMessages()
+  if (.if_different_forms == "join") {
+
+    purrr::map(
+      sel_vars,
+      function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
+    ) |>
+      purrr::reduce(dplyr::full_join) |>
+      suppressMessages()
+
+  } else {
+
+    extracted_vars <- tibble::tibble(
+      data = purrr::map(
+        sel_vars,
+        function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
+      ),
+      form = purrr::map_chr(
+        data, ~.$redcap_form_name |> unique()
+      )
+    ) |>
+      tidyr::nest(data = data)
+
+    extracted_list <- purrr::map(
+      extracted_vars[[2]],
+      ~purrr::reduce(.[[1]], dplyr::full_join)
+    ) |> suppressMessages()
+
+
+    names(extracted_list) <- extracted_vars$form
+
+    if (length(extracted_list) == 1) {
+      extracted_list[[1]]
+    } else {
+      extracted_list
+    }
+
+  }
 
 }
 

@@ -13,6 +13,7 @@ ody_summarise_df(
   use_NA = c("no", "ifany", "always"),
   min_distinct = 5,
   raw_summary = FALSE,
+  show_completeness = TRUE,
   show_conditions = FALSE,
   opt_reactable = ody_options(),
   ...
@@ -35,6 +36,8 @@ ody_summarise_df(
 
 \item{raw_summary}{If TRUE, the function returns a raw summary instead of the defaiult reactable report.}
 
+\item{show_completeness}{Logical, it TRUE it adds completeness information to the main table.}
+
 \item{show_conditions}{If TRUE, the filtering conditions defined by conditions_list ( if any) appear at each filtered variable.}
 
 \item{opt_reactable}{Reactable options. A call to ody_options}
@@ -48,5 +51,5 @@ A list
 ody_summarise_df
 }
 \details{
-If grouping_var exists and compare_groups = TRUE, the code runs compareGroups::compareGroups(grouping_var ~ variable).
+If grouping_var exists and compare_groups = TRUE, the code runs gtsummary::tbl_summary and extracts the p-values.
 }

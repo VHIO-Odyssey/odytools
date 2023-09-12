@@ -889,16 +889,17 @@ get_conditions_from_metadata <- function(data_frame,
 #' @param metadata Used metadata if conditions_list = "from_metadata". By default, the function gets it from the attribute "metadata" of the redcap_data.
 #' @param missing_codes Redcap_data missing codes. Only needed if conditions_list is based on the metadata. By default is the attribute "missing_codes".
 #' @param report Render a report or output a tibble?
+#' @param opt_reactable Extra options provided by ody_options. To ody_rc_completeness it only applies border_color.
 #'
 #' @return An html report or a tibble
 #' @export
 ody_rc_completeness <- function(
     data_frame,
-    id_var = attr(redcap_data, "id_var"),
+    id_var = attr(get("redcap_data"), "id_var"), # Use get to avois check warnings.
     count_user_na = FALSE,
     conditions_list = "from_metadata",
-    metadata = attr(redcap_data, "metadata"),
-    missing_codes = attr(redcap_data, "missing"),
+    metadata = attr(get("redcap_data"), "metadata"),
+    missing_codes = attr(get("redcap_data"), "missing"),
     report = TRUE,
     opt_reactable = ody_options()
 ) {
@@ -964,7 +965,7 @@ ody_rc_completeness <- function(
   }
 
   if (report) {
-    report_completeness(completeness)
+    report_completeness(completeness, opt_reactable = opt_reactable)
   } else {
     completeness
   }

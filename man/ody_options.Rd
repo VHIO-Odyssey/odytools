@@ -12,7 +12,8 @@ ody_options(
   width_density_plot = 700,
   width_bar = 100,
   groups_plot_height = 300,
-  full_group_label = FALSE
+  full_group_label = FALSE,
+  border_color = "#DEDEDE"
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ ody_options(
 \item{groups_plot_height}{ody_summarise_df: density plot height whem grouping_var != NULL}
 
 \item{full_group_label}{ody_summarise_df: Add or not the grouping var name to the group name.}
+
+\item{border_color}{Border color in reactable tables.}
 }
 \value{
 An list of arguments internaly used in some odytools functions

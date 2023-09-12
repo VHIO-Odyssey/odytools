@@ -6,18 +6,13 @@
 \usage{
 ody_rc_completeness(
   data_frame,
-  id_var = {
-     attr(get("redcap_data"), "id_var")
- },
+  id_var = attr(get("redcap_data"), "id_var"),
   count_user_na = FALSE,
   conditions_list = "from_metadata",
-  metadata = {
-     attr(get("redcap_data"), "metadata")
- },
-  missing_codes = {
-     attr(get("redcap_data"), "missing")
- },
-  report = TRUE
+  metadata = attr(get("redcap_data"), "metadata"),
+  missing_codes = attr(get("redcap_data"), "missing"),
+  report = TRUE,
+  opt_reactable = ody_options()
 )
 }
 \arguments{
@@ -34,6 +29,8 @@ ody_rc_completeness(
 \item{missing_codes}{Redcap_data missing codes. Only needed if conditions_list is based on the metadata. By default is the attribute "missing_codes".}
 
 \item{report}{Render a report or output a tibble?}
+
+\item{opt_reactable}{Extra options provided by ody_options. To ody_rc_completeness it only applies border_color.}
 }
 \value{
 An html report or a tibble

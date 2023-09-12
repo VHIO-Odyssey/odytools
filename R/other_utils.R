@@ -86,6 +86,7 @@ ody_change_names <- function(data_frame, names_df) { #CANDIDATE
 #' @param width_bar ody_summarise_df: Width of the percentage bars.
 #' @param groups_plot_height ody_summarise_df: density plot height whem grouping_var != NULL
 #' @param full_group_label ody_summarise_df: Add or not the grouping var name to the group name.
+#' @param border_color Border color in reactable tables.
 #'
 #' @return An list of arguments internaly used in some odytools functions
 #' @export

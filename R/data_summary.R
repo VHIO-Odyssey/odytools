@@ -448,6 +448,7 @@ make_continuous_detail_table <- function(detail_tbl,
 #' @param use_NA Add missing values in the report?
 #' @param min_distinct Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.
 #' @param raw_summary If TRUE, the function returns a raw summary instead of the defaiult reactable report.
+#' @param show_completeness Logical, it TRUE it adds completeness information to the main table.
 #' @param show_conditions If TRUE, the filtering conditions defined by conditions_list ( if any) appear at each filtered variable.
 #' @param opt_reactable Reactable options. A call to ody_options
 #' @param ... Further aditional options to be directly passed to reactable

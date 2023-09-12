@@ -60,3 +60,7 @@
 # odytools 0.5.0
 
 -   Drastic improvement of **ody_summarise_df**. Now it reports a reactable.
+
+# odytools 0.5.1
+
+-   Added a descriptive tab in **ody_rc_view**.

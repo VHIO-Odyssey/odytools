@@ -28,7 +28,7 @@ Functions to summarise dataframes.
 
 -   summarise_discrete_var
 
--   ody_summarise_df [complete_list, make_var_list, summarise_continuos_var, summarise_discrete_var]
+-   ody_summarise_df [complete_list, make_var_list, summarise_continuos_var, summarise_discrete_var, make_continuous_detail_tbl, make_discrete_detail_tbl]
 
 ## **data_wrangling**
 
@@ -70,9 +70,9 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_format
 
--   ody_rc_view
+-   ody_rc_view [restore_attributes, ody_rc_completeness, ody_rc_format, ody_summarise_df]
 
--   ody_rc_completeness [ody_verify_completeness]
+-   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]
 
 ## **other_utils**
 

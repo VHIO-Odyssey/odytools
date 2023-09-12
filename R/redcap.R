@@ -797,8 +797,6 @@ ody_rc_view <- function(data_app = NULL) {
 }
 
 # Helper functions to create a conditions_list from redcap metadata.
-# It returns a list. The first element is the conditions list and the second
-#  one is the metadata actually used.
 get_conditions_from_metadata <- function(data_frame,
                                          metadata,
                                          missing_codes) {

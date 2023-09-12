@@ -4,12 +4,23 @@
 \alias{ody_rc_select}
 \title{Select variables from a RedCap import}
 \usage{
-ody_rc_select(rc_data, ..., .include_aux = FALSE)
+ody_rc_select(
+  rc_data,
+  ...,
+  .if_different_forms = c("list", "join"),
+  .include_aux = FALSE
+)
 }
 \arguments{
 \item{rc_data}{RedCap data imported with ody_rc_import.}
 
 \item{...}{Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.}
+
+\item{.if_different_forms}{What action take if the selected variables belong to different forms.
+\itemize{
+\item list: It returns a list with an element for each form so only variables belonging to the same form are joinned in the same data frame.
+\item join: Join all variables creating artifact NAs.
+}}
 
 \item{.include_aux}{When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE}
 }

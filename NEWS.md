@@ -64,3 +64,7 @@
 # odytools 0.5.1
 
 -   Added a descriptive tab in **ody_rc_view**.
+
+# odytools 0.5.2
+
+-   Improved **ody_rc_select**. Now it also works with character vectors and by defaulit it returns a list if the selected variables do not belong to the same form.

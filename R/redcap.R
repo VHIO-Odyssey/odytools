@@ -715,15 +715,15 @@ ody_rc_select <- function(rc_data,
   } else {
 
     extracted_vars <- tibble::tibble(
-      data = purrr::map(
+      variables = purrr::map(
         sel_vars,
         function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
       ),
       form = purrr::map_chr(
-        data, ~.$redcap_form_name |> unique()
+        .data$variables, ~.$redcap_form_name |> unique()
       )
     ) |>
-      tidyr::nest(data = data)
+      tidyr::nest(data = .data$variables)
 
     extracted_list <- purrr::map(
       extracted_vars[[2]],

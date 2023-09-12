@@ -645,8 +645,9 @@ ody_rc_select <- function(rc_data,
   sel_vars <- purrr::map(
     rlang::enquos(...),
     rlang::quo_get_expr
-  ) |>
-    as.character()
+  ) |> purrr::map(as.character) |>
+    purrr::reduce(c) |>
+    unique()
 
   if (names(rc_data)[1] == "redcap_event_name") {
     select_rc_function <- select_rc_long
@@ -656,14 +657,6 @@ ody_rc_select <- function(rc_data,
 
   metadata <- attr(rc_data, "metadata")
   checkbox_aux <- attr(rc_data, "checkbox_aux")
-
-
-  # If it is provided the name of an existing character vector it is evaluated
-  if (length(sel_vars) == 1) {
-
-    if (is.character(get0(eval(sel_vars)))) sel_vars <- get0(eval(sel_vars))
-
-  }
 
   # If a form name is provided, all the variables of the form are extracted
   if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {

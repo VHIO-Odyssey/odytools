@@ -649,6 +649,14 @@ ody_rc_select <- function(rc_data, ..., .include_aux = FALSE) {
   metadata <- attr(rc_data, "metadata")
   checkbox_aux <- attr(rc_data, "checkbox_aux")
 
+
+  # If it is provided the name of an existing character vector it is evaluated
+  if (length(sel_vars) == 1) {
+
+    if (is.character(get0(eval(sel_vars)))) sel_vars <- get0(eval(sel_vars))
+
+  }
+
   # If a form name is provided, all the variables of the form are extracted
   if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
     current_form <- metadata |>

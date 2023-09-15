@@ -12,7 +12,7 @@ ody_rc_import(
 )
 }
 \arguments{
-\item{token}{Project token. If not prived, a dialog promp will ask for it}
+\item{token}{Project token. If not provided, a dialog promp will ask for it}
 
 \item{url}{URL of the RedCap server (VHIO server by default).}
 

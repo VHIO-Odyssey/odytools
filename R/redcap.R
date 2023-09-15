@@ -528,7 +528,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
 
 #' Import a RedCap Proyect
 #'
-#' @param token Project token. If not prived, a dialog promp will ask for it
+#' @param token Project token. If not provided, a dialog promp will ask for it
 #' @param url URL of the RedCap server (VHIO server by default).
 #' @param label Logical. Should the variables be labelled according to the metadata?
 #' @param nest Logical. Should the data be nested?

@@ -8,6 +8,12 @@
 ody_rc_init <- function(token = NULL,
                         url = "https://redcap.vhio.net/redcap/api/") {
 
+  project_name <- list.files() |>
+    stringr::str_subset(".Rproj$") |>
+    stringr::str_remove(".Rproj$")
+
+  if (length(project_name) == 0) stop("No RStudio project detected.")
+
   dir.create(here::here("data", "imports"), recursive = TRUE)
   dir.create(here::here("data", "extra"))
   dir.create(here::here("datasets"))

@@ -65,7 +65,7 @@ rc_run_datasets <- function(redcap_data) {
 
   datasets_file <- list.files(here::here("datasets"), "_datasets.R")
 
-  source(here::here("datasets", datasets_file), local = parent.env())
+  source(here::here("datasets", datasets_file), local = TRUE)
 
   save(
     "datasets",

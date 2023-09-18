@@ -36,7 +36,7 @@ rc_init_dirs_files <- function() {
     system.file(
       "redcap_templates", "dependencies_template.R", package = "odytools"
     ),
-    here::here(stringr::str_c(project_name, "dependencies"))
+    here::here(stringr::str_c(project_name, "_dependencies.R"))
   )
   file.copy(
     system.file(

@@ -36,11 +36,14 @@ ody_rc_init <- function(token = NULL,
     )
   )
 
-  # file.copy(
-  #   here::here("datasets_template.R"),
-  #   here::here("datasets", stringr::str_c(project_name, "_datasets.R"))
-  # )
+  # Copy dataset template
 
 
+  file.copy(
+    system.file(
+      "redcap_templates", "datasets_template.R", package = "odytools"
+    ),
+    here::here("datasets", stringr::str_c(project_name, "_datasets.R"))
+  )
 
 }

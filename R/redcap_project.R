@@ -14,13 +14,6 @@ get_import_date <- function(redcap_data) {
     stringr::str_replace(" ", "_")
 }
 
-
-# get_last_rdata <- function(dir) {
-#
-#
-#
-# }
-
 # Helper function to set the directories structure of a RedCap project
 rc_init_dirs <- function() {
 
@@ -72,7 +65,7 @@ rc_run_datasets <- function(redcap_data) {
 
   datasets_file <- list.files(here::here("datasets"), "_datasets.R")
 
-  source(here::here("datasets", datasets_file))
+  source(here::here("datasets", datasets_file), local = parent.env())
 
   save(
     "datasets",

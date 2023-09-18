@@ -56,7 +56,7 @@ rc_store_data <- function(token, url) {
 
 }
 
-# Helper function to store the datasets in an RData in ./datsets
+# Helper function to store the datasets in an RData in ./datasets
 rc_run_datasets <- function(redcap_data) {
 
   project_name <- get_project_name()
@@ -65,7 +65,7 @@ rc_run_datasets <- function(redcap_data) {
 
   datasets_file <- list.files(here::here("datasets"), "_datasets.R")
 
-  source(here::here("datasets", datasets_file), local = TRUE)
+  source(here::here("datasets", datasets_file), local = rlang::current_env())
 
   save(
     "datasets",

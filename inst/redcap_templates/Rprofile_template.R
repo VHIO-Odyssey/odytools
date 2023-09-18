@@ -1,4 +1,4 @@
 
-
-dependencies_file <- list.files(here::here(), "_dependencies.R$")
-source(here::here(dependencies_file))
+source(here::here(
+  list.files(here::here(), "_dependencies.R$")
+))

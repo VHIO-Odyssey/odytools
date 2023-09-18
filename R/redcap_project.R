@@ -15,7 +15,7 @@ get_import_date <- function(redcap_data) {
 }
 
 # Helper function to set the directories structure of a RedCap project
-rc_init_dirs <- function() {
+rc_init_dirs_files <- function() {
 
   project_name <- get_project_name()
 
@@ -25,13 +25,26 @@ rc_init_dirs <- function() {
   dir.create(here::here("datasets"))
   dir.create(here::here("docs"))
 
-  # Datasets template
+  # Templates
+  file.copy(
+    system.file(
+      "redcap_templates", "Rprofile_template.R", package = "odytools"
+    ),
+    here::here(".Rprofile")
+  )
+  file.copy(
+    system.file(
+      "redcap_templates", "dependencies_template.R", package = "odytools"
+    ),
+    here::here(stringr::str_c(project_name, "dependencies"))
+  )
   file.copy(
     system.file(
       "redcap_templates", "datasets_template.R", package = "odytools"
     ),
     here::here("datasets", stringr::str_c(project_name, "_datasets.R"))
   )
+
 
 }
 
@@ -57,7 +70,7 @@ rc_store_data <- function(token, url) {
 }
 
 # Helper function to store the datasets in an RData in ./datasets
-rc_run_datasets <- function(redcap_data) {
+rc_store_datasets <- function(redcap_data) {
 
   project_name <- get_project_name()
 
@@ -75,6 +88,8 @@ rc_run_datasets <- function(redcap_data) {
     )
   )
 
+  get("datasets")
+
 }
 
 
@@ -89,10 +104,22 @@ ody_rc_init_update <- function(token = NULL,
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
-  rc_init_dirs()
+  imports <- list.files(here::here("data", "imports"), ".RData$")
+  # If no imports, it is assumed the project must be started.
+  if (length(imports) == 0) {
+    print("Starting Project")
+    rc_init_dirs_files()
+  } else {
+    print("Updating Data")
+  }
 
   redcap_data <- rc_store_data(token, url)
+  datasets <- rc_store_datasets(redcap_data)
+  project_name <- get_project_name()
 
-  rc_run_datasets(redcap_data)
+  save(
+    redcap_data, datasets,
+    file = here::here(stringr::str_c(project_name, ".RData"))
+  )
 
 }

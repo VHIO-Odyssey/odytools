@@ -75,7 +75,7 @@ rc_run_datasets <- function(redcap_data) {
   source(here::here("datasets", datasets_file))
 
   save(
-    get("datasets"),
+    "datasets",
     file = here::here(
       "datasets",
       stringr::str_c(project_name, "_datasets_", import_date, ".RData")

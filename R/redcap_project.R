@@ -53,7 +53,7 @@ rc_store_data <- function(token, url) {
 
   project_name <- get_project_name()
 
-  redcap_data <- odytools::ody_rc_import(token, url)
+  redcap_data <- ody_rc_import(token, url)
 
   import_date <- get_import_date(redcap_data)
 
@@ -76,7 +76,7 @@ rc_store_datasets <- function(redcap_data) {
 
   import_date <- get_import_date(redcap_data)
 
-  datasets_file <- list.files(here::here("datasets"), "_datasets.R")
+  datasets_file <- list.files(here::here("datasets"), "datasets.R$")
 
   source(here::here("datasets", datasets_file), local = rlang::current_env())
 
@@ -121,5 +121,7 @@ ody_rc_init_update <- function(token = NULL,
     redcap_data, datasets,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
+
+  rstudioapi::restartSession()
 
 }

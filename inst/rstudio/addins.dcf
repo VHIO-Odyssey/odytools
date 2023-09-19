@@ -1,9 +1,9 @@
-Name: RedCap Viewer
-Description: Explore the data and metadata of a RedCap project.
-Binding: ody_rc_view
-Interactive: true
-
 Name: Start/Update RedCap Project
 Description: Starts, or updates if already started, a RedCap project in RStudio.
 Binding: ody_rc_init_update
 Interactive: false
+
+Name: RedCap Viewer
+Description: Explore the data and metadata of a RedCap project.
+Binding: ody_rc_view
+Interactive: true

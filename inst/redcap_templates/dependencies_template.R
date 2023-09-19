@@ -13,3 +13,5 @@ conflicted::conflicts_prefer(
 
 #.RData
 load(list.files(here(), ".RData$"))
+
+ody_rc_current(redcap_data)

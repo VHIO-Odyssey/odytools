@@ -125,3 +125,21 @@ ody_rc_init_update <- function(token = NULL,
   rstudioapi::restartSession()
 
 }
+
+#' Get the name and current import of the project
+#'
+#' @param redcap_data ody_rc_import import
+#'
+#' @export
+ody_rc_current <- function(redcap_data) {
+
+  import_date <- attr(redcap_data, "import_date") |>
+    stringr::str_extract("....-..-.. ..:..")
+  project_name <- attr(redcap_data, "project_info")$project_title
+
+  stringr::str_c(
+    "Project: ", project_name, "\nCurrent import: ", import_date
+  ) |>
+    cat()
+
+}

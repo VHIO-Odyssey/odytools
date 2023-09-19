@@ -104,7 +104,7 @@ ody_rc_init_update <- function(token = NULL,
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
-  rm(list = ls())
+  rm(list = ls(envir = .GlobalEnv))
 
   rc_init_dirs_files()
 

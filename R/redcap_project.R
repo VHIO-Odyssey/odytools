@@ -130,9 +130,7 @@ ody_rc_refresh_datasets <- function(rc_data = redcap_data) {
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  load(here::here(stringr::str_c(project_name, ".RData")))
-
-  #rstudioapi::restartSession()
+  rstudioapi::restartSession()
 
 }
 

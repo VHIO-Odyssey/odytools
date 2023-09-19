@@ -120,12 +120,12 @@ ody_rc_init_update <- function(token = NULL,
 
 }
 
-ody_rc_refresh_datasets <- function(redcap_data = redcap_data) {
+ody_rc_refresh_datasets <- function(rc_data = redcap_data) {
 
-  datasets <- rc_store_datasets(redcap_data)
+  datasets <- rc_store_datasets(rc_data)
 
   save(
-    redcap_data, datasets,
+    rc_data, datasets,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 

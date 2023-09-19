@@ -120,9 +120,9 @@ ody_rc_init_update <- function(token = NULL,
 
 }
 
-ody_rc_refresh_datasets <- function(redcap_data) {
+ody_rc_refresh_datasets <- function(rc_data = redcap_data) {
 
-  datasets <- rc_store_datasets(redcap_data)
+  datasets <- rc_store_datasets(rc_data)
   project_name <- get_project_name()
 
   save(
@@ -130,7 +130,9 @@ ody_rc_refresh_datasets <- function(redcap_data) {
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  rstudioapi::restartSession()
+  load(here::here(stringr::str_c(project_name, ".RData")))
+
+  #rstudioapi::restartSession()
 
 }
 

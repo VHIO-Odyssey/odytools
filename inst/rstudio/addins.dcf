@@ -5,7 +5,7 @@ Interactive: false
 
 Name: Refresh datasets
 Description: Refresh dataset content without updating data.
-Binding: ody_rc_refresh_datasets(redcap_data = redcap_data)
+Binding: ody_rc_refresh_datasets
 Interactive: false
 
 Name: RedCap Viewer

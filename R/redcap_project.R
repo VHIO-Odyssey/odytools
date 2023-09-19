@@ -130,7 +130,9 @@ ody_rc_refresh_datasets <- function(rc_data = redcap_data) {
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  rstudioapi::restartSession()
+  datasets <<- datasets
+
+  cat("datasets list has beeing updated")
 
 }
 

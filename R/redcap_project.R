@@ -123,6 +123,7 @@ ody_rc_init_update <- function(token = NULL,
 ody_rc_refresh_datasets <- function(rc_data = redcap_data) {
 
   datasets <- rc_store_datasets(rc_data)
+  project_name <- get_project_name()
 
   save(
     rc_data, datasets,

@@ -104,7 +104,6 @@ ody_rc_init_update <- function(token = NULL,
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
-  rm(list = ls(envir = .GlobalEnv))
 
   rc_init_dirs_files()
 
@@ -120,6 +119,20 @@ ody_rc_init_update <- function(token = NULL,
   rstudioapi::restartSession()
 
 }
+
+ody_rc_refresh_datasets <- function(redcap_data = redcap_data) {
+
+  datasets <- rc_store_datasets(redcap_data)
+
+  save(
+    redcap_data, datasets,
+    file = here::here(stringr::str_c(project_name, ".RData"))
+  )
+
+  rstudioapi::restartSession()
+
+}
+
 
 #' Get the name and current import of the project
 #'

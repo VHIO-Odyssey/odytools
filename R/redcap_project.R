@@ -125,12 +125,12 @@ ody_rc_init_update <- function(token = NULL,
 #' @param rc_data RedCap data
 #'
 #' @export
-ody_rc_refresh_datasets <- function(rc_data = redcap_data) {
+ody_rc_refresh_datasets <- function() {
 
-  datasets <- rc_store_datasets(rc_data)
+  load(list.files(here(), ".RData$"))
+
+  datasets <- rc_store_datasets(redcap_data)
   project_name <- get_project_name()
-
-  redcap_data <- rc_data
 
   save(
     redcap_data, datasets,

@@ -104,14 +104,6 @@ ody_rc_init_update <- function(token = NULL,
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
-  # # If no main .RData, it is assumed the project must be started.
-  # if (length(list.files(here::here(), ".RData$")) == 0) {
-  #   cat("Starting Project")
-  #   rc_init_dirs_files()
-  # } else {
-  #   cat("Updating Data")
-  # }
-
   rc_init_dirs_files()
 
   redcap_data <- rc_store_data(token, url)
@@ -122,6 +114,8 @@ ody_rc_init_update <- function(token = NULL,
     redcap_data, datasets,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
+
+  Sys.sleep(2)
 
   rstudioapi::restartSession()
 

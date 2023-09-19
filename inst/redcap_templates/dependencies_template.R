@@ -1,17 +1,20 @@
-library(odytools)
-library(dplyr)
-library(stringr)
-library(purrr)
-library(labelled)
-library(here)
 
+suppressMessages({
 
-# Conflicts resolution
-conflicted::conflicts_prefer(
-  dplyr::filter
-)
+  library(odytools)
+  library(dplyr)
+  library(stringr)
+  library(purrr)
+  library(labelled)
+  library(here)
 
-#.RData
+  # Conflicts resolution
+  conflicted::conflicts_prefer(
+    dplyr::filter
+  )
+
+})
+
 load(list.files(here(), ".RData$"))
 
 ody_rc_current(redcap_data)

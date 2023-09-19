@@ -104,9 +104,8 @@ ody_rc_init_update <- function(token = NULL,
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
-  imports <- list.files(here::here("data", "imports"), ".RData$")
-  # If no imports, it is assumed the project must be started.
-  if (length(imports) == 0) {
+  # If no main .RData, it is assumed the project must be started.
+  if (length(list.files(here::here(), ".RData$")) == 0) {
     print("Starting Project")
     rc_init_dirs_files()
   } else {

@@ -120,14 +120,14 @@ ody_rc_init_update <- function(token = NULL,
 
 }
 
-#' Refresh the dasest list
+#' Refresh the datasets list
 #'
 #' @param rc_data RedCap data
 #'
 #' @export
 ody_rc_refresh_datasets <- function() {
 
-  load(list.files(here(), ".RData$"))
+  load(list.files(here::here(), ".RData$"))
 
   datasets <- rc_store_datasets(redcap_data)
   project_name <- get_project_name()
@@ -137,7 +137,10 @@ ody_rc_refresh_datasets <- function() {
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  rstudioapi::restartSession()
+  load(
+    here::here(stringr::str_c(project_name, ".RData")),
+    envir = .GlobalEnv
+  )
 
 }
 

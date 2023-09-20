@@ -2,6 +2,7 @@
 suppressMessages({
 
   library(odytools)
+  library(rstudioapi)
   library(dplyr)
   library(stringr)
   library(purrr)
@@ -16,6 +17,6 @@ suppressMessages({
 
 })
 
-load(list.files(here(), ".RData$"))
+load(here(list.files(here(), ".RData$")))
 
 ody_rc_current()

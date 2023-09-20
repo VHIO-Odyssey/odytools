@@ -1,0 +1,42 @@
+---
+title: "Report title"
+date: today
+format: 
+  html:
+    fontsize: medium
+    embed-resources: true
+toc: true
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#| label: setup
+
+source(here::here(list.files(here::here(), "dependencies.R")))
+
+```
+
+The Report goes here
+
+```{r}
+#| label: render
+#| eval: false
+# Not evaluated chunck, execute it to render a final version of the report.
+# Keep this chunck at the end of the file.
+
+this_file <- getActiveDocumentContext()$path |> 
+  str_split("/",) |> 
+  unlist() |> 
+  tail(1) |> 
+  str_remove("\\..+$")
+
+setwd(here("analysis"))
+quarto::quarto_render(
+  input = getActiveDocumentContext()$path,
+  output_file = ody_add_version(this_file)
+)
+setwd(here())
+
+```

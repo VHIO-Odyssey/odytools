@@ -138,7 +138,7 @@ rc_init_update <- function(token = NULL,
     envir = .GlobalEnv
   )
 
-  cat("Project successfully downloaded.\n")
+  message("Project successfully downloaded.\n")
 
 }
 
@@ -162,7 +162,7 @@ rc_refresh_datasets <- function() {
     envir = .GlobalEnv
   )
 
-  cat("Datasets successfully refreshed.\n")
+  message("Datasets successfully refreshed.\n")
 
 }
 
@@ -180,13 +180,13 @@ ody_rc_current <- function(as_list = FALSE) {
   rdatas <- list.files(here::here(), ".RData$")
 
   if (length(rdatas) != 1) {
-    return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
+    return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
   } else {
 
     load(here::here(list.files(here::here(), ".RData$")))
 
     if (!exists("redcap_data", inherits = FALSE)) {
-      return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
+      return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
     }
   }
 
@@ -203,7 +203,7 @@ ody_rc_current <- function(as_list = FALSE) {
     stringr::str_c(
       "Project: ", project_name, "\nCurrent import: ", import_date, "\n"
     ) |>
-      cat()
+      message()
 
   }
 

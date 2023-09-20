@@ -175,10 +175,17 @@ rc_refresh_datasets <- function() {
 #' @export
 ody_rc_current <- function(as_list = FALSE) {
 
-  load(list.files(here::here(), ".RData$"))
+  rdatas <- list.files(here::here(), ".RData$")
 
-  if (!exists("redcap_data", inherits = FALSE)) {
-    cat("No Redcap project detected. \nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.")
+  if (length(rdatas) != 1) {
+    return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
+  } else {
+
+    load(list.files(here::here(), ".RData$"))
+
+    if (!exists("redcap_data", inherits = FALSE)) {
+      return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
+    }
   }
 
   import_date <- attr(get("redcap_data"), "import_date") |>

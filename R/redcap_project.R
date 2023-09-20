@@ -183,7 +183,7 @@ ody_rc_current <- function(as_list = FALSE) {
     return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
   } else {
 
-    load(list.files(here::here(), ".RData$"))
+    load(here::here(list.files(here::here(), ".RData$")))
 
     if (!exists("redcap_data", inherits = FALSE)) {
       return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))

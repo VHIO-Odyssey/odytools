@@ -1,3 +1,5 @@
+#' @importFrom utils View
+
 # Helper to get the name of the project
 get_project_name <- function() {
   list.files(here::here(), ".Rproj$") |>
@@ -24,8 +26,12 @@ rc_init_dirs_files <- function() {
   dir.create(here::here("data", "extra"))
   dir.create(here::here("datasets"))
   dir.create(here::here("docs"))
+  dir.create(here::here("analysis"))
+  dir.create(here::here("quality", "verification"), recursive = TRUE)
+  dir.create(here::here("quality", "completeness"))
+  dir.create(here::here("quality", "cra_tables"))
 
-  # Templates
+  # Root Templates
   file.copy(
     system.file(
       "redcap_templates", "Rprofile_template.R", package = "odytools"
@@ -40,11 +46,18 @@ rc_init_dirs_files <- function() {
   )
   file.copy(
     system.file(
+      "redcap_templates", "sandbox_template.R", package = "odytools"
+    ),
+    here::here(stringr::str_c(project_name, "_sandbox.R"))
+  )
+
+  #Datasets Template
+  file.copy(
+    system.file(
       "redcap_templates", "datasets_template.R", package = "odytools"
     ),
     here::here("datasets", stringr::str_c(project_name, "_datasets.R"))
   )
-
 
 }
 
@@ -80,15 +93,22 @@ rc_store_datasets <- function(redcap_data) {
 
   source(here::here("datasets", datasets_file), local = rlang::current_env())
 
+  datasets <- get("datasets")
+
+  attr(datasets, "import_date") <- attr(redcap_data, "import_date")
+  attr(datasets, "project_title") <- attr(
+    redcap_data, "project_info"
+  )$project_title
+
   save(
     "datasets",
     file = here::here(
-      "datasets",
+      datasets,
       stringr::str_c(project_name, "_datasets_", import_date, ".RData")
     )
   )
 
-  get("datasets")
+  datasets
 
 }
 
@@ -145,18 +165,46 @@ rc_refresh_datasets <- function() {
 }
 
 
-# Get the name and current import of the project. Only Addin
-rc_current <- function(redcap_data) {
+#' Get the name and current import of the project
+#'
+#' @param as_list If FALSE, the information is printed on the console. Otherwise, it returns a list (usefull for reports)
+#'
+#' @details
+#' "Where am I?" addin calls to this function
+#'
+#' @export
+ody_rc_current <- function(as_list = FALSE) {
 
   load(list.files(here::here(), ".RData$"))
 
-  import_date <- attr(redcap_data, "import_date") |>
-    stringr::str_extract("....-..-.. ..:..")
-  project_name <- attr(redcap_data, "project_info")$project_title
+  if (!exists("redcap_data", inherits = FALSE)) {
+    cat("No Redcap project detected. \nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.")
+  }
 
-  stringr::str_c(
-    "Project: ", project_name, "\nCurrent import: ", import_date
-  ) |>
-    cat()
+  import_date <- attr(get("redcap_data"), "import_date") |>
+    stringr::str_extract("....-..-.. ..:..")
+  project_name <- attr(get("redcap_data"), "project_info")$project_title
+
+  if (as_list) {
+
+    list(project = project_name, date = import_date)
+
+  } else {
+
+    stringr::str_c(
+      "Project: ", project_name, "\nCurrent import: ", import_date, "\n"
+    ) |>
+      cat()
+
+  }
+
+}
+
+# View the metadata of the current project. Only Addin
+rc_view_metadata <- function() {
+
+  load(list.files(here::here(), ".RData$"))
+
+  attr(get("redcap_data"), "metadata") |> View()
 
 }

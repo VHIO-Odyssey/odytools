@@ -801,7 +801,13 @@ ody_rc_format <- function(rc_df) {
 #' View a RedCap project
 #'
 #' @param data_app Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.
+#'
 #' @return An html viewer
+#'
+#' @details
+#' "RedCap Viewer" addin calls to this function
+#'
+#'
 #' @export
 ody_rc_view <- function(data_app = NULL) {
 

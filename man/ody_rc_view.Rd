@@ -15,3 +15,6 @@ An html viewer
 \description{
 View a RedCap project
 }
+\details{
+"RedCap Viewer" addin calls to this function
+}

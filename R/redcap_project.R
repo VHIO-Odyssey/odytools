@@ -62,16 +62,16 @@ rc_init_dirs_files <- function() {
   # Report templates
   file.copy(
     system.file(
-      "redcap_templates", "report_template.R", package = "odytools"
+      "redcap_templates", "report_template.qmd", package = "odytools"
     ),
-    here::here("analysis", stringr::str_c(project_name, "_analysis.R"))
+    here::here("analysis", stringr::str_c(project_name, "_analysis.qmd"))
   )
   file.copy(
     system.file(
-      "redcap_templates", "report_template.R", package = "odytools"
+      "redcap_templates", "report_template.qmd", package = "odytools"
     ),
     here::here(
-      "quality", "verification", stringr::str_c(project_name, "_verification.R")
+      "quality", "verification", stringr::str_c(project_name, "_verification.qmd")
     )
   )
 

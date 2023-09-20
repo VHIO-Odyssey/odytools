@@ -101,9 +101,9 @@ rc_store_datasets <- function(redcap_data) {
   )$project_title
 
   save(
-    "datasets",
+    datasets,
     file = here::here(
-      datasets,
+      "datasets",
       stringr::str_c(project_name, "_datasets_", import_date, ".RData")
     )
   )
@@ -178,13 +178,13 @@ ody_rc_current <- function(as_list = FALSE) {
   rdatas <- list.files(here::here(), ".RData$")
 
   if (length(rdatas) != 1) {
-    return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
+    return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
   } else {
 
     load(list.files(here::here(), ".RData$"))
 
     if (!exists("redcap_data", inherits = FALSE)) {
-      return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
+      return(cat("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
     }
   }
 

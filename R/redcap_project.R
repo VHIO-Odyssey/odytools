@@ -93,14 +93,9 @@ rc_store_datasets <- function(redcap_data) {
 }
 
 
-#' Start/Update a RedCap Project
-#'
-#' @param token Project token. If not provided, a dialog promp will ask for it.
-#' @param url URL of the RedCap server (VHIO server by default).
-#'
-#' @export
-ody_rc_init_update <- function(token = NULL,
-                               url = "https://redcap.vhio.net/redcap/api/") {
+# Start/Update a RedCap Project. Only Addin
+rc_init_update <- function(token = NULL,
+                           url = "https://redcap.vhio.net/redcap/api/") {
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
@@ -116,21 +111,24 @@ ody_rc_init_update <- function(token = NULL,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  rstudioapi::restartSession()
+  load(
+    here::here(stringr::str_c(project_name, ".RData")),
+    envir = .GlobalEnv
+  )
+
+  cat("Project successfully downloaded.")
 
 }
 
-#' Refresh the datasets list
-#'
-#' @param rc_data RedCap data
-#'
-#' @export
-ody_rc_refresh_datasets <- function() {
+# Refresh the Datasets List. Only Addin
+rc_refresh_datasets <- function() {
 
   load(list.files(here::here(), ".RData$"))
 
+  redcap_data <- get("redcap_data")
   datasets <- rc_store_datasets(redcap_data)
   project_name <- get_project_name()
+
 
   save(
     redcap_data, datasets,
@@ -142,15 +140,15 @@ ody_rc_refresh_datasets <- function() {
     envir = .GlobalEnv
   )
 
+  cat("Datasets successfully refreshed.")
+
 }
 
 
-#' Get the name and current import of the project
-#'
-#' @param redcap_data ody_rc_import import
-#'
-#' @export
-ody_rc_current <- function(redcap_data) {
+# Get the name and current import of the project. Only Addin
+rc_current <- function(redcap_data) {
+
+  load(list.files(here::here(), ".RData$"))
 
   import_date <- attr(redcap_data, "import_date") |>
     stringr::str_extract("....-..-.. ..:..")

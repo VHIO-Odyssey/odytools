@@ -24,7 +24,7 @@ rc_init_dirs_files <- function() {
   # Directories
   dir.create(here::here("data", "imports"), recursive = TRUE)
   dir.create(here::here("data", "extra"))
-  dir.create(here::here("datasets"))
+  dir.create(here::here("data", "datasets"))
   dir.create(here::here("docs"))
   dir.create(here::here("analysis"))
   dir.create(here::here("quality", "verification"), recursive = TRUE)
@@ -56,7 +56,7 @@ rc_init_dirs_files <- function() {
     system.file(
       "redcap_templates", "datasets_template.R", package = "odytools"
     ),
-    here::here("datasets", stringr::str_c(project_name, "_datasets.R"))
+    here::here("data", "datasets", stringr::str_c(project_name, "_datasets.R"))
   )
 
 }
@@ -89,9 +89,11 @@ rc_store_datasets <- function(redcap_data) {
 
   import_date <- get_import_date(redcap_data)
 
-  datasets_file <- list.files(here::here("datasets"), "datasets.R$")
+  datasets_file <- list.files(here::here("data", "datasets"), "datasets.R$")
 
-  source(here::here("datasets", datasets_file), local = rlang::current_env())
+  source(
+    here::here("data", "datasets", datasets_file), local = rlang::current_env()
+  )
 
   datasets <- get("datasets")
 
@@ -103,7 +105,7 @@ rc_store_datasets <- function(redcap_data) {
   save(
     datasets,
     file = here::here(
-      "datasets",
+      "data", "datasets",
       stringr::str_c(project_name, "_datasets_", import_date, ".RData")
     )
   )
@@ -136,7 +138,7 @@ rc_init_update <- function(token = NULL,
     envir = .GlobalEnv
   )
 
-  cat("Project successfully downloaded.")
+  cat("Project successfully downloaded.\n")
 
 }
 
@@ -160,7 +162,7 @@ rc_refresh_datasets <- function() {
     envir = .GlobalEnv
   )
 
-  cat("Datasets successfully refreshed.")
+  cat("Datasets successfully refreshed.\n")
 
 }
 
@@ -207,11 +209,15 @@ ody_rc_current <- function(as_list = FALSE) {
 
 }
 
+# Helper function to properli open the RStudio Viewer
+myView <- function(x, title) {
+  get("View", envir = as.environment("package:utils"))(x, title)
+}
 # View the metadata of the current project. Only Addin
 rc_view_metadata <- function() {
 
   load(list.files(here::here(), ".RData$"))
 
-  attr(get("redcap_data"), "metadata") |> View()
+  attr(get("redcap_data"), "metadata") |> myView("Metadata")
 
 }

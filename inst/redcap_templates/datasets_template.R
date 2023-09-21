@@ -1,7 +1,12 @@
 
 # 1. Code your datasets.
-# 2. Store them in a list named datasets.
+# 2. Label them as datasets with ody_add_to_datasets
 # 3. Refresh the project (Addins/Odytools/Refresh Datasets).
 
-datasets <- list()
+example <- tibble(
+  x = 1,
+  y = "a"
+) |>
+  ody_add_to_datasets("This is an example")
+
 

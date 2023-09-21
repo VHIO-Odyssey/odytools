@@ -50,6 +50,12 @@ rc_init_dirs_files <- function() {
     ),
     here::here(stringr::str_c(project_name, "_sandbox.R"))
   )
+  file.copy(
+    system.file(
+      "redcap_templates", "functions_template.R", package = "odytools"
+    ),
+    here::here(stringr::str_c(project_name, "_functions.R"))
+  )
 
   # Datasets Template
   file.copy(

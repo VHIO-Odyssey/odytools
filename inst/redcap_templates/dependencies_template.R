@@ -19,4 +19,6 @@ suppressMessages({
 
 load(here(list.files(here(), ".RData$")))
 
+source(here(list.files(here(), "functions.R$")))
+
 ody_rc_current()

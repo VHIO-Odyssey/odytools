@@ -256,7 +256,7 @@ add_analysis_template <- function() {
 
   n_analysis <- list.files(here::here("analysis")) |>
     stringr::str_detect(
-      stringr::str_c(project_name, "_analysis.qmd")
+      stringr::str_c(project_name, "_analysis_?\\d?\\.qmd")
     ) |>
     sum()
 

@@ -146,16 +146,33 @@ rc_init_update <- function(token = NULL,
                            url = "https://redcap.vhio.net/redcap/api/") {
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
+  project_name <- get_project_name()
 
   # It is an update?
   expected_rdata <- stringr::str_c(get_project_name(), ".RData")
   is_update <- any(expected_rdata == list.files(here::here()))
 
-  if (!is_update) rc_init_dirs_files()
+  if (is_update) {
+    load(here::here(stringr::str_c(project_name, ".RData")))
+    pre_update_project <- attr(get("redcap_data"), "project_info")$project_title
+    rm(redcap_data, datasets)
+  } else {
+    rc_init_dirs_files()
+  }
 
   redcap_data <- rc_store_data(token, url)
   datasets <- rc_store_datasets(redcap_data)
-  project_name <- get_project_name()
+
+  if (is_update) {
+    post_update_project <- attr(redcap_data, "project_info")$project_title
+    if (pre_update_project != post_update_project) {
+      stop(
+        "The project associated with the token provided (",
+        pre_update_project, ") does not match the current project (",
+        post_update_project, ").\nUpdate canceled."
+      )
+    }
+  }
 
   save(
     redcap_data, datasets,

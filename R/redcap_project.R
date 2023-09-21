@@ -249,7 +249,7 @@ ody_rc_current <- function(as_list = FALSE) {
 
 }
 
-# Helper function to properli open the RStudio Viewer
+# Helper function to propperly open the RStudio Viewer
 myView <- function(x, title) {
   get("View", envir = as.environment("package:utils"))(x, title)
 }

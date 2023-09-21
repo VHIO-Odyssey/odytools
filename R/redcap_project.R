@@ -192,6 +192,20 @@ rc_refresh_datasets <- function() {
 
 }
 
+#' Declare an object as belonging to datasets list
+#'
+#' @param object Object to add to datasets. Usually a data frame.
+#' @param description Optional description of the object.
+#'
+#' @export
+ody_add_to_datasets <- function(object, description = NULL) {
+
+  attr(object, "is_dataset") <- TRUE
+  attr(object, "description") <- description
+
+  object
+
+}
 
 #' Get the name and current import of the project
 #'

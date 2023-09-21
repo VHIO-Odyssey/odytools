@@ -161,18 +161,21 @@ rc_init_update <- function(token = NULL,
   }
 
   redcap_data <- rc_store_data(token, url)
-  datasets <- rc_store_datasets(redcap_data)
 
   if (is_update) {
     post_update_project <- attr(redcap_data, "project_info")$project_title
     if (pre_update_project != post_update_project) {
       stop(
         "The project associated with the token provided (",
-        pre_update_project, ") does not match the current project (",
-        post_update_project, ").\nUpdate canceled."
+        post_update_project, ") does not match the current project (",
+        pre_update_project, "). Update canceled."
       )
     }
   }
+
+  #Datasets must run after checking the downloaded project is the same as the
+  #current project.
+  datasets <- rc_store_datasets(redcap_data)
 
   save(
     redcap_data, datasets,

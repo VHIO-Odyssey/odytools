@@ -159,12 +159,11 @@ rc_init_update <- function(token = NULL,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  load(
-    here::here(stringr::str_c(project_name, ".RData")),
-    envir = .GlobalEnv
-  )
-
   message("Project successfully downloaded.\n")
+
+  source(here::here(stringr::str_c(project_name, "_dependencies.R")))
+
+
 
 }
 

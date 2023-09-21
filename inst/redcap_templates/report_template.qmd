@@ -23,20 +23,21 @@ The Report goes here
 ```{r}
 #| label: render
 #| eval: false
-# Not evaluated chunck, execute it to render a final version of the report.
-# Keep this chunck at the end of the file.
+# Not evaluated chunk, execute it to render a final version of the report.
+# Keep this chunk at the end of the file.
 
-this_file <- getActiveDocumentContext()$path |> 
-  str_split("/",) |> 
-  unlist() |> 
-  tail(1) |> 
-  str_remove("\\..+$")
+path <- rstudioapi::getActiveDocumentContext()$path
+path_split <- stringr::str_split(path, "/") |> unlist()
+folder <- tail(path_split, 2)[1]
+file <- tail(path_split, 1) |> 
+  stringr::str_remove("\\..+$")
 
-setwd(here("analysis"))
+setwd(here::here(folder))
 quarto::quarto_render(
-  input = getActiveDocumentContext()$path,
-  output_file = ody_add_version(this_file)
+  input = path,
+  output_file = odytools::ody_add_version(file)
 )
-setwd(here())
+setwd(here::here())
 
+rm(path, path_split, folder, file)
 ```

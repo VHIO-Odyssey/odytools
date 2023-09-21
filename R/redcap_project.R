@@ -105,13 +105,23 @@ rc_store_datasets <- function(redcap_data) {
 
   import_date <- get_import_date(redcap_data)
 
-  datasets_file <- list.files(here::here("data", "datasets"), "datasets.R$")
+  datasets_scripts <- list.files(here::here("data", "datasets"), ".R$")
 
-  source(
-    here::here("data", "datasets", datasets_file), local = rlang::current_env()
+  purrr::walk(
+    here::here("data", "datasets", datasets_scripts),
+    source, local = rlang::current_env()
   )
 
-  datasets <- get("datasets")
+  current_objects <- ls()
+  dataset_index <- purrr::map_lgl(
+    current_objects, ~!is.null(attr(get(.), "is_dataset"))
+  )
+  to_datasets <- current_objects[dataset_index]
+  datasets <- purrr::map(
+    to_datasets,
+    ~get(.)
+  )
+  names(datasets) <- to_datasets
 
   attr(datasets, "import_date") <- attr(redcap_data, "import_date")
   attr(datasets, "project_title") <- attr(

@@ -147,8 +147,11 @@ rc_init_update <- function(token = NULL,
 
   if (length(get_project_name()) == 0) stop("No RStudio project detected.")
 
+  # It is an update?
+  expected_rdata <- stringr::str_c(get_project_name(), ".RData")
+  is_update <- any(expected_rdata == list.files(here::here()))
 
-  rc_init_dirs_files()
+  if (!is_update) rc_init_dirs_files()
 
   redcap_data <- rc_store_data(token, url)
   datasets <- rc_store_datasets(redcap_data)
@@ -162,8 +165,6 @@ rc_init_update <- function(token = NULL,
   message("Project successfully downloaded.\n")
 
   source(here::here(stringr::str_c(project_name, "_dependencies.R")))
-
-
 
 }
 
@@ -247,6 +248,35 @@ ody_rc_current <- function(as_list = FALSE) {
   }
 
 }
+
+# Helper function to copy a new analysis template.Onla addin
+add_analysis_template <- function() {
+
+  project_name <- get_project_name()
+
+  n_analysis <- list.files(here::here("analysis")) |>
+    stringr::str_detect(
+      stringr::str_c(project_name, "_analysis.qmd")
+    ) |>
+    sum()
+
+  if (n_analysis == 0) {
+    analysis_name <- stringr::str_c(project_name, "_analysis.qmd")
+  } else {
+    analysis_name <- stringr::str_c(
+      project_name, "_analysis_", n_analysis + 1, ".qmd"
+    )
+  }
+
+  file.copy(
+    system.file(
+      "redcap_templates", "report_template.qmd", package = "odytools"
+    ),
+    here::here("analysis", analysis_name)
+  )
+
+}
+
 
 # Helper function to propperly open the RStudio Viewer
 myView <- function(x, title) {

@@ -22,3 +22,8 @@ Name: View metadata
 Description: Show the metadata of the current project on the Viewer.
 Binding: rc_view_metadata
 Interactive: false
+
+Name: Add analysis template
+Description: Add a new Quarto template in analysis/.
+Binding: add_analysis_template
+Interactive: false

@@ -290,3 +290,17 @@ rc_view_metadata <- function() {
   attr(get("redcap_data"), "metadata") |> myView("Metadata")
 
 }
+
+# View the description of the datasets. Only Addin
+view_datasets <- function() {
+
+  dplyr::tibble(
+    dataset = names(get("datasets")),
+    description = purrr::map_chr(
+      get("datasets"),
+      ~ifelse(is.null(attr(., "description")), NA, attr(., "description"))
+    )
+  ) |> myView("Datasets Description")
+
+}
+

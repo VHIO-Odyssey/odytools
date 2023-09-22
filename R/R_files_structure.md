@@ -74,6 +74,36 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]
 
+## redcap_project
+
+Functions to create and update RedCap projects in RStudio:
+
+-   get_project_name
+
+-   get_import_date
+
+-   rc_init_dirs_files [get_project_name]
+
+-   rc_store_data [get_project_name, ody_rc_import, get_import_date]
+
+-   rc_store_datasets [get_project_name, get_import_date]
+
+-   rc_init_update [rc_init_dirs_files, rc_store_data, rc_store_datasets, get_project_name] ADDIN
+
+-   rc_refresh_datasets [rc_store_datasets, get_project_name] ADDIN
+
+-   ody_add_to_datasets
+
+-   ody_rc_current ADDIN
+
+-   add_analysis_template ADDIN
+
+-   myView
+
+-   rc_view_metadata ADDIN
+
+-   view_datasets ADDIN
+
 ## **other_utils**
 
 Miscelaneous utilities.

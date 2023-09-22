@@ -3,22 +3,29 @@ suppressMessages({
 
   library(odytools)
   library(rstudioapi)
-  library(dplyr)
-  library(stringr)
-  library(purrr)
-  library(lubridate)
-  library(labelled)
   library(here)
+  library(dplyr)
+  library(readr)
+  library(forcats)
+  library(stringr)
+  library(ggplot2)
+  library(tibble)
+  library(lubridate)
+  library(tidyr)
+  library(purrr)
+  library(labelled)
 
   # Conflicts resolution
   conflicted::conflicts_prefer(
-    dplyr::filter
+    dplyr::filter,
+    dplyr::lag
   )
 
 })
 
 load(here(list.files(here(), ".RData$")))
 
-source(here(list.files(here(), "functions.R$")))
+here(list.files(here(), "_functions.R$")) |>
+  walk(source)
 
 ody_rc_current()

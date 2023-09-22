@@ -181,6 +181,8 @@ rc_init_update <- function(token = NULL,
 
   #Datasets must run after checking the downloaded project is the same as the
   #current project.
+
+  message("Computing datasets...\n")
   datasets <- rc_store_datasets(redcap_data)
 
   save(
@@ -196,6 +198,8 @@ rc_init_update <- function(token = NULL,
 
 # Refresh the Datasets List. Only Addin
 rc_refresh_datasets <- function() {
+
+  message("Refreshing datasets...\n")
 
   load(list.files(here::here(), ".RData$"))
 

@@ -68,3 +68,25 @@
 # odytools 0.5.2
 
 -   Improved **ody_rc_select**. Now it also works with character vectors and by defaulit it returns a list if the selected variables do not belong to the same form.
+
+# odytools 0.6.0
+
+-   Added **ody_add_to_datasets,** a function to create datsets.
+
+-   Added **ody_rc_current**, a function to print the current project and import of the loaded RedCap database.
+
+-   First "RedCap structure" implementation. Added several addins to manage a RedCap database in RStudio.
+
+    -   **Where am I?**: Print the name and import date of the current RedCap project if any. (it just calls ody_rc_current.
+
+    -   **Start/update a RedCap project**: Start, or update if already started, a RedCap project in RStudio.
+
+    -   **Refresh datasets**: Refresh the datasets content.
+
+    -   **RedCap viewer**: Explore the data of a RedCap project. (it calls ody_rc_view)
+
+    -   **View metadata**: Show the metadata of the current project on the Viewer.
+
+    -   **View datasets description**: Show the descriptions of the datasets on the Viewer.
+
+    -   **Add analysis template**: Add a new Quarto template in analysis/.

@@ -28,7 +28,8 @@ Write your awesome report here.
 
 path <- rstudioapi::getActiveDocumentContext()$path
 folder <- stringr::str_remove(path, "/[^/]+$")
-file <- stringr::str_remove(path, "^.+/")
+file <- stringr::str_remove(path, "^.+/") |> 
+  stringr::str_remove("\\..+$")
 
 setwd(here::here(folder))
 quarto::quarto_render(

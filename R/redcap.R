@@ -526,7 +526,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
 
 
 
-#' Import a RedCap Proyect
+#' Import a RedCap Project
 #'
 #' @param token Project token. If not provided, a dialog promp will ask for it
 #' @param url URL of the RedCap server (VHIO server by default).

@@ -2,7 +2,7 @@
 % Please edit documentation in R/redcap.R
 \name{ody_rc_import}
 \alias{ody_rc_import}
-\title{Import a RedCap Proyect}
+\title{Import a RedCap Project}
 \usage{
 ody_rc_import(
   token = NULL,
@@ -24,5 +24,5 @@ ody_rc_import(
 A Tibble wiht metadata attributes (nested if nest = TRUE)
 }
 \description{
-Import a RedCap Proyect
+Import a RedCap Project
 }

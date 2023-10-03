@@ -736,6 +736,32 @@ ody_rc_select <- function(rc_data,
 
 }
 
+#' Filter a RedCap import by subject id
+#'
+#' @param redcap_data RedCap data import.
+#' @param subjects_vector Vector with the subjects id's to be kept.
+#'
+#' @return A filtered RedCap import.
+#' @export
+ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
+
+  id_var <- attr(redcap_data, "id_var")
+
+  result <- tidyr::unnest(redcap_data, cols = "redcap_event_data") |>
+    dplyr::mutate(
+      redcap_form_data = purrr::map(
+        .data$redcap_form_data,
+        ~dplyr::filter(., .data[[id_var]] %in% subjects_vector)
+      )
+    ) |>
+    tidyr::nest(redcap_event_data = "redcap_form_name":"redcap_form_data")
+
+  attributes(result) <- attributes(redcap_data)
+  attr(result, "subjects") <- subjects_vector
+
+  result
+
+}
 
 
 #' Format RedCap variables

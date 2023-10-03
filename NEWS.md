@@ -90,3 +90,7 @@
     -   **View datasets description**: Show the descriptions of the datasets on the Viewer.
 
     -   **Add analysis template**: Add a new Quarto template in analysis/.
+
+# odytools 0.6.1
+
+-   Added **ody_rc_filter_subject**, a function to filter a RedCap import according to a provided vector of subject's Ids.

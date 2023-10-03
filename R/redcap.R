@@ -747,14 +747,28 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 
   id_var <- attr(redcap_data, "id_var")
 
-  result <- tidyr::unnest(redcap_data, cols = "redcap_event_data") |>
-    dplyr::mutate(
-      redcap_form_data = purrr::map(
-        .data$redcap_form_data,
-        ~dplyr::filter(., .data[[id_var]] %in% subjects_vector)
+  if (names(redcap_data)[1] == "redcap_event_name") {
+
+    result <- tidyr::unnest(redcap_data, cols = "redcap_event_data") |>
+      dplyr::mutate(
+        redcap_form_data = purrr::map(
+          .data$redcap_form_data,
+          ~dplyr::filter(., .data[[id_var]] %in% subjects_vector)
+        )
+      ) |>
+      tidyr::nest(redcap_event_data = "redcap_form_name":"redcap_form_data")
+
+  } else {
+
+    result <- redcap_data |>
+      dplyr::mutate(
+        redcap_form_data = purrr::map(
+          .data$redcap_form_data,
+          ~dplyr::filter(., .data[[id_var]] %in% subjects_vector)
+        )
       )
-    ) |>
-    tidyr::nest(redcap_event_data = "redcap_form_name":"redcap_form_data")
+
+  }
 
   attributes(result) <- attributes(redcap_data)
   attr(result, "subjects") <- subjects_vector

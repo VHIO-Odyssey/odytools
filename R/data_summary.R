@@ -324,6 +324,14 @@ make_discrete_detail_tbl <- function(detail_tbl,
       grouping_var_levels <- var_list_case[[2]] |> levels()
     }
 
+    has_na_column <- names(detail_tbl) |>
+      stringr::str_detect("<NA>") |>
+      any()
+
+    if (has_na_column) {
+      grouping_var_levels <- c(grouping_var_levels, "<NA>")
+    }
+
     grouping_var_num <- detail_tbl |>
       dplyr::select(dplyr::starts_with("N_")) |>
       purrr::map_dbl(sum)

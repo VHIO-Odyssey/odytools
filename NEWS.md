@@ -94,3 +94,7 @@
 # odytools 0.6.1
 
 -   Added **ody_rc_filter_subject**, a function to filter a RedCap import according to a provided vector of subject's Ids.
+
+# odytools 0.6.2
+
+-   Added **add_overall** argument to **ody_summarise_df**

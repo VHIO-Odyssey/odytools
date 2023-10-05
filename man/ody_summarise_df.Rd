@@ -12,6 +12,7 @@ ody_summarise_df(
   compare_groups = c("no", "p_value", "q_value", "both"),
   use_NA = c("no", "ifany", "always"),
   min_distinct = 5,
+  add_overall = TRUE,
   raw_summary = FALSE,
   show_completeness = TRUE,
   show_conditions = FALSE,
@@ -33,6 +34,8 @@ ody_summarise_df(
 \item{use_NA}{Add missing values in the report?}
 
 \item{min_distinct}{Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.}
+
+\item{add_overall}{If TRUE and grouping_var is not NULL, an overall description is added to the detail table of each variable.}
 
 \item{raw_summary}{If TRUE, the function returns a raw summary instead of the defaiult reactable report.}
 

@@ -286,6 +286,7 @@ make_discrete_detail_tbl <- function(detail_tbl,
                                      details_tbl,
                                      var_list_case,
                                      grouping_var,
+                                     add_overall,
                                      opt_reactable = opt_reactable) {
 
   prop_names <- names(detail_tbl) |>
@@ -317,7 +318,11 @@ make_discrete_detail_tbl <- function(detail_tbl,
 
   if (ncol(detail_tbl) > 4) {
 
-    grouping_var_levels <- c("Overall", var_list_case[[2]] |> levels())
+    if (add_overall) {
+      grouping_var_levels <- c("Overall", var_list_case[[2]] |> levels())
+    } else {
+      grouping_var_levels <- var_list_case[[2]] |> levels()
+    }
 
     grouping_var_num <- detail_tbl |>
       dplyr::select(dplyr::starts_with("N_")) |>
@@ -447,6 +452,7 @@ make_continuous_detail_table <- function(detail_tbl,
 #' @param compare_groups Compare groups?
 #' @param use_NA Add missing values in the report?
 #' @param min_distinct Minimal number of distinct cases in a numeric variable to be described as numeric. If the number of distinct cases is lower, the variable is described as it was a factor.
+#' @param add_overall If TRUE and grouping_var is not NULL, an overall description is added to the detail table of each variable.
 #' @param raw_summary If TRUE, the function returns a raw summary instead of the defaiult reactable report.
 #' @param show_completeness Logical, it TRUE it adds completeness information to the main table.
 #' @param show_conditions If TRUE, the filtering conditions defined by conditions_list ( if any) appear at each filtered variable.
@@ -467,6 +473,7 @@ ody_summarise_df <- function(data_frame,
                               ),
                              use_NA = c("no", "ifany", "always"),
                              min_distinct = 5,
+                             add_overall = TRUE,
                              raw_summary = FALSE,
                              show_completeness = TRUE,
                              show_conditions = FALSE,
@@ -640,6 +647,28 @@ ody_summarise_df <- function(data_frame,
     ~dplyr::if_else(.x == names(.y)[1], "discrete", "continuous")
   )
 
+  if (!add_overall) {
+
+    details_tbl <- purrr::map2(
+      details_tbl, details_type,
+      function(x, y) {
+
+        if (y == "discrete") {
+
+          dplyr::select(x, -tidyselect::matches("_Overall$"))
+
+        } else {
+
+          x |>
+            dplyr::filter(.data[[names(x)[2]]] != "Overall") |>
+            dplyr::mutate(No = 1:dplyr::n())
+        }
+
+      }
+    )
+
+  }
+
   reactable::reactable(
     main_tbl,
     columns = list(
@@ -741,6 +770,7 @@ ody_summarise_df <- function(data_frame,
           details_tbl,
           var_list[[index]],
           grouping_var,
+          add_overall,
           opt_reactable = opt_reactable
         )
 

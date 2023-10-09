@@ -98,3 +98,7 @@
 # odytools 0.6.2
 
 -   Added **add_overall** argument to **ody_summarise_df**
+
+# odytools 0.6.3 (under development)
+
+-   Now project-specific functions of a RedCap project are stored in the scripts of the new folder functions/ (no name restrictions).

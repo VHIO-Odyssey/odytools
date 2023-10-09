@@ -25,7 +25,7 @@ suppressMessages({
 
 load(here(list.files(here(), ".RData$")))
 
-here(list.files(here(), "_functions.R$")) |>
+here("functions", list.files(here("functions"), ".R$")) |>
   walk(source)
 
 ody_rc_current()

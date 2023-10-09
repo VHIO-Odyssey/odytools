@@ -27,6 +27,7 @@ rc_init_dirs_files <- function() {
   dir.create(here::here("data", "datasets"))
   dir.create(here::here("docs"))
   dir.create(here::here("analysis"))
+  dir.create(here::here("functions"))
   dir.create(here::here("quality", "verification"), recursive = TRUE)
   dir.create(here::here("quality", "completeness"))
   dir.create(here::here("quality", "cra_tables"))
@@ -50,12 +51,6 @@ rc_init_dirs_files <- function() {
     ),
     here::here(stringr::str_c(project_name, "_sandbox.R"))
   )
-  file.copy(
-    system.file(
-      "redcap_templates", "functions_template.R", package = "odytools"
-    ),
-    here::here(stringr::str_c(project_name, "_functions.R"))
-  )
 
   # Datasets Template
   file.copy(
@@ -63,6 +58,14 @@ rc_init_dirs_files <- function() {
       "redcap_templates", "datasets_template.R", package = "odytools"
     ),
     here::here("data", "datasets", stringr::str_c(project_name, "_datasets.R"))
+  )
+
+  # function template
+  file.copy(
+    system.file(
+      "redcap_templates", "functions_template.R", package = "odytools"
+    ),
+    here::here("functions", stringr::str_c(project_name, "_functions.R"))
   )
 
   # Report templates

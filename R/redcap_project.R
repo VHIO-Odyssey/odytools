@@ -257,7 +257,7 @@ ody_rc_current <- function (as_list = FALSE) {
     stop("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n")
   }
   else {
-    walk(here::here(rdatas), load)
+    walk(here::here(rdatas), load, envir = rlang::current_env())
     if (!exists("redcap_data", inherits = FALSE)) {
       return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
     }

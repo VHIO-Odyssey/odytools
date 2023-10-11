@@ -1,5 +1,5 @@
 Name: Where am I?
-Description: Print the name and import date of the current RedCap project if any.
+Description: Print the name and import dates of the current RedCap project if any.
 Binding: ody_rc_current
 Interactive: false
 

@@ -23,7 +23,8 @@ suppressMessages({
 
 })
 
-load(here(list.files(here(), ".RData$")))
+here(list.files(here(), ".RData$")) |>
+  walk(load, envir = .GlobalEnv)
 
 here("functions", list.files(here("functions"), ".R$")) |>
   walk(source)

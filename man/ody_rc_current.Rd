@@ -2,7 +2,7 @@
 % Please edit documentation in R/redcap_project.R
 \name{ody_rc_current}
 \alias{ody_rc_current}
-\title{Get the name and current import of the project}
+\title{Get the name and the import dates (last and loaded) of the project}
 \usage{
 ody_rc_current(as_list = FALSE)
 }
@@ -10,8 +10,9 @@ ody_rc_current(as_list = FALSE)
 \item{as_list}{If FALSE, the information is printed on the console. Otherwise, it returns a list (usefull for reports)}
 }
 \description{
-Get the name and current import of the project
+Get the name and the import dates (last and loaded) of the project
 }
 \details{
-"Where am I?" addin calls to this function
+"Where am I?" addin calls to this function.
+"Last" and "Loaded" imports can be different. If so, CAUTION, you are a timetraveller
 }

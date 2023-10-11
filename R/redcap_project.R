@@ -240,48 +240,55 @@ ody_add_to_datasets <- function(object, description = NULL) {
 
 }
 
-#' Get the name and current import of the project
+#' Get the name and the import dates (last and loaded) of the project
 #'
 #' @param as_list If FALSE, the information is printed on the console. Otherwise, it returns a list (usefull for reports)
 #'
 #' @details
-#' "Where am I?" addin calls to this function
+#' "Where am I?" addin calls to this function.
+#' "Last" and "Loaded" imports can be different. If so, CAUTION, you are a timetraveller
 #'
 #' @export
-ody_rc_current <- function(as_list = FALSE) {
+ody_rc_current <- function (as_list = FALSE) {
 
+  # Current Redcap data in main RData
   rdatas <- list.files(here::here(), ".RData$")
-
-  if (length(rdatas) != 1) {
-    return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
-  } else {
-
-    load(here::here(list.files(here::here(), ".RData$")))
-
+  if (length(rdatas) == 0) {
+    stop("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n")
+  }
+  else {
+    walk(here::here(rdatas), load)
     if (!exists("redcap_data", inherits = FALSE)) {
       return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
     }
   }
 
+  # Import date of the loaded redcap
+  loaded_import_date  <- attr(
+    get("redcap_data", envir = .GlobalEnv),
+    "import_date"
+  ) |>
+    stringr::str_extract( "....-..-.. ..:..")
+
+  # Info of the current data (the oine stored in the main RData)
   import_date <- attr(get("redcap_data"), "import_date") |>
     stringr::str_extract("....-..-.. ..:..")
   project_name <- attr(get("redcap_data"), "project_info")$project_title
 
   if (as_list) {
-
-    list(project = project_name, date = import_date)
-
-  } else {
-
-    stringr::str_c(
-      "Project: ", project_name, "\nCurrent import: ", import_date, "\n"
-    ) |>
-      message()
-
+    list(
+      project = project_name,
+      last = import_date,
+      loaded = loaded_import_date
+    )
+  }else {
+    message(stringr::str_c(
+      "Project: ", project_name,
+      "\nLast import: ", import_date,
+      "\nLoaded import: ", loaded_import_date
+    ))
   }
-
 }
-
 # Helper function to copy a new analysis template.Onla addin
 add_analysis_template <- function() {
 
@@ -337,3 +344,36 @@ view_datasets <- function() {
 
 }
 
+#' Paradox-Free Time Travelling
+#'
+#' Load previous imports and datasets.
+#'
+#' @param timepoint Timepoint pattern.
+#'
+#' @export
+ody_rc_timetravel <- function(timepoint) {
+
+  dataset <- list.files(here::here("data", "datasets"), ".RData$") |>
+    stringr::str_subset(timepoint)
+
+
+  import <- list.files(here::here("data", "imports"), ".RData$") |>
+    stringr::str_subset(timepoint)
+
+
+  if (length(dataset) == 0 || length(import) == 0) {
+
+    stop("No available timepoint")
+
+  }
+
+  if (length(dataset) > 1 || length(import) > 1) {
+
+    stop("Ambiguous timepoint")
+
+  }
+
+  load(here::here("data", "datasets", dataset), envir = .GlobalEnv)
+  load(here::here("data", "imports", import), envir = .GlobalEnv)
+
+}

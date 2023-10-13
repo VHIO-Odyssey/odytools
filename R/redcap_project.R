@@ -307,7 +307,7 @@ ody_rc_current <- function (as_list = FALSE) {
     stop("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n")
   }
   else {
-    walk(here::here(rdatas), load, envir = rlang::current_env())
+    purrr::walk(here::here(rdatas), load, envir = rlang::current_env())
     if (!exists("redcap_data", inherits = FALSE)) {
       return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
     }
@@ -425,5 +425,7 @@ ody_rc_timetravel <- function(timepoint) {
 
   load(here::here("data", "datasets", dataset), envir = .GlobalEnv)
   load(here::here("data", "imports", import), envir = .GlobalEnv)
+
+  ody_rc_current()
 
 }

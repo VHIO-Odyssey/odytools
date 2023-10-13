@@ -191,16 +191,7 @@ rc_init_update <- function() {
   # Saving redcap_data and datasets must be done after checking the import
   # actually belongs to the expected project.
 
-  if (is_new_token) {
-    token_renviron <- stringr::str_c(api_renv_name, "=", token)
-    writeLines(
-      c(readLines("~/.Renviron"), token_renviron),
-      "~/.Renviron"
-    )
-    message(
-      "The provided token has been stored in ~/.Renviron.\nIt will be available after restarting your R session."
-    )
-  }
+
 
   import_date <- get_import_date(redcap_data)
   save(
@@ -220,6 +211,17 @@ rc_init_update <- function() {
   )
 
   message("Project successfully downloaded.\n")
+
+  if (is_new_token) {
+    token_renviron <- stringr::str_c(api_renv_name, "=", token)
+    writeLines(
+      c(readLines("~/.Renviron"), token_renviron),
+      "~/.Renviron"
+    )
+    message(
+      "The provided token has been stored in ~/.Renviron.\nIt will be available after restarting your R session.\n"
+    )
+  }
 
   source(here::here(stringr::str_c(project_name, "_dependencies.R")))
 

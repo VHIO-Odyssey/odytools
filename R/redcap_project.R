@@ -199,6 +199,8 @@ rc_init_update <- function() {
       prompt = "Please enter a RedCap token:"
     )
     is_new_token <- TRUE
+  } else {
+    is_new_token <- FALSE
   }
 
   redcap_data <- ody_rc_import(token)

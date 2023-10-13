@@ -102,4 +102,5 @@
 # odytools dev
 
 -   Now, project-specific functions of a RedCap project are assumed to be in the scripts of the folder functions.
--   Added **ody_rc_timatravel** to load previous imports.
+-   Added **ody_rc_timetravel** to load previous imports.
+-   Now, tokens are stored in .Renviron, so you only have to probide it when starting a new project.

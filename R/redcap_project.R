@@ -87,25 +87,42 @@ rc_init_dirs_files <- function() {
 }
 
 # Helper function to download and store a RedCap Project
-rc_store_data <- function(token, url) {
-
-  project_name <- get_project_name()
-
-  redcap_data <- ody_rc_import(token, url)
-
-  import_date <- get_import_date(redcap_data)
-
-  save(
-    redcap_data,
-    file = here::here(
-      "data", "imports",
-      stringr::str_c(project_name, "_import_", import_date, ".RData")
-    )
-  )
-
-  redcap_data
-
-}
+# Not needed anymore. Delete after testing.
+# rc_store_data <- function() {
+#
+#   project_name <- get_project_name()
+#
+#   # Is there a stored token for this project?
+#   api_renv_name <- project_name |>
+#     stringr::str_to_upper() |>
+#     c("_API_KEY") |>
+#     stringr::str_c(collapse = "")
+#   token <- Sys.getenv(api_renv_name)
+#
+#   if (token == "") {
+#     token <- rstudioapi::askForPassword(
+#       prompt = "Please enter a RedCap token:"
+#     )
+#     token_renviron <- stringr::str_c(api_renv_name, "=", token)
+#     current_renviron <- readLines("~/.Renviron")
+#     writeLines(c(current_renviron, token_renviron), "~/.Renviron")
+#   }
+#
+#   redcap_data <- ody_rc_import(token)
+#
+#   import_date <- get_import_date(redcap_data)
+#
+#   save(
+#     redcap_data,
+#     file = here::here(
+#       "data", "imports",
+#       stringr::str_c(project_name, "_import_", import_date, ".RData")
+#     )
+#   )
+#
+#   redcap_data
+#
+# }
 
 # Helper function to store the datasets in an RData in ./datasets
 rc_store_datasets <- function(redcap_data) {
@@ -151,14 +168,14 @@ rc_store_datasets <- function(redcap_data) {
 
 
 # Start/Update a RedCap Project. Only Addin
-rc_init_update <- function(token = NULL,
-                           url = "https://redcap.vhio.net/redcap/api/") {
+rc_init_update <- function() {
 
-  if (length(get_project_name()) == 0) stop("No RStudio project detected.")
   project_name <- get_project_name()
+  if (length(project_name) == 0) stop("No RStudio project detected.")
 
   # It is an update?
-  expected_rdata <- stringr::str_c(get_project_name(), ".RData")
+  # It is assumed to be an update if there is an RData named after the project.
+  expected_rdata <- stringr::str_c(project_name, ".RData")
   is_update <- any(expected_rdata == list.files(here::here()))
 
   if (is_update) {
@@ -169,7 +186,22 @@ rc_init_update <- function(token = NULL,
     rc_init_dirs_files()
   }
 
-  redcap_data <- rc_store_data(token, url)
+  # Redcap Import
+  # Is there a stored token for this project?
+  api_renv_name <- project_name |>
+    stringr::str_to_upper() |>
+    c("_API_KEY") |>
+    stringr::str_c(collapse = "")
+  token <- Sys.getenv(api_renv_name)
+
+  if (token == "") {
+    token <- rstudioapi::askForPassword(
+      prompt = "Please enter a RedCap token:"
+    )
+    is_new_token <- TRUE
+  }
+
+  redcap_data <- ody_rc_import(token)
 
   if (is_update) {
     post_update_project <- attr(redcap_data, "project_info")$project_title
@@ -182,8 +214,25 @@ rc_init_update <- function(token = NULL,
     }
   }
 
-  #Datasets must run after checking the downloaded project is the same as the
-  #current project.
+  # Saving redcap_data and datasets must be done after checking the import
+  # actually belongs to the expected project.
+
+  if (is_new_token) {
+    token_renviron <- stringr::str_c(api_renv_name, "=", token)
+    writeLines(
+      c(readLines("~/.Renviron"), token_renviron),
+      "~/.Renviron"
+    )
+  }
+
+  import_date <- get_import_date(redcap_data)
+  save(
+    redcap_data,
+    file = here::here(
+      "data", "imports",
+      stringr::str_c(project_name, "_import_", import_date, ".RData")
+    )
+  )
 
   message("Computing datasets...\n")
   datasets <- rc_store_datasets(redcap_data)
@@ -209,7 +258,6 @@ rc_refresh_datasets <- function() {
   redcap_data <- get("redcap_data")
   datasets <- rc_store_datasets(redcap_data)
   project_name <- get_project_name()
-
 
   save(
     redcap_data, datasets,

@@ -86,44 +86,6 @@ rc_init_dirs_files <- function() {
 
 }
 
-# Helper function to download and store a RedCap Project
-# Not needed anymore. Delete after testing.
-# rc_store_data <- function() {
-#
-#   project_name <- get_project_name()
-#
-#   # Is there a stored token for this project?
-#   api_renv_name <- project_name |>
-#     stringr::str_to_upper() |>
-#     c("_API_KEY") |>
-#     stringr::str_c(collapse = "")
-#   token <- Sys.getenv(api_renv_name)
-#
-#   if (token == "") {
-#     token <- rstudioapi::askForPassword(
-#       prompt = "Please enter a RedCap token:"
-#     )
-#     token_renviron <- stringr::str_c(api_renv_name, "=", token)
-#     current_renviron <- readLines("~/.Renviron")
-#     writeLines(c(current_renviron, token_renviron), "~/.Renviron")
-#   }
-#
-#   redcap_data <- ody_rc_import(token)
-#
-#   import_date <- get_import_date(redcap_data)
-#
-#   save(
-#     redcap_data,
-#     file = here::here(
-#       "data", "imports",
-#       stringr::str_c(project_name, "_import_", import_date, ".RData")
-#     )
-#   )
-#
-#   redcap_data
-#
-# }
-
 # Helper function to store the datasets in an RData in ./datasets
 rc_store_datasets <- function(redcap_data) {
 
@@ -203,7 +165,17 @@ rc_init_update <- function() {
     is_new_token <- FALSE
   }
 
-  redcap_data <- ody_rc_import(token)
+  # The import if wrapped with try in case the token has changed and the store
+  # one is not valid anymore
+  redcap_data <- try(ody_rc_import(token))
+
+  if (all(class(redcap_data) == "try-error")) {
+    token <- rstudioapi::askForPassword(
+      prompt = "The token stored in .Renviron is no longer valid, please enter the current token:"
+    )
+    is_new_token <- TRUE
+    redcap_data <- ody_rc_import(token)
+  }
 
   if (is_update) {
     post_update_project <- attr(redcap_data, "project_info")$project_title
@@ -224,6 +196,9 @@ rc_init_update <- function() {
     writeLines(
       c(readLines("~/.Renviron"), token_renviron),
       "~/.Renviron"
+    )
+    message(
+      "The provided token has been stored in ~/.Renviron.\nIt will be available after restarting your R session."
     )
   }
 

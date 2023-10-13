@@ -86,11 +86,9 @@ Functions to create and update RedCap projects in RStudio:
 
 -   rc_init_dirs_files [get_project_name]
 
--   rc_store_data [get_project_name, ody_rc_import, get_import_date]
-
 -   rc_store_datasets [get_project_name, get_import_date]
 
--   rc_init_update [rc_init_dirs_files, rc_store_data, rc_store_datasets, get_project_name] ADDIN
+-   rc_init_update [get_project_name, rc_init_dirs_files, ody_rc_import, get_import_date, rc_store_datasets, ] ADDIN
 
 -   rc_refresh_datasets [rc_store_datasets, get_project_name] ADDIN
 

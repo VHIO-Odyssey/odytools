@@ -546,7 +546,7 @@ ody_rc_import <- function(
     )
   }
 
-  message("Importing data from RedCap")
+  message("Importing data from RedCap\n")
   rc_raw_import <- import_rc(token, url)
 
   if (!label && !nest) return(rc_raw_import)
@@ -558,7 +558,7 @@ ody_rc_import <- function(
   }
 
   if (nest) {
-    message("Nesting the project")
+    message("Nesting the project...\n")
     rc_import <- nest_rc(rc_import) |>
       restore_attributes(rc_raw_import)
   }

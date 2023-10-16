@@ -123,3 +123,9 @@ Adverse Events related functions.
 -   add_pct
 
 -   ody_make_ae_gt [add_pct]
+
+## **survival**
+
+Survival related functions.
+
+-   ody_extract_km

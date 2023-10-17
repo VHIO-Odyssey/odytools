@@ -301,16 +301,17 @@ ody_rc_current <- function (as_list = FALSE) {
   import_date <- attr(get("redcap_data"), "import_date") |>
     stringr::str_extract("....-..-.. ..:..")
   project_name <- attr(get("redcap_data"), "project_info")$project_title
+  project_id <- attr(get("redcap_data"), "project_info")$project_id
 
   if (as_list) {
     list(
-      project = project_name,
+      project = stringr::str_c(project_name, " (", project_id, ")"),
       last = import_date,
       loaded = loaded_import_date
     )
   }else {
     message(stringr::str_c(
-      "Project: ", project_name,
+      "Project: ", stringr::str_c(project_name, " (", project_id, ")"),
       "\nLast import: ", import_date,
       "\nLoaded import: ", loaded_import_date
     ))

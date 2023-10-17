@@ -305,13 +305,13 @@ ody_rc_current <- function (as_list = FALSE) {
 
   if (as_list) {
     list(
-      project = stringr::str_c(project_name, " (", project_id, ")"),
+      project = stringr::str_c(project_name, " (PID ", project_id, ")"),
       last = import_date,
       loaded = loaded_import_date
     )
   }else {
     message(stringr::str_c(
-      "Project: ", stringr::str_c(project_name, " (", project_id, ")"),
+      "Project: ", stringr::str_c(project_name, " (PID ", project_id, ")"),
       "\nLast import: ", import_date,
       "\nLoaded import: ", loaded_import_date
     ))

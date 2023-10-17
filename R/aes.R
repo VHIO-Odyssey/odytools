@@ -223,7 +223,7 @@ ody_make_ae_gt <- function(
       function(x, y) {
 
         names(ae_tbl[[x]])[-(1:n_terms)] <- stringr::str_c(
-          y, "___", names(ae_tbl[[x]])[-(1:n_terms)]
+          y, ";", names(ae_tbl[[x]])[-(1:n_terms)]
         )
 
         ae_tbl[[x]]
@@ -239,7 +239,7 @@ ody_make_ae_gt <- function(
       ae_tbl_join <- ae_tbl_join |>
         dplyr::mutate(
           dplyr::across(
-            dplyr::contains("___"),
+            dplyr::contains(";"),
             ~tidyr::replace_na(., "0 (0%)"))
         )
 
@@ -318,7 +318,7 @@ ody_make_ae_gt <- function(
 
     gt_tbl |>
       gt::tab_spanner_delim(
-        delim = "___"
+        delim = ";"
       ) |>
       gt::tab_style(
         style = gt::cell_text(weight = "bold"),

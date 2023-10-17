@@ -104,4 +104,4 @@
 -   Now, project-specific functions of a RedCap project are assumed to be stored in the scripts of the folder functions.
 -   Added **ody_rc_timetravel** to load previous imports.
 -   Now, tokens are stored in .Renviron, so you only have to provide it when starting a new project or after regenerating your token.
--   Added ody_extract_km to get the median and confidence intervals of survfit objects.
+-   Added **ody_extract_km** to get the median and confidence intervals of survfit objects.

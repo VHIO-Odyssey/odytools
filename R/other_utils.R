@@ -114,3 +114,72 @@ ody_options <- function(label_size = 1,
 
 
 }
+
+
+#' Start a plain non-RedCap project
+#'
+#' @export
+ody_proj_init <- function() {
+
+  project_name <- get_project_name()
+
+  # Directories
+  dir.create(here::here("data"))
+  dir.create(here::here("docs"))
+  dir.create(here::here("analysis"))
+  dir.create(here::here("functions"))
+  dir.create(here::here("quality"))
+
+  # Root Templates
+  file.copy(
+    system.file(
+      "project_templates", "Rprofile_template.R", package = "odytools"
+    ),
+    here::here(".Rprofile")
+  )
+  file.copy(
+    system.file(
+      "project_templates", "dependencies_template.R", package = "odytools"
+    ),
+    here::here(stringr::str_c(project_name, "_dependencies.R"))
+  )
+  file.copy(
+    system.file(
+      "project_templates", "sandbox_template.R", package = "odytools"
+    ),
+    here::here(stringr::str_c(project_name, "_sandbox.R"))
+  )
+
+  # Data Template
+  file.copy(
+    system.file(
+      "project_templates", "data_template.R", package = "odytools"
+    ),
+    here::here("data", stringr::str_c(project_name, "_data.R"))
+  )
+
+  # function template
+  file.copy(
+    system.file(
+      "project_templates", "functions_template.R", package = "odytools"
+    ),
+    here::here("functions", stringr::str_c(project_name, "_functions.R"))
+  )
+
+  # Report templates
+  file.copy(
+    system.file(
+      "project_templates", "report_template.qmd", package = "odytools"
+    ),
+    here::here("analysis", stringr::str_c(project_name, "_analysis.qmd"))
+  )
+  file.copy(
+    system.file(
+      "project_templates", "report_template.qmd", package = "odytools"
+    ),
+    here::here(
+      "quality", stringr::str_c(project_name, "_verification.qmd")
+    )
+  )
+
+}

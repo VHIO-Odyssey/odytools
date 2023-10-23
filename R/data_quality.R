@@ -11,8 +11,8 @@ count_grouped_cases <- function(count_var, grouped) {
     tibble::tibble(
       count_var,
       cases = dplyr::case_when(
-        stringr::str_detect(count_var, "^\\d+$") ~ "integer",
-        stringr::str_detect(count_var, "^\\d+[\\.,]\\d+$") ~ "dec_number",
+        stringr::str_detect(count_var, "^-?\\d+$") ~ "integer",
+        stringr::str_detect(count_var, "^-?\\d+[\\.,]\\d+$") ~ "dec_number",
         !is.na(lubridate::ymd(count_var, quiet = TRUE)) ~ "date_ymd",
         !is.na(lubridate::dmy(count_var, quiet = TRUE)) ~ "date_dmy",
         TRUE ~ stringr::str_c("'", count_var, "'")
@@ -27,7 +27,7 @@ count_grouped_cases <- function(count_var, grouped) {
     tibble::tibble(
       count_var,
       cases = dplyr::case_when(
-        stringr::str_detect(count_var, "^\\d+([\\.,]\\d+)?$") ~ "number",
+        stringr::str_detect(count_var, "^-?\\d+([\\.,]\\d+)?$") ~ "number",
         !is.na(lubridate::ymd(count_var, quiet = TRUE)) ~ "date_ymd",
         !is.na(lubridate::dmy(count_var, quiet = TRUE)) ~ "date_dmy",
         stringr::str_detect(count_var, "^[:blank:]+$") ~ "blank",
@@ -41,8 +41,8 @@ count_grouped_cases <- function(count_var, grouped) {
     tibble::tibble(
       count_var,
       cases = dplyr::case_when(
-        stringr::str_detect(count_var, "^\\d+$") ~ "integer",
-        stringr::str_detect(count_var, "^\\d+[\\.,]\\d+$") ~ "dec_number",
+        stringr::str_detect(count_var, "^-?\\d+$") ~ "integer",
+        stringr::str_detect(count_var, "^-?\\d+[\\.,]\\d+$") ~ "dec_number",
         !is.na(lubridate::ymd(count_var, quiet = TRUE)) ~ "date_ymd",
         !is.na(lubridate::dmy(count_var, quiet = TRUE)) ~ "date_dmy",
         stringr::str_detect(count_var, "^[:blank:]+$") ~ "blank",

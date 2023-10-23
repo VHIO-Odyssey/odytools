@@ -178,7 +178,7 @@ ody_proj_init <- function() {
       "project_templates", "report_template.qmd", package = "odytools"
     ),
     here::here(
-      "quality", stringr::str_c(project_name, "_verification.qmd")
+      "quality", stringr::str_c(project_name, "_quality.qmd")
     )
   )
 

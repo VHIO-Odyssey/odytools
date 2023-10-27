@@ -2,26 +2,27 @@
 #'
 #' @param file_name File name.
 #' @param extension File extension.
+#' @param path The location the file will be stored
 #'
-#' @details The function looks for the possible files named as file_name followed by today's date in the current wd. If none, the current date is returned as version indicator. If any, a number is added to the date.
+#' @details The function looks for the possible files named as file_name followed by today's date in path. If none, the current date is returned as version indicator. If any, a number is added to the date.
 #'
 #' @return A character
 #' @export
-ody_add_version <- function(file_name, extension = "html") {
+ody_add_version <- function(file_name, extension = "html", path = ".") {
 
   today_num <- lubridate::today() |>
     stringr::str_remove_all("-")
-  today_present <- list.files() |>
+  today_present <- list.files(path = path) |>
     stringr::str_detect(stringr::str_c(file_name, "_", today_num)) |>
     any()
-  today_present_mult <- list.files() |>
+  today_present_mult <- list.files(path = path) |>
     stringr::str_detect(stringr::str_c(file_name, "_", today_num, "_\\d")) |>
     any()
 
   if (today_present & !today_present_mult) {
     current_ver <- stringr::str_c("_", today_num, "_2")
   } else if (today_present_mult) {
-    current_ver <- list.files() |>
+    current_ver <- list.files(path = path) |>
       stringr::str_extract(stringr::str_c(today_num, "_\\d")) |>
       unique() |>
       na.omit() |>

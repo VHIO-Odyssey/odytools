@@ -4,12 +4,14 @@
 \alias{ody_add_version}
 \title{Get a version date for a render.}
 \usage{
-ody_add_version(file_name, extension = "html")
+ody_add_version(file_name, extension = "html", path = ".")
 }
 \arguments{
 \item{file_name}{File name.}
 
 \item{extension}{File extension.}
+
+\item{path}{The location the file will be stored}
 }
 \value{
 A character
@@ -18,5 +20,5 @@ A character
 Get a version date for a render.
 }
 \details{
-The function looks for the possible files named as file_name followed by today's date in the current wd. If none, the current date is returned as version indicator. If any, a number is added to the date.
+The function looks for the possible files named as file_name followed by today's date in path. If none, the current date is returned as version indicator. If any, a number is added to the date.
 }

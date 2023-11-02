@@ -184,3 +184,26 @@ ody_proj_init <- function() {
   )
 
 }
+
+save_lock <- function() {
+
+  locjk_exists <- any(list.files(here::here()) == "renv.lock")
+
+  if (locjk_exists) {
+
+    question <- rstudioapi::showQuestion(
+      "Lock file already exists",
+      "This action will overwrite an already existing Lock file. Are you sure?",
+      ok = "Yes, overwrite.", cancel = "No, cancel."
+    )
+
+    if (!question) stop("Aborted by user")
+
+  }
+
+  renv::lockfile_create() |>
+    renv::lockfile_write()
+
+}
+
+

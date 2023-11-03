@@ -99,7 +99,7 @@
 
 -   Added **add_overall** argument to **ody_summarise_df**
 
-# odytools dev
+# odytools 0.7.0
 
 -   Now, project-specific functions of a RedCap project are assumed to be stored in the scripts of the folder functions.
 -   Added **ody_rc_timetravel** to load previous imports.

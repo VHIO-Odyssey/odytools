@@ -328,6 +328,12 @@ nest_rc <- function(rc_raw) {
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
 
+  if (is.null(repeating)) {
+    message("Nothing to nest. This project has no repeating instruments.\n")
+    return(rc_raw)
+  }
+
+  message("Nesting the project...\n")
   # If the project has no events, the dummy event "classic_project" is added.
   if (names(rc_raw)[2] != "redcap_event_name") {
     rc_raw <- rc_raw |>
@@ -558,7 +564,7 @@ ody_rc_import <- function(
   }
 
   if (nest) {
-    message("Nesting the project...\n")
+
     rc_import <- nest_rc(rc_import) |>
       restore_attributes(rc_raw_import)
   }

@@ -108,3 +108,7 @@
 -   Added **ody_proj_init** to set the basicc structure of a non-RedCap project.
 -   Now, **ody_add_version** looks for already rendered outputs in the specified path instead than only in the current wd (the default path).
 -   Added **Create Lockfile** addin. It creates and saves a lockfile of the current project, so if any thing crashes after an update, the project can we isolated creating its own library according to the lockfile.
+
+# odytools dev
+
+-   Now, **ody_rc_import** does not try to nest a project with no repeating istruments even if nest = TRUE.

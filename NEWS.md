@@ -112,3 +112,4 @@
 # odytools dev
 
 -   Now, **ody_rc_import** does not try to nest a project with no repeating istruments even if nest = TRUE.
+-   Now, **ody_summarise_df** plots the density curves following the same order as shown in the table.

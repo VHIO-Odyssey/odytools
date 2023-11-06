@@ -429,7 +429,10 @@ make_continuous_detail_table <- function(detail_tbl,
 
       plot_data <- var_list_case[[1]] |>
       dplyr::rename(x = 1, y = 2) |>
-      na.omit()
+      na.omit() |>
+      dplyr::mutate(
+        y = forcats::fct_rev(y)
+      )
 
       ggplot2::ggplot(
         plot_data,

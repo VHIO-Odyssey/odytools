@@ -18,6 +18,10 @@ source(here::here(list.files(here::here(), "_dependencies.R$")))
 
 ```
 
+**RedCap Project:** `r ody_rc_current(as_list = TRUE)$project`
+
+**Import:** `r ody_rc_current(as_list = TRUE)$loaded`
+
 Write your awesome report here.
 
 ```{r}

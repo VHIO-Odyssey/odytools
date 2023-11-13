@@ -2,6 +2,7 @@
 
 -   Now, **ody_rc_import** does not try to nest a project with no repeating istruments even if nest = TRUE.
 -   Now, **ody_summarise_df** plots the density curves following the same order as shown in the table.
+-   Added the argument *export* to **ody_add_to_datasets**. If *export* = TRUE, the dataset is exported as csv to quality/tables.
 
 # odytools 0.7.0
 

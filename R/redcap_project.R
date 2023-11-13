@@ -99,6 +99,7 @@ rc_store_datasets <- function(redcap_data) {
     source, local = rlang::current_env()
   )
 
+  # Objects declared as datasets
   current_objects <- ls()
   dataset_index <- purrr::map_lgl(
     current_objects, ~!is.null(attr(get(.), "is_dataset"))
@@ -115,6 +116,22 @@ rc_store_datasets <- function(redcap_data) {
     redcap_data, "project_info"
   )$project_title
 
+  # Export datasets declared as export
+  export_index <- purrr::map_lgl(
+    datasets, ~attr(., "export")
+  )
+
+  if (sum(export_index) > 0) {
+
+    exported_tables <- datasets[export_index]
+    file_names <- stringr::str_c(names(exported_tables), "_", import_date, ".csv")
+
+    purrr::walk2(
+      exported_tables, file_names,
+      ~readr::write_csv2(.x, here::here("quality", "tables", .y))
+    )
+  }
+
   save(
     datasets,
     file = here::here(
@@ -127,6 +144,30 @@ rc_store_datasets <- function(redcap_data) {
 
 }
 
+# Helper function to export all datasets marked as exports
+rc_export_tables <- function(datasets) {
+
+  dataset_index <- purrr::map_lgl(
+    datasets, ~attr(., "export")
+  )
+
+  if (sum(dataset_index) > 0) {
+    exported_tables <- datasets[dataset_index]
+
+    import_date <- attr(datasets,"import_date") |>
+      stringr::str_extract("....-..-.. ..:..") |>
+      stringr::str_remove_all("-|:") |>
+      stringr::str_replace(" ", "_")
+
+    file_names <- stringr::str_c(names(exported_tables), "_", import_date, ".csv")
+
+    purrr::walk2(
+      exported_tables, file_names,
+      ~readr::write_csv2(.x, here::here("quality", "tables", .y))
+    )
+  }
+
+}
 
 # Start/Update a RedCap Project. Only Addin
 rc_init_update <- function() {
@@ -255,12 +296,19 @@ rc_refresh_datasets <- function() {
 #'
 #' @param object Object to add to datasets. Usually a data frame.
 #' @param description Optional description of the object.
+#' @param export Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at quality/tables/
 #'
 #' @export
-ody_add_to_datasets <- function(object, description = NULL) {
+ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
 
   attr(object, "is_dataset") <- TRUE
   attr(object, "description") <- description
+
+  if (export && is.data.frame(object)) {
+    attr(object, "export") <- TRUE
+  } else {
+    attr(object, "export") <- FALSE
+  }
 
   object
 

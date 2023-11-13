@@ -29,8 +29,7 @@ rc_init_dirs_files <- function() {
   dir.create(here::here("analysis"))
   dir.create(here::here("functions"))
   dir.create(here::here("quality", "verification"), recursive = TRUE)
-  dir.create(here::here("quality", "completeness"))
-  dir.create(here::here("quality", "cra_tables"))
+  dir.create(here::here("quality", "tables"))
 
   # Root Templates
   file.copy(

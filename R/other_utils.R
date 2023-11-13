@@ -187,9 +187,9 @@ ody_proj_init <- function() {
 
 save_lock <- function() {
 
-  locjk_exists <- any(list.files(here::here()) == "renv.lock")
+  lock_exists <- any(list.files(here::here()) == "renv.lock")
 
-  if (locjk_exists) {
+  if (lock_exists) {
 
     question <- rstudioapi::showQuestion(
       "Lock file already exists",

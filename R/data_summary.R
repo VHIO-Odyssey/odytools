@@ -431,7 +431,7 @@ make_continuous_detail_table <- function(detail_tbl,
       dplyr::rename(x = 1, y = 2) |>
       na.omit() |>
       dplyr::mutate(
-        y = forcats::fct_rev(y)
+        y = forcats::fct_rev(.data$y)
       )
 
       ggplot2::ggplot(

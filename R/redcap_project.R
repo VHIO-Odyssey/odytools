@@ -124,12 +124,15 @@ rc_store_datasets <- function(redcap_data) {
   if (sum(export_index) > 0) {
 
     exported_tables <- datasets[export_index]
-    file_names <- stringr::str_c(names(exported_tables), "_", import_date, ".csv")
+    file_names <- stringr::str_c(
+      project_name, "_", names(exported_tables), "_", import_date, ".csv"
+    )
 
     purrr::walk2(
       exported_tables, file_names,
       ~readr::write_csv2(.x, here::here("quality", "tables", .y))
     )
+
   }
 
   save(
@@ -141,31 +144,6 @@ rc_store_datasets <- function(redcap_data) {
   )
 
   datasets
-
-}
-
-# Helper function to export all datasets marked as exports
-rc_export_tables <- function(datasets) {
-
-  dataset_index <- purrr::map_lgl(
-    datasets, ~attr(., "export")
-  )
-
-  if (sum(dataset_index) > 0) {
-    exported_tables <- datasets[dataset_index]
-
-    import_date <- attr(datasets,"import_date") |>
-      stringr::str_extract("....-..-.. ..:..") |>
-      stringr::str_remove_all("-|:") |>
-      stringr::str_replace(" ", "_")
-
-    file_names <- stringr::str_c(names(exported_tables), "_", import_date, ".csv")
-
-    purrr::walk2(
-      exported_tables, file_names,
-      ~readr::write_csv2(.x, here::here("quality", "tables", .y))
-    )
-  }
 
 }
 
@@ -411,6 +389,7 @@ view_datasets <- function() {
 
   dplyr::tibble(
     dataset = names(get("datasets")),
+    exported = purrr::map_lgl(get("datasets"), ~attr(., "export")),
     description = purrr::map_chr(
       get("datasets"),
       ~ifelse(is.null(attr(., "description")), NA, attr(., "description"))

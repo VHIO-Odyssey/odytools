@@ -416,11 +416,18 @@ make_continuous_detail_table <- function(detail_tbl,
         dplyr::rename(x = 1) |>
         na.omit()
 
-      ggplot2::ggplot(plot_data, ggplot2::aes(.data$x)) +
-        ggridges::geom_density_line() +
+      ggplot2::ggplot(plot_data, ggplot2::aes(
+        .data$x, y = 0, fill = ggplot2::after_stat(quantile))
+      ) +
+        ggridges::stat_density_ridges(quantile_lines = FALSE,
+                                      calc_ecdf = TRUE, scale = 2,
+                                      geom = "density_ridges_gradient",
+                                      show.legend = FALSE) +
         ggplot2::labs(
-          x = names(var_list_case[[1]])[1]
+          x = names(var_list_case[[1]])[1],
+          y = "Density"
         ) +
+        ggplot2::scale_fill_brewer(name = "")+
         ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
         ggridges::theme_ridges(font_size = 16) +
         ggplot2::theme(axis.text.y = ggplot2::element_blank())

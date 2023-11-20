@@ -209,7 +209,9 @@ save_lock <- function() {
 
 update_odytools <- function() {
 
-  detach("package:odytools", unload = TRUE)
+  if ("odytools" %in% (.packages())) {
+    detach("package:odytools", unload = TRUE)
+  }
 
   master_branch <- rstudioapi::showQuestion(
     "Update odytools from GitHub",
@@ -223,4 +225,5 @@ update_odytools <- function() {
     devtools::install_github("VHIO-Odyssey/odytools@dev")
   }
 
+  require("odytools")
 }

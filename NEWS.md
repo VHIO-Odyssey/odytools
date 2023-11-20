@@ -1,6 +1,6 @@
-# odytools dev
+# odytools 0.7.1.9XXX
 
--   Nothing under development added since 0.7.1
+-   Nothing under development since 0.7.1
 
 # odytools 0.7.1
 

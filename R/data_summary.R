@@ -753,7 +753,7 @@ ody_summarise_df <- function(data_frame,
       }
 
       # Comparison to show if any
-      if (!is.null(comparisons) && !is.na(comparisons$Test)) {
+      if (!is.null(comparisons)) {
 
         comparison <- comparisons |>
           dplyr::filter(
@@ -763,7 +763,7 @@ ody_summarise_df <- function(data_frame,
             -"variable"
           )
 
-        if (nrow(comparison) == 0) {
+        if (nrow(comparison) == 0 || is.na(comparison$Test)) {
           comparison <- NULL
         } else {
           comparison <- reactable::reactable(

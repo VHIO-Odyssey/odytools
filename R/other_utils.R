@@ -209,7 +209,7 @@ save_lock <- function() {
 
 update_odytools <- function() {
 
-  current_version <- packageVersion("odytools")
+  current_version <- as.character(packageVersion("odytools"))
 
   sure <- rstudioapi::showQuestion(
     "Update odytools from GitHub",

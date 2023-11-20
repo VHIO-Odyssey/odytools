@@ -220,9 +220,9 @@ update_odytools <- function() {
   )
 
   if (master_branch) {
-    devtools::install_github("VHIO-Odyssey/odytools")
+    devtools::install_github("VHIO-Odyssey/odytools", force = TRUE)
   } else {
-    devtools::install_github("VHIO-Odyssey/odytools@dev")
+    devtools::install_github("VHIO-Odyssey/odytools@dev", force = TRUE)
   }
 
   require("odytools")

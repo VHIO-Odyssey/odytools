@@ -1,4 +1,4 @@
-# odytools dev
+# odytools 0.7.1
 
 -   Now, **ody_rc_import** does not try to nest a project with no repeating istruments even if nest = TRUE.
 -   Now, **ody_summarise_df** plots the density curves following the same order as shown in the table and if the test fails when comparing groups, the empty results table is not shown.

@@ -54,5 +54,5 @@ A list
 ody_summarise_df
 }
 \details{
-If grouping_var exists and compare_groups = TRUE, the code runs gtsummary::tbl_summary and extracts the p-values.
+If grouping_var exists and compare_groups is not "no", the code runs gtsummary::tbl_summary and extracts the p-values.
 }

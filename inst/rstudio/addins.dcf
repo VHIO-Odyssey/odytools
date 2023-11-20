@@ -37,3 +37,9 @@ Name: Create lockfile
 Description:  Record the state of the project at this time point.
 Binding: save_lock
 Interactive: false
+
+Name: Update odytools
+Description: Update odytools from GitHub.
+Binding: update_odytools
+Interactive: false
+

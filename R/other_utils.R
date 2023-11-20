@@ -185,6 +185,7 @@ ody_proj_init <- function() {
 
 }
 
+# Helper function to create a lockfile
 save_lock <- function() {
 
   lock_exists <- any(list.files(here::here()) == "renv.lock")
@@ -206,4 +207,20 @@ save_lock <- function() {
 
 }
 
+update_odytools <- function() {
 
+  detach("package:odytools", unload = TRUE)
+
+  master_branch <- rstudioapi::showQuestion(
+    "Update odytools from GitHub",
+    "From which branch do you want to update?",
+    ok = "Master", cancel = "Dev"
+  )
+
+  if (master_branch) {
+    devtools::install_github("VHIO-Odyssey/odytools")
+  } else {
+    devtools::install_github("VHIO-Odyssey/odytools@dev")
+  }
+
+}

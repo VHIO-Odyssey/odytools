@@ -1,7 +1,8 @@
 # odytools dev
 
 -   Now, **ody_rc_import** does not try to nest a project with no repeating istruments even if nest = TRUE.
--   Now, **ody_summarise_df** plots the density curves following the same order as shown in the table.
+-   Now, **ody_summarise_df** plots the density curves following the same order as shown in the table and if the test fails when comparing groups, the empty results table is not shown.
+-   Minor modification of the *quality* folder structure. Now, it only contains the folders *verification* and *tables.*
 -   Added the argument *export* to **ody_add_to_datasets**. If *export* = TRUE, the dataset is exported as csv to quality/tables.
 
 # odytools 0.7.0

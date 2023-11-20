@@ -479,7 +479,7 @@ make_continuous_detail_table <- function(detail_tbl,
 #'
 #' @return A list
 #' @details
-#' If grouping_var exists and compare_groups = TRUE, the code runs gtsummary::tbl_summary and extracts the p-values.
+#' If grouping_var exists and compare_groups is not "no", the code runs gtsummary::tbl_summary and extracts the p-values.
 #'
 #' @export
 ody_summarise_df <- function(data_frame,
@@ -753,7 +753,7 @@ ody_summarise_df <- function(data_frame,
       }
 
       # Comparison to show if any
-      if (!is.null(comparisons)) {
+      if (!is.null(comparisons) && !is.na(comparisons$Test)) {
 
         comparison <- comparisons |>
           dplyr::filter(

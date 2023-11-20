@@ -209,6 +209,18 @@ save_lock <- function() {
 
 update_odytools <- function() {
 
+  current_version <- packageVersion("odytools")
+
+  sure <- rstudioapi::showQuestion(
+    "Update odytools from GitHub",
+    stringr::str_c(
+      "Do you want to update odytools? (current version ",
+      current_version, ")"
+    )
+  )
+
+  if (!sure) stop("Update aborted")
+
   if ("odytools" %in% (.packages())) {
     detach("package:odytools", unload = TRUE)
   }

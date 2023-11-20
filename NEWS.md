@@ -1,6 +1,6 @@
 # odytools 0.7.1.9000
 
--   Nothing under development since 0.7.1
+-   Internal improvements of **Update odytools**.
 
 # odytools 0.7.1
 

@@ -209,8 +209,6 @@ rc_init_update <- function() {
   # Saving redcap_data and datasets must be done after checking the import
   # actually belongs to the expected project.
 
-
-
   import_date <- get_import_date(redcap_data)
   save(
     redcap_data,
@@ -431,5 +429,173 @@ ody_rc_timetravel <- function(timepoint) {
   load(here::here("data", "imports", import), envir = .GlobalEnv)
 
   ody_rc_current()
+
+}
+
+# Helper function to modify values in a longitudinal project
+hardcode_value_longproj <- function(
+    redcap_data,
+    event,
+    form,
+    variable,
+    id,
+    instance,
+    corrected_value) {
+
+  event_index <- redcap_data$redcap_event_name == event
+
+  form_index <- redcap_data$redcap_event_data[
+    event_index
+  ][[1]]$redcap_form_name == form
+
+  subject_index <- redcap_data$redcap_event_data[
+    event_index
+  ][[1]]$redcap_form_data[
+    form_index
+  ][[1]][, 1] == id
+
+  if (is.na(instance)) {
+
+    case_index <- subject_index
+
+  } else {
+
+    instance_index <- redcap_data$redcap_event_data[
+      event_index
+    ][[1]]$redcap_form_data[
+      form_index
+    ][[1]]$redcap_instance_number == instance
+
+    case_index <- subject_index & instance_index
+
+  }
+
+
+  selected <- redcap_data$redcap_event_data[
+    event_index
+  ][[1]]$redcap_form_data[
+    form_index
+  ][[1]][case_index, variable]
+
+  if (nrow(selected) != 1) {
+    stop("Ambiguous indications. Did you forget to specify the instance?")
+  }
+
+  redcap_data$redcap_event_data[
+    event_index
+  ][[1]]$redcap_form_data[
+    form_index
+  ][[1]][case_index, variable] <- corrected_value
+
+  list(
+    redcap_data,
+    dplyr::pull(selected)
+  )
+
+}
+
+
+# Helper function to modify values in a classic project
+hardcode_value_clasproj <- function(
+    redcap_data,
+    form,
+    variable,
+    id,
+    instance,
+    corrected_value) {
+
+  form_index <- redcap_data$redcap_form_name == form
+
+  subject_index <- redcap_data$redcap_form_data[
+    form_index
+  ][[1]][, 1] == id
+
+  if (is.na(instance)) {
+
+    case_index <- subject_index
+
+  } else {
+
+    instance_index <- redcap_data$redcap_form_data[
+      form_index
+    ][[1]]$redcap_instance_number == instance
+
+    case_index <- subject_index & instance_index
+
+  }
+
+  selected <- redcap_data$redcap_form_data[
+    form_index
+  ][[1]][case_index, variable]
+
+  if (nrow(selected) != 1) {
+    stop("Ambiguous indications. Did you forget to specify the instance?")
+  }
+
+  redcap_data$redcap_form_data[
+    form_index
+  ][[1]][case_index, variable] <- corrected_value
+
+  list(
+    redcap_data,
+    dplyr::pull(selected)
+  )
+
+}
+
+# Function to apply values modification according to the strcuture of the
+# project.
+hardcode_values <- function(redcap_data, hardcode_df) {
+
+  orig_values <- character()
+
+  if (names(hardcode_df)[1] == "event") {
+
+    for (i in 1:nrow(hardcode_df)) {
+
+      correction <- hardcode_value_longproj(
+        redcap_data,
+        hardcode_df$event[i],
+        hardcode_df$form[i],
+        hardcode_df$variable[i],
+        hardcode_df$id[i],
+        hardcode_df$instance[i],
+        hardcode_df$corrected_value[i]
+      )
+
+      redcap_data <- correction[[1]]
+
+      orig_values <- c(orig_values, correction[[2]])
+
+    }
+
+  } else {
+    for (i in 1:nrow(hardcode_df)) {
+
+      correction <- hardcode_value_clasproj(
+        redcap_data,
+        hardcode_df$form[i],
+        hardcode_df$variable[i],
+        hardcode_df$id[i],
+        hardcode_df$instance[i],
+        hardcode_df$corrected_value[i]
+      )
+
+      redcap_data <- correction[[1]]
+
+      orig_values <- c(orig_values, correction[[2]])
+    }
+
+  }
+
+  corrections <- hardcode_df |>
+    dplyr::mutate(
+      original_value = orig_values,
+      .before = corrected_value
+    )
+
+  attr(redcap_data, "hardcoded_values") <- corrections
+
+  redcap_data
 
 }

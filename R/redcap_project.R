@@ -228,14 +228,11 @@ rc_init_update <- function() {
       "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv"),
 
     ), col_types = readr::cols(.default = readr::col_character())
-  )
+  ) |> suppressMessages()
 
-  if(nrow(hardcoded_values) > 0) {
-
+  if (nrow(hardcoded_values) > 0) {
     redcap_data <- hardcode_values(redcap_data, hardcoded_values)
-
     message("This project has hardcoded values. Check them with attr(redcap_data, \"hardcoded_values\")\n")
-
   }
 
   import_date <- get_import_date(redcap_data)

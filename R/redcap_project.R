@@ -1,4 +1,5 @@
 #' @importFrom utils View
+#' @importFrom utils packageVersion
 
 # Helper to get the name of the project
 get_project_name <- function() {
@@ -576,7 +577,7 @@ hardcode_values <- function(redcap_data, hardcode_df) {
 
   orig_values <- character()
 
-  if (names(hardcode_df)[1] == "event") {
+  if (all(!is.na(hardcode_df$event))) {
 
     for (i in 1:nrow(hardcode_df)) {
 
@@ -618,7 +619,7 @@ hardcode_values <- function(redcap_data, hardcode_df) {
   corrections <- hardcode_df |>
     dplyr::mutate(
       original_value = orig_values,
-      .before = corrected_value
+      .before = "corrected_value"
     )
 
   attr(redcap_data, "hardcoded_values") <- corrections

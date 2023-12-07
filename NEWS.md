@@ -1,5 +1,6 @@
 # odytools 0.7.1.9000
 
+-   Introduced a formal method for hardcoding values.
 -   Internal improvements of **Update odytools**.
 
 # odytools 0.7.1

@@ -83,6 +83,17 @@ rc_init_dirs_files <- function() {
     )
   )
 
+  # hardcoding template
+  file.copy(
+    system.file(
+      "redcap_templates", "hardcoded_values.csv", package = "odytools"
+    ),
+    here::here(
+      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
+    )
+  )
+
+
 }
 
 # Helper function to store the datasets in an RData in ./datasets
@@ -208,6 +219,22 @@ rc_init_update <- function() {
 
   # Saving redcap_data and datasets must be done after checking the import
   # actually belongs to the expected project.
+
+  # before saving any hardcode modification is applyed
+
+  hardcoded_values <- readr::read_csv2(
+    here::here(
+      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
+    )
+  )
+
+  if(nrow(hardcoded_values) > 0) {
+
+    redcap_data <- hardcode_values(redcap_data, hardcoded_values)
+
+    warning("This project has hardcoded values. Check them with attr(redcap_data, hardcoded_values)")
+
+  }
 
   import_date <- get_import_date(redcap_data)
   save(

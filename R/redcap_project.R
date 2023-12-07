@@ -225,15 +225,16 @@ rc_init_update <- function() {
 
   hardcoded_values <- readr::read_csv2(
     here::here(
-      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
-    )
-  ) |> suppressMessages()
+      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv"),
+
+    ), col_types = readr::cols(.default = readr::col_character())
+  )
 
   if(nrow(hardcoded_values) > 0) {
 
     redcap_data <- hardcode_values(redcap_data, hardcoded_values)
 
-    message("This project has hardcoded values. Check them with attr(redcap_data, hardcoded_values)")
+    message("This project has hardcoded values. Check them with attr(redcap_data, \"hardcoded_values\")\n")
 
   }
 

@@ -227,13 +227,13 @@ rc_init_update <- function() {
     here::here(
       "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
     )
-  )
+  ) |> suppressMessages()
 
   if(nrow(hardcoded_values) > 0) {
 
     redcap_data <- hardcode_values(redcap_data, hardcoded_values)
 
-    warning("This project has hardcoded values. Check them with attr(redcap_data, hardcoded_values)")
+    message("This project has hardcoded values. Check them with attr(redcap_data, hardcoded_values)")
 
   }
 

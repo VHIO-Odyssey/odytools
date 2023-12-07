@@ -225,7 +225,7 @@ rc_init_update <- function() {
 
   hardcoded_values <- readr::read_csv2(
     here::here(
-      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv"),
+      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
 
     ), col_types = readr::cols(.default = readr::col_character())
   ) |> suppressMessages()
@@ -495,7 +495,6 @@ hardcode_value_longproj <- function(
     case_index <- subject_index & instance_index
 
   }
-
 
   selected <- redcap_data$redcap_event_data[
     event_index

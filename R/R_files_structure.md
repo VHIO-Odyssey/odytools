@@ -117,6 +117,11 @@ Functions to create and update RedCap projects in RStudio:
 Miscelaneous utilities.
 
 -   ody_add_version
+-   ody_change_names
+-   ody_options
+-   ody_proj_init
+-   save_lock ADDIN
+-   update_odytools ADDIN
 
 ## **aes**
 
@@ -137,3 +142,7 @@ Adverse Events related functions.
 Survival related functions.
 
 -   ody_extract_km
+
+## gpt
+
+-   ody_gpt

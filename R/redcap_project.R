@@ -25,12 +25,12 @@ rc_init_dirs_files <- function() {
   # Directories
   dir.create(here::here("data", "imports"), recursive = TRUE)
   dir.create(here::here("data", "extra"))
+  dir.create(here::here("data", "exports"))
   dir.create(here::here("data", "datasets"))
   dir.create(here::here("docs"))
   dir.create(here::here("analysis"))
   dir.create(here::here("functions"))
-  dir.create(here::here("quality", "verification"), recursive = TRUE)
-  dir.create(here::here("quality", "tables"))
+  dir.create(here::here("quality"))
 
   # Root Templates
   file.copy(
@@ -80,7 +80,7 @@ rc_init_dirs_files <- function() {
       "redcap_templates", "report_template.qmd", package = "odytools"
     ),
     here::here(
-      "quality", "verification", stringr::str_c(project_name, "_verification.qmd")
+      "quality", stringr::str_c(project_name, "_quality.qmd")
     )
   )
 
@@ -142,7 +142,7 @@ rc_store_datasets <- function(redcap_data) {
 
     purrr::walk2(
       exported_tables, file_names,
-      ~readr::write_csv2(.x, here::here("quality", "tables", .y))
+      ~readr::write_csv2(.x, here::here("data", "exports", .y))
     )
 
   }

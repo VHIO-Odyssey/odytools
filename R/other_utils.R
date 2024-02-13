@@ -239,3 +239,52 @@ update_odytools <- function() {
 
   require("odytools")
 }
+
+# Helper function of ody_compare_1_vs_others
+compare_cosa <- function(df) {
+
+  level <- levels(df[[1]])
+
+  purrr::map_dbl(
+    level,
+    ~wilcox.test(
+      df[[2]][df[[1]] == .],
+      df[[2]][df[[1]] != .]
+    )$p.value
+  )
+
+}
+
+#' Compere 1 level vs all other levels
+#'
+#' @param data_frame A data frame with a grouping variable in the first column and numeric variables in the rest of the columns.
+#' @param p_method Method to adjust p-values. Default is "BH".
+#'
+#' @export
+ody_compare_1_vs_others <- function(data_frame, p_method = "BH") {
+
+  result <- purrr::map_dfc(
+    names(data_frame)[-1],
+    ~compare_cosa(
+      data_frame |>
+        select(1, .)
+    )
+  ) |>
+    dplyr::mutate(
+      group = levels(data_frame[[1]]),
+      .before = 1
+    )
+
+  names(result)[-1] <- names(data_frame)[-1]
+
+  result |>
+    tidyr::pivot_longer(
+      -.data$group, names_to = "variable", values_to = "p_value"
+    ) |>
+    dplyr::group_by(.data$variable) |>
+    dplyr::mutate(
+      adj_p = p.adjust(.data$p_value, method = p_method)
+    ) |>
+    dplyr::ungroup()
+
+}

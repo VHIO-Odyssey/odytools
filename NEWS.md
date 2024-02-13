@@ -1,5 +1,6 @@
 # odytools 0.7.1.9000
 
+-   Added **ody_compare_1_vs_others** to compare a group with the rest of the groups in each variable of a data frame.
 -   Very first version of **ody_gpt**.
 -   Introduced a formal method for hardcoding values.
 -   Internal improvements of **Update odytools**.

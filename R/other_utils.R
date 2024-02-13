@@ -241,11 +241,11 @@ update_odytools <- function() {
 }
 
 # Helper function of ody_compare_1_vs_others
-compare_cosa <- function(df) {
+compare_1_vs_others <- function(df) {
 
   level <- levels(df[[1]])
 
-  purrr::map_dbl(
+  p_values <- purrr::map_dbl(
     level,
     ~wilcox.test(
       df[[2]][df[[1]] == .],
@@ -253,34 +253,43 @@ compare_cosa <- function(df) {
     )$p.value
   )
 
+  median_group <- purrr::map_dbl(
+    level, ~median(df[[2]][df[[1]] == .])
+  )
+
+  median_others <- purrr::map_dbl(
+    level, ~median(df[[2]][df[[1]] != .])
+  )
+
+  tibble(
+    group = level,
+    median_group = median_group,
+    median_others = median_others,
+    p_value = p_values
+  )
+
 }
 
-#' Compere 1 level vs all other levels
+#' Compare 1 level vs all other
+#'
+#' The function compares the values that correspond to one level of a factor with the values of all the other levels.
 #'
 #' @param data_frame A data frame with a grouping variable in the first column and numeric variables in the rest of the columns.
-#' @param p_method Method to adjust p-values. Default is "BH".
+#' @param p_method Method to adjust p-values. Default is "BH". Adjustment is performed within each variable.
 #'
 #' @export
 ody_compare_1_vs_others <- function(data_frame, p_method = "BH") {
 
-  result <- purrr::map_dfc(
+  result <- purrr::map_df(
     names(data_frame)[-1],
-    ~compare_cosa(
+    ~compare_1_vs_others(
       data_frame |>
         select(1, .)
-    )
-  ) |>
-    dplyr::mutate(
-      group = levels(data_frame[[1]]),
-      .before = 1
-    )
-
-  names(result)[-1] <- names(data_frame)[-1]
+    ) |>
+      mutate(variable = ., .before = 1)
+  )
 
   result |>
-    tidyr::pivot_longer(
-      -.data$group, names_to = "variable", values_to = "p_value"
-    ) |>
     dplyr::group_by(.data$variable) |>
     dplyr::mutate(
       adj_p = p.adjust(.data$p_value, method = p_method)

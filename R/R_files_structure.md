@@ -122,6 +122,8 @@ Miscelaneous utilities.
 -   ody_proj_init
 -   save_lock ADDIN
 -   update_odytools ADDIN
+-   compare_1_vs_others
+-   ody_compare_1_vs_others [compare_1_vs_others]
 
 ## **aes**
 

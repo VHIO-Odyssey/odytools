@@ -254,11 +254,11 @@ compare_1_vs_others <- function(df) {
   )
 
   median_group <- purrr::map_dbl(
-    level, ~median(df[[2]][df[[1]] == .])
+    level, ~median(df[[2]][df[[1]] == .], na.rm = TRUE)
   )
 
   median_others <- purrr::map_dbl(
-    level, ~median(df[[2]][df[[1]] != .])
+    level, ~median(df[[2]][df[[1]] != .], na.rm = TRUE)
   )
 
   tibble(

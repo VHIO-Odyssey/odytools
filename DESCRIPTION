@@ -8,7 +8,7 @@ Description: A miscellany of data science tools developed by the Oncology Data S
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.0
+RoxygenNote: 7.3.1
 Imports: 
     boot,
     bsicons,

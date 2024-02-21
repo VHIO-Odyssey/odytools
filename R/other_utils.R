@@ -261,7 +261,7 @@ compare_1_vs_others <- function(df) {
     level, ~median(df[[2]][df[[1]] != .], na.rm = TRUE)
   )
 
-  tibble(
+  tibble::tibble(
     group = level,
     median_group = median_group,
     median_others = median_others,

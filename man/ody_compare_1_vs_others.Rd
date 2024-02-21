@@ -2,15 +2,15 @@
 % Please edit documentation in R/other_utils.R
 \name{ody_compare_1_vs_others}
 \alias{ody_compare_1_vs_others}
-\title{Compere 1 level vs all other levels}
+\title{Compare 1 level vs all other}
 \usage{
 ody_compare_1_vs_others(data_frame, p_method = "BH")
 }
 \arguments{
 \item{data_frame}{A data frame with a grouping variable in the first column and numeric variables in the rest of the columns.}
 
-\item{p_method}{Method to adjust p-values. Default is "BH".}
+\item{p_method}{Method to adjust p-values. Default is "BH". Adjustment is performed within each variable.}
 }
 \description{
-Compere 1 level vs all other levels
+The function compares the values that correspond to one level of a factor with the values of all the other levels.
 }

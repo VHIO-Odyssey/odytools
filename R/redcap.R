@@ -25,18 +25,18 @@ import_rc <- function(
   import_date <- Sys.time()
 
   formData <- list(
-    "token"=token,
-    content='record',
-    action='export',
-    format='csv',
-    type='flat',
-    csvDelimiter='',
-    rawOrLabel='raw',
-    rawOrLabelHeaders='raw',
-    exportCheckboxLabel='false',
-    exportSurveyFields='false',
-    exportDataAccessGroups='false',
-    returnFormat='json'
+    "token" = token,
+    content = 'record',
+    action = 'export',
+    format = 'csv',
+    type = 'flat',
+    csvDelimiter = '',
+    rawOrLabel = 'raw',
+    rawOrLabelHeaders = 'raw',
+    exportCheckboxLabel = 'false',
+    exportSurveyFields = 'false',
+    exportDataAccessGroups = 'false',
+    returnFormat = 'json'
   )
 
   redcap_data <- httr::POST(url, body = formData, encode = "form") |>
@@ -49,6 +49,7 @@ import_rc <- function(
   # Metadata imports
   project_info <- extract_data("project", token, url)
   metadata <- extract_data("metadata", token, url)
+  dag <- extract_data("dag", token, url)
   forms <- extract_data("instrument", token, url)
   events <- extract_data("event", token, url)
   forms_event_mapping <- extract_data("formEventMapping", token, url)
@@ -107,6 +108,7 @@ import_rc <- function(
   attr(redcap_data, "subjects") <- redcap_data |>
     dplyr::pull(dplyr::all_of(id_var)) |>
     unique()
+  if (nrow(dag) > 0) attr(redcap_data, "dag") <- dag
   attr(redcap_data, "import_date") <- import_date
 
   # Delete unnecessary attributes
@@ -516,7 +518,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "project_info", "metadata", "forms", "events",
     "forms_events_mapping", "repeating", "arms",
     "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
-    "subjects", "import_date"
+    "subjects", "dag", "import_date"
   )
 
   needed_attributes <-  possible_attributes[

@@ -1,5 +1,6 @@
 # odytools 0.7.1.9000
 
+-   Now, **ody_rc_import** also gets the Data Access Groups information an stores it as the attribute "dag".
 -   Added **ody_compare_1_vs_others** to compare a group with the rest of the groups in each variable of a data frame.
 -   Very first version of **ody_gpt**.
 -   Introduced a formal method for hardcoding values.

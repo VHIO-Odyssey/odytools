@@ -35,7 +35,7 @@ import_rc <- function(
     rawOrLabelHeaders = 'raw',
     exportCheckboxLabel = 'false',
     exportSurveyFields = 'false',
-    exportDataAccessGroups = 'false',
+    exportDataAccessGroups = 'true',
     returnFormat = 'json'
   )
 
@@ -49,12 +49,20 @@ import_rc <- function(
   # Metadata imports
   project_info <- extract_data("project", token, url)
   metadata <- extract_data("metadata", token, url)
-  dag <- extract_data("dag", token, url)
   forms <- extract_data("instrument", token, url)
   events <- extract_data("event", token, url)
   forms_event_mapping <- extract_data("formEventMapping", token, url)
   repeating <- extract_data("repeatingFormsEvents", token, url)
   arms <- extract_data("arm", token, url)
+  has_dag <- any(names(redcap_data) == "redcap_data_access_group")
+  if (has_dag) {
+    dag <- extract_data("dag", token, url)
+    subjects_dag <- redcap_data |>
+      dplyr::select(1, "redcap_data_access_group") |>
+      unique()
+    redcap_data <- redcap_data |>
+      dplyr::select(-"redcap_data_access_group")
+  }
 
   # Indentifying variable
   id_var <- colnames(redcap_data)[1]
@@ -108,7 +116,10 @@ import_rc <- function(
   attr(redcap_data, "subjects") <- redcap_data |>
     dplyr::pull(dplyr::all_of(id_var)) |>
     unique()
-  if (nrow(dag) > 0) attr(redcap_data, "dag") <- dag
+  if (has_dag) {
+    attr(redcap_data, "dag") <- dag
+    attr(redcap_data, "subjects_dag") <- subjects_dag
+  }
   attr(redcap_data, "import_date") <- import_date
 
   # Delete unnecessary attributes
@@ -518,7 +529,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "project_info", "metadata", "forms", "events",
     "forms_events_mapping", "repeating", "arms",
     "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
-    "subjects", "dag", "import_date"
+    "subjects","subjects_dag", "dag", "import_date"
   )
 
   needed_attributes <-  possible_attributes[

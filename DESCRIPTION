@@ -46,6 +46,7 @@ Imports:
     rstudioapi,
     scales,
     shiny,
+    shinycssloaders,
     stringr,
     tibble,
     tidyr,

@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(shiny)
+library(shinycssloaders)
 library(bslib)
 library(forcats)
 library(labelled)
@@ -22,24 +23,30 @@ app_title <- str_c(
 )
 
 # Puede haber events 100% vacíos. Se eliminan.
-data_app <- data_app[map_dbl(data_app[[3]], nrow) != 0, ]
+data_app_events <- attr(data_app, "events")
 
+# Eventos
+if (is.null(data_app_events)) {
+  events_choices <- "No events"
+} else {
+  present_events <- data_app_events |>
+    filter(unique_event_name %in% data_app$redcap_event_name)
+  events_choices <- c("All", present_events$unique_event_name)
+  names(events_choices) <- c("All", present_events$event_name)
+}
 
 ui <- page_sidebar(
   title = app_title,
   sidebar = sidebar(
     selectInput(
-      "event", HTML("<b>Event</b>"), c("All", data_app$redcap_event_name),
+      "event", HTML("<b>Event</b>"), events_choices,
       width = "100%"
     ),
     selectInput(
-      "form", HTML("<b>Form</b>"), data_app |>
-        unnest(cols = redcap_event_data) |>
-        pull(redcap_form_name) |>
-        unique(),
+      "form", HTML("<b>Form</b>"), NULL,
       width = "100%"
     ),
-    width = "25%"
+    width = "15%"
   ),
   navset_card_tab(
     nav_panel(
@@ -49,9 +56,9 @@ ui <- page_sidebar(
           "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
           inline = TRUE
         )
-      ), DTOutput("table")
+      ), DTOutput("table") |> withSpinner()
     ),
-    nav_panel("Metadata", dataTableOutput("metadata")),
+    nav_panel("Metadata", dataTableOutput("metadata") |> withSpinner()),
     nav_panel(
       popover(
         tagList("Completeness", bsicons::bs_icon("gear", class = "ms-auto")),
@@ -61,30 +68,61 @@ ui <- page_sidebar(
           value = FALSE
         )
       ),
-      reactableOutput("completeness")
+      reactableOutput("completeness") |> withSpinner()
     ),
-    nav_panel("Descriptive", reactableOutput("descriptive"))
+    nav_panel("Descriptive", reactableOutput("descriptive") |> withSpinner())
   )
 )
 
 
 server <- function(input, output, session) {
 
+  # observeEvent(
+  #   input$event,
+  #   {
+  #     if (input$event != "All") {
+  #
+  #     temp <- data_app |>
+  #       filter(redcap_event_name == input$event) |>
+  #       unnest(cols = redcap_event_data) |>
+  #       pull(redcap_form_name)
+  #     } else {
+  #       temp <- data_app |>
+  #         unnest(cols = redcap_event_data) |>
+  #         pull(redcap_form_name)
+  #     }
+  #     updateSelectInput(session,"form",choices = unique(temp))
+  #   }
+  # )
+
+  # Forms Selector Update
   observeEvent(
     input$event,
     {
       if (input$event != "All") {
 
-      temp <- data_app |>
-        filter(redcap_event_name == input$event) |>
-        unnest(cols = redcap_event_data) |>
-        pull(redcap_form_name)
-      } else {
-        temp <- data_app |>
+        data_app_forms <- data_app |>
+          filter(redcap_event_name == input$event) |>
           unnest(cols = redcap_event_data) |>
-          pull(redcap_form_name)
+          pull(redcap_form_name) |>
+          unique()
+
+      } else {
+
+        data_app_forms <- data_app |>
+          unnest(cols = redcap_event_data) |>
+          pull(redcap_form_name) |>
+          unique()
       }
-      updateSelectInput(session,"form",choices = unique(temp))
+
+      present_forms <- attr(data_app, "forms") |>
+        filter(instrument_name %in% data_app_forms)
+      forms_choices <- present_forms$instrument_name
+      names(forms_choices) <- present_forms$instrument_label
+
+      updateSelectInput(
+        session, "form", choices = forms_choices
+      )
     }
   )
 
@@ -176,7 +214,6 @@ output$table <- renderDT(
   datatable(
     table_to_show(),
     filter = "top",
-    fillContainer = TRUE,
     extensions = "Buttons",
     class = "compact hover",
     options = list(
@@ -204,7 +241,7 @@ output$metadata <- renderDataTable({
       )
     ) |>
     datatable(
-      escape = FALSE, fillContainer = TRUE,
+      escape = FALSE,
       class = "compact hover",
       options = list(paging = FALSE)
     )

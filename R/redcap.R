@@ -341,12 +341,25 @@ nest_rc <- function(rc_raw) {
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
 
+  message("Nesting the project...\n")
+
+  # Added structure for projects with no repating forms
   if (is.null(repeating)) {
-    message("Nothing to nest. This project has no repeating instruments.\n")
-    return(rc_raw)
+    rc_raw <- rc_raw |>
+      dplyr::mutate(
+        redcap_event_name = "classic_project",
+        redcap_repeat_instrument = NA,
+        redcap_repeat_instance = NA,
+        redcap_instance_type = "unique",
+        redcap_instance_number = NA,
+        .after = 1
+      )
+    repeating <- tibble::tibble(
+      event_name = NA,
+      form_name = NA
+    )
   }
 
-  message("Nesting the project...\n")
   # If the project has no events, the dummy event "classic_project" is added.
   if (names(rc_raw)[2] != "redcap_event_name") {
     rc_raw <- rc_raw |>

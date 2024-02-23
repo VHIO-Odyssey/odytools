@@ -1,8 +1,10 @@
 # odytools 0.7.1.9000
 
--   Now, **ody_rc_import** also gets the Data Access Groups information, if any, an creates the following attributes:
-    -    **dag**: Tibble with the names and id info of all groups.
-    -   **subjects_dag**: Tibble with all the recorded subjects and the group they belong to.
+-    **ody_rc_import** improvements:
+    -   Nest projects even with no repeating forms.
+    -   Get the Data Access Groups information, if any, an creates the following attributes:
+        -   **dag**: Tibble with the names and id info of all groups.
+        -   **subjects_dag**: Tibble with all the recorded subjects and the group they belong to.
 -   Added **ody_compare_1_vs_others** to compare a group with the rest of the groups in each variable of a data frame.
 -   Very first version of **ody_gpt**.
 -   Introduced a formal method for hardcoding values.

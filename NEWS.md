@@ -1,6 +1,11 @@
 # odytools 0.7.1.9000
 
--    **ody_rc_import** improvements:
+-   Improvements to the REDCap Data Viewer:
+    -   Data can now be filtered by site.
+    -   Instead of displaying the raw name, selectors now present the label name of sites, events, and forms.
+    -   To ensure data availability, validators are added (if no data, a human friendly message is displayed).
+    -   While internal calculations are being executed, spinners are displayed to provide a visual cue of ongoing processes.
+-   **ody_rc_import** improvements:
     -   Nest projects even with no repeating forms.
     -   Get the Data Access Groups information, if any, an creates the following attributes:
         -   **dag**: Tibble with the names and id info of all groups.

@@ -25,6 +25,15 @@ app_title <- str_c(
 # Puede haber events 100% vacíos. Se eliminan.
 data_app_events <- attr(data_app, "events")
 
+# DAGS
+dag <- attr(data_app, "dag")
+if (is.null(dag)) {
+  dag_choices <- "No sites"
+} else {
+  dag_choices <- c("All", dag$unique_group_name)
+  names(dag_choices) <- c("All", dag$data_access_group_name)
+}
+
 # Eventos
 if (is.null(data_app_events)) {
   events_choices <- "No events"
@@ -35,15 +44,30 @@ if (is.null(data_app_events)) {
   names(events_choices) <- c("All", present_events$event_name)
 }
 
+# Forms
+data_app_forms <- data_app |>
+  unnest(cols = redcap_event_data) |>
+  pull(redcap_form_name) |>
+  unique()
+present_forms <- attr(data_app, "forms") |>
+  filter(instrument_name %in% data_app_forms)
+forms_choices <- present_forms$instrument_name
+names(forms_choices) <- present_forms$instrument_label
+
+
 ui <- page_sidebar(
   title = app_title,
   sidebar = sidebar(
+    selectInput(
+      "dag", HTML("<b>Site</b>"), dag_choices,
+      width = "100%"
+    ),
     selectInput(
       "event", HTML("<b>Event</b>"), events_choices,
       width = "100%"
     ),
     selectInput(
-      "form", HTML("<b>Form</b>"), NULL,
+      "form", HTML("<b>Form</b>"), forms_choices,
       width = "100%"
     ),
     width = "15%"
@@ -126,26 +150,62 @@ server <- function(input, output, session) {
     }
   )
 
-  raw_table <- reactive({
+  # raw_table <- reactive({
+  #
+  #   if (input$event != "All") {
+  #
+  #     event_data <- data_app |>
+  #       filter(redcap_event_name == input$event)
+  #
+  #   } else {
+  #
+  #     event_data <- data_app
+  #
+  #   }
+  #
+  #   event_data |>
+  #     unnest(cols = redcap_event_data) |>
+  #     filter(redcap_form_name == input$form) |>
+  #     select(redcap_event_name, redcap_form_name, redcap_form_data) |>
+  #     unnest(cols = redcap_form_data)
+  #
+  # })
 
-    if (input$event != "All") {
+  raw_table <- eventReactive(
+    c(input$dag, input$form, input$event),
+    {
 
-      event_data <- data_app |>
-        filter(redcap_event_name == input$event)
+      if (input$dag %in% c("All", "No sites")) {
 
-    } else {
+        filtered_data <- data_app
 
-      event_data <- data_app
+      } else {
 
-    }
+        site_subjects <- attr(data_app, "subjects_dag") |>
+          filter(redcap_data_access_group == input$dag) |>
+          pull(1)
+        filtered_data <- ody_rc_filter_subject(data_app, site_subjects)
 
-    event_data |>
-      unnest(cols = redcap_event_data) |>
-      filter(redcap_form_name == input$form) |>
-      select(redcap_event_name, redcap_form_name, redcap_form_data) |>
-      unnest(cols = redcap_form_data)
+      }
 
-  })
+      if (input$event != "All") {
+
+        event_data <- filtered_data |>
+          filter(redcap_event_name == input$event)
+
+      } else {
+
+        event_data <- filtered_data
+
+      }
+
+      event_data |>
+        unnest(cols = redcap_event_data) |>
+        filter(redcap_form_name == input$form) |>
+        select(redcap_event_name, redcap_form_name, redcap_form_data) |>
+        unnest(cols = redcap_form_data)
+
+    })
 
   table_to_show <- reactive({
 
@@ -210,7 +270,14 @@ server <- function(input, output, session) {
 
   })
 
-output$table <- renderDT(
+output$table <- renderDT({
+
+  validate(
+    need(
+      nrow(raw_table()) > 0,
+      "No data available for the selected site.")
+  )
+
   datatable(
     table_to_show(),
     filter = "top",
@@ -222,7 +289,7 @@ output$table <- renderDT(
       buttons = c("copy", "csv", "excel")
     )
   )
-)
+})
 
 output$metadata <- renderDataTable({
   attr(data_app, "metadata") |>
@@ -278,6 +345,12 @@ raw_table_comp <- reactive({
 
 output$completeness <- renderReactable({
 
+  validate(
+    need(
+      nrow(raw_table()) > 0,
+      "No data available for the selected site.")
+  )
+
   ody_rc_completeness(
     raw_table_comp(),
     id_var = attr(data_app, "id_var"),
@@ -291,6 +364,12 @@ output$completeness <- renderReactable({
 })
 
 output$descriptive <- renderReactable({
+
+  validate(
+    need(
+      nrow(raw_table()) > 0,
+      "No data available for the selected site.")
+  )
 
   raw_table_v0 <- raw_table() |>
     dplyr::select(-(1:5))

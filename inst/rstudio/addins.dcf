@@ -1,10 +1,10 @@
 Name: Where am I?
-Description: Print the name and import dates of the current RedCap project if any.
+Description: Print the name and import dates of the current REDCap project if any.
 Binding: ody_rc_current
 Interactive: false
 
-Name: Start/update a RedCap project
-Description: Start, or update if already started, a RedCap project in RStudio.
+Name: Start/update a REDCap project
+Description: Start, or update if already started, a REDCap project in RStudio.
 Binding: rc_init_update
 Interactive: false
 
@@ -13,8 +13,8 @@ Description: Refresh the datasets content.
 Binding: rc_refresh_datasets
 Interactive: false
 
-Name: RedCap viewer
-Description: Explore the data of a RedCap project.
+Name: REDCap viewer
+Description: Explore the data of a REDCap project.
 Binding: ody_rc_view
 Interactive: true
 

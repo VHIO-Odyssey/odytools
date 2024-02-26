@@ -1,4 +1,4 @@
-# odytools 0.7.1.9000
+# odytools 0.7.2
 
 -   Improvements to the REDCap Data Viewer:
     -   Data can now be filtered by site.
@@ -25,11 +25,11 @@
 
 # odytools 0.7.0
 
--   Now, project-specific functions of a RedCap project are assumed to be stored in the scripts of the folder functions.
+-   Now, project-specific functions of a REDCap project are assumed to be stored in the scripts of the folder functions.
 -   Added **ody_rc_timetravel** to load previous imports.
 -   Now, tokens are stored in .Renviron, so you only have to provide it when starting a new project or after regenerating your token.
 -   Added **ody_extract_km** to get the median and confidence intervals of survfit objects.
--   Added **ody_proj_init** to set the basicc structure of a non-RedCap project.
+-   Added **ody_proj_init** to set the basicc structure of a non-REDCap project.
 -   Now, **ody_add_version** looks for already rendered outputs in the specified path instead than only in the current wd (the default path).
 -   Added **Create Lockfile** addin. It creates and saves a lockfile of the current project, so if any thing crashes after an update, the project can we isolated creating its own library according to the lockfile.
 
@@ -39,23 +39,23 @@
 
 # odytools 0.6.1
 
--   Added **ody_rc_filter_subject**, a function to filter a RedCap import according to a provided vector of subject's Ids.
+-   Added **ody_rc_filter_subject**, a function to filter a REDCap import according to a provided vector of subject's Ids.
 
 # odytools 0.6.0
 
 -   Added **ody_add_to_datasets,** a function to create datsets.
 
--   Added **ody_rc_current**, a function to print the current project and import of the loaded RedCap database.
+-   Added **ody_rc_current**, a function to print the current project and import of the loaded REDCap database.
 
--   First "RedCap structure" implementation. Added several addins to manage a RedCap database in RStudio.
+-   First "REDCap structure" implementation. Added several addins to manage a REDCap database in RStudio.
 
-    -   **Where am I?**: Print the name and import date of the current RedCap project if any. (it just calls ody_rc_current.
+    -   **Where am I?**: Print the name and import date of the current REDCap project if any. (it just calls ody_rc_current.
 
-    -   **Start/update a RedCap project**: Start, or update if already started, a RedCap project in RStudio.
+    -   **Start/update a REDCap project**: Start, or update if already started, a REDCap project in RStudio.
 
     -   **Refresh datasets**: Refresh the datasets content.
 
-    -   **RedCap viewer**: Explore the data of a RedCap project. (it calls ody_rc_view)
+    -   **REDCap viewer**: Explore the data of a REDCap project. (it calls ody_rc_view)
 
     -   **View metadata**: Show the metadata of the current project on the Viewer.
 
@@ -104,12 +104,12 @@
 
 # odytools 0.3.1
 
--   Added **ody_rc_completeness**. This functions verifies the completeness of a RedCap derived dataframe. The conditions list is based on the branching logic of the project.
+-   Added **ody_rc_completeness**. This functions verifies the completeness of a REDCap derived dataframe. The conditions list is based on the branching logic of the project.
 -   Added the *.include_aux* (TRUE/FALSE) argument to **ody_rc_select**. If TRUE, the function also returns the auxiliar logic variables of a multiple selection variable.
 
 # odytools 0.3.0
 
--   Added RedCap functions:
+-   Added REDCap functions:
     -   **ody_rc_import**: Imports a project with a user token.
     -   **ody_rc_view**: Interactive viewer to explore the imported project.
     -   **ody_rc_select**: Helper function to select forms or variables.

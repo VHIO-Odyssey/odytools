@@ -18,6 +18,8 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA)
 
+rlang::check_installed("DHARMa")
+
 library(dplyr)
 library(stringr)
 library(lme4)

@@ -15,7 +15,6 @@ Imports:
     bslib,
     conflicted,
     devtools,
-    DHARMa,
     dplyr,
     DT,
     flexdashboard,
@@ -51,3 +50,5 @@ Imports:
     tibble,
     tidyr,
     tidyselect
+Suggests:
+    DHARMa

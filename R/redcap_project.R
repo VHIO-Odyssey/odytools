@@ -263,7 +263,7 @@ rc_init_update <- function() {
 
   if (backup) {
     message(
-      "A backup copy of the import and its derived datasets has been stored in the data/imports directory with the name ", backup_name
+      "A backup copy of the import and its derived datasets has been stored in data/imports with the name ", backup_name, "\n"
     )
   }
 

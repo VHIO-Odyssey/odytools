@@ -97,8 +97,8 @@ rc_init_dirs_files <- function() {
 
 }
 
-# Helper function to store the datasets in an RData in ./datasets
-rc_store_datasets <- function(redcap_data) {
+# Helper function to make the datasets
+rc_make_datasets <- function(redcap_data) {
 
   project_name <- get_project_name()
 
@@ -147,14 +147,6 @@ rc_store_datasets <- function(redcap_data) {
 
   }
 
-  save(
-    datasets,
-    file = here::here(
-      "data", "datasets",
-      stringr::str_c(project_name, "_datasets_", import_date, ".RData")
-    )
-  )
-
   datasets
 
 }
@@ -195,7 +187,7 @@ rc_init_update <- function() {
     is_new_token <- FALSE
   }
 
-  # The import if wrapped with try in case the token has changed and the store
+  # The import if wrapped with try in case the token has changed and the stored
   # one is not valid anymore
   redcap_data <- try(ody_rc_import(token))
 
@@ -235,24 +227,31 @@ rc_init_update <- function() {
     message("This project has hardcoded values. Check them with attr(redcap_data, \"hardcoded_values\")\n")
   }
 
-  import_date <- get_import_date(redcap_data)
-  save(
-    redcap_data,
-    file = here::here(
-      "data", "imports",
-      stringr::str_c(project_name, "_import_", import_date, ".RData")
-    )
-  )
-
   message("Computing datasets...\n")
-  datasets <- rc_store_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data)
 
   save(
     redcap_data, datasets,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  message("Project successfully downloaded.\n")
+  backup <- rstudioapi::showQuestion(
+    "Project successfully downloaded",
+    "Would you like to store a backup copy of the import and its derived datasets in the data/imports directory? (If you choose not to save a backup copy, this import will be overwritten at the next update.)",
+    ok = "Yes, save a backup copy.",
+    cancel = "No, I do not need a backup."
+  )
+
+  if (backup) {
+    import_date <- get_import_date(redcap_data)
+    save(
+      redcap_data, datasets,
+      file = here::here(
+        "data", "imports",
+        stringr::str_c(project_name, "_import_", import_date, ".RData")
+      )
+    )
+  }
 
   if (is_new_token) {
     token_renviron <- stringr::str_c(api_renv_name, "=", token)
@@ -277,7 +276,7 @@ rc_refresh_datasets <- function() {
   load(list.files(here::here(), ".RData$"))
 
   redcap_data <- get("redcap_data")
-  datasets <- rc_store_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data)
   project_name <- get_project_name()
 
   save(

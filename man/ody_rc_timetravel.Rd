@@ -10,5 +10,8 @@ ody_rc_timetravel(timepoint)
 \item{timepoint}{Timepoint pattern.}
 }
 \description{
-Load previous imports and datasets.
+Replace the current redcap_data and datasets with the ones from a previous backup stored in the data/imports folder.
+}
+\details{
+The back-ups are named after the project and the import date. The timepoint pattern is a regular expression to match the name of the back-up file. The pattern must match one and only one back-up file.
 }

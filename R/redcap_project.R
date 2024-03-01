@@ -236,7 +236,7 @@ rc_init_update <- function() {
   )
 
   backup <- rstudioapi::showQuestion(
-    "Project successfully downloaded",
+    "Back-up",
     "Would you like to store a backup copy of the import and its derived datasets in the data/imports directory? (If you choose not to save a backup copy, this import will be overwritten at the next update.)",
     ok = "Yes, save a backup copy.",
     cancel = "No, I do not need a backup."
@@ -250,6 +250,18 @@ rc_init_update <- function() {
         "data", "imports",
         stringr::str_c(project_name, "_import_", import_date, ".RData")
       )
+    )
+  }
+
+  if (is_update) {
+    message("Project successfully updated.\n")
+  } else {
+    message("Project successfully started.\n")
+  }
+
+  if (backup) {
+    message(
+      "A backup copy of the import and its derived datasets has been stored in the data/imports directory.\n"
     )
   }
 
@@ -423,34 +435,31 @@ view_datasets <- function() {
 
 #' Paradox-Free Time Travelling
 #'
-#' Load previous imports and datasets.
+#' Replace the current redcap_data and datasets with the ones from a previous backup stored in the data/imports folder.
 #'
 #' @param timepoint Timepoint pattern.
 #'
+#' @details The back-ups are named after the project and the import date. The timepoint pattern is a regular expression to match the name of the back-up file. The pattern must match one and only one back-up file.
+#'
 #' @export
 ody_rc_timetravel <- function(timepoint) {
-
-  dataset <- list.files(here::here("data", "datasets"), ".RData$") |>
-    stringr::str_subset(timepoint)
-
 
   import <- list.files(here::here("data", "imports"), ".RData$") |>
     stringr::str_subset(timepoint)
 
 
-  if (length(dataset) == 0 || length(import) == 0) {
+  if (length(import) == 0) {
 
     stop("No available timepoint")
 
   }
 
-  if (length(dataset) > 1 || length(import) > 1) {
+  if (length(import) > 1) {
 
     stop("Ambiguous timepoint")
 
   }
 
-  load(here::here("data", "datasets", dataset), envir = .GlobalEnv)
   load(here::here("data", "imports", import), envir = .GlobalEnv)
 
   ody_rc_current()

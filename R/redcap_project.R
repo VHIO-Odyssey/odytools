@@ -244,11 +244,13 @@ rc_init_update <- function() {
 
   if (backup) {
     import_date <- get_import_date(redcap_data)
+    backup_name <- stringr::str_c(
+      project_name, "_import_", import_date, ".RData"
+    )
     save(
       redcap_data, datasets,
       file = here::here(
-        "data", "imports",
-        stringr::str_c(project_name, "_import_", import_date, ".RData")
+        "data", "imports",backup_name
       )
     )
   }
@@ -261,7 +263,7 @@ rc_init_update <- function() {
 
   if (backup) {
     message(
-      "A backup copy of the import and its derived datasets has been stored in the data/imports directory.\n"
+      "A backup copy of the import and its derived datasets has been stored in the data/imports directory with the name ", backup_name
     )
   }
 

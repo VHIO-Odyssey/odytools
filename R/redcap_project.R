@@ -297,7 +297,9 @@ rc_back_up <- function() {
     project_name, "_import_", import_date, ".RData"
   )
 
-  attr(redcap_data, "backup_date") <- Sys.time()
+  backup_date <- Sys.time()
+  attr(redcap_data, "backup_date") <- backup_date
+  attr(datasets, "backup_date") <- backup_date
 
   save(
     redcap_data, datasets,
@@ -378,7 +380,8 @@ ody_rc_current <- function(as_list = FALSE) {
     message(stringr::str_c(
       "Project: ", stringr::str_c(project_name, " (PID ", project_id, ")"),
       "\nLast import: ", import_date,
-      "\nLoaded import: ", loaded_import_date
+      "\nLoaded import: ", loaded_import_date,
+      "\n"
     ))
   }
 }

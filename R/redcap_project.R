@@ -256,7 +256,7 @@ rc_init_update <- function() {
 
 }
 
-# Refresh the Datasets List. Only Addin
+# Refresh the Datasets List. Only Addin.
 rc_refresh_datasets <- function() {
 
   message("Refreshing datasets...\n")
@@ -307,7 +307,7 @@ rc_back_up <- function() {
   )
 
   message(
-    "A backup copy of the import and its derived datasets has been stored in data/imports with the name ", backup_name, "\n"
+    "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
   )
 
 }

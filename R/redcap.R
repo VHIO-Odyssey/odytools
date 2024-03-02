@@ -1090,3 +1090,46 @@ ody_rc_completeness <- function(
 
 }
 
+
+
+ody_rc_spread <- function(rc_data = redcap_data) {
+
+  if (names(rc_data)[2] != "redcap_repeating_form") {
+    stop("This function only supports classic projects with no events.")
+  }
+
+  fields <- attr(rc_data, "metadata")$field_name
+  id_var <- attr(rc_data, "id_var")
+
+  rc_data |>
+    dplyr::filter(!redcap_repeating_form) |>
+    dplyr::pull(redcap_form_data) |>
+    purrr::map(
+      ~. |>
+        dplyr::select(
+          -redcap_instance_type,
+          -redcap_instance_number,
+          -tidyselect::matches("___")
+        ) |>
+        ody_rc_format()
+    ) |>
+    purrr::reduce(dplyr::full_join, by = id_var) |>
+    dplyr::full_join(
+      rc_data |>
+        dplyr::filter(redcap_repeating_form) |>
+        dplyr::pull(redcap_form_data) |>
+        purrr::map(
+          ~.|>
+            ody_rc_format() |>
+            dplyr::select(-redcap_instance_type, -tidyselect::matches("___")) |>
+            tidyr::pivot_wider(
+              names_from = redcap_instance_number,
+              values_from = c(-tidyselect::all_of(id_var), -redcap_instance_number),
+              names_vary = "slowest"
+            )
+        ) |>
+        purrr::reduce(dplyr::full_join, by = id_var),
+      by = id_var
+    ) |>
+    dplyr::select(tidyselect::starts_with(fields))
+}

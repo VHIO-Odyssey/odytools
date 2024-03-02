@@ -1,6 +1,6 @@
 # odytools 0.7.2.9000
 
--   The new REDCap imports obtained with the add-in will no longer be backed up by default. Instead, a pop-up window will ask if you want to keep a copy. If you answer yes, both the import and its derived datasets will be stored in a single, date-stamped RData file in the data/imports directory.
+-   The new REDCap imports, obtained with the add-in,will no longer be backed up by default. Instead, we've introduced a new add-in that permits the user to save the current redcap_data and datasets objects into a single RData file. This file will be stored in the data/imports directory.
 
 # odytools 0.7.2
 

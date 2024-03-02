@@ -235,36 +235,10 @@ rc_init_update <- function() {
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  backup <- rstudioapi::showQuestion(
-    "Back-up",
-    "Would you like to store a backup copy of the import and its derived datasets in the data/imports directory? (If you choose not to save a backup copy, this import will be overwritten at the next update.)",
-    ok = "Yes, save a backup copy.",
-    cancel = "No, I do not need a backup."
-  )
-
-  if (backup) {
-    import_date <- get_import_date(redcap_data)
-    backup_name <- stringr::str_c(
-      project_name, "_import_", import_date, ".RData"
-    )
-    save(
-      redcap_data, datasets,
-      file = here::here(
-        "data", "imports",backup_name
-      )
-    )
-  }
-
   if (is_update) {
     message("Project successfully updated.\n")
   } else {
     message("Project successfully started.\n")
-  }
-
-  if (backup) {
-    message(
-      "A backup copy of the import and its derived datasets has been stored in data/imports with the name ", backup_name, "\n"
-    )
   }
 
   if (is_new_token) {
@@ -307,6 +281,35 @@ rc_refresh_datasets <- function() {
 
 }
 
+# Save a copy of the current redcap_data and datasets. Only Addin
+rc_back_up <- function() {
+
+  load(list.files(here::here(), ".RData$"))
+
+  # this to avoid package check complains about undefined objects
+  redcap_data <- get("redcap_data")
+  datasets <- get("datasets")
+
+  project_name <- get_project_name()
+  import_date <- get_import_date(redcap_data)
+
+  backup_name <- stringr::str_c(
+    project_name, "_import_", import_date, ".RData"
+  )
+
+  attr(redcap_data, "backup_date") <- Sys.time()
+
+  save(
+    redcap_data, datasets,
+    file = here::here("data", "imports", backup_name)
+  )
+
+  message(
+    "A backup copy of the import and its derived datasets has been stored in data/imports with the name ", backup_name, "\n"
+  )
+
+}
+
 #' Declare an object as belonging to datasets list
 #'
 #' @param object Object to add to datasets. Usually a data frame.
@@ -338,7 +341,7 @@ ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
 #' "Last" and "Loaded" imports can be different. If so, CAUTION, you are a timetraveller
 #'
 #' @export
-ody_rc_current <- function (as_list = FALSE) {
+ody_rc_current <- function(as_list = FALSE) {
 
   # Current Redcap data in main RData
   rdatas <- list.files(here::here(), ".RData$")

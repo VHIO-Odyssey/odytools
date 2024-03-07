@@ -630,7 +630,11 @@ ody_render_quality_report <- function(
     id_var = "row_number", conditions_list = "no", add_data = FALSE,
     max_integer_distinct = 10, output_dir = getwd()) {
 
-  rlang::check_installed("flexdashboard")
+  rlang::check_installed(c(
+    "flexdashboard",
+    "janitor",
+    "openxlsx"
+  ))
 
   parameters <- list(
     project_name = project_name,

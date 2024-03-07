@@ -629,6 +629,9 @@ ody_render_quality_report <- function(
     project_date = {lubridate::today() |> stringr::str_remove_all("-")},
     id_var = "row_number", conditions_list = "no", add_data = FALSE,
     max_integer_distinct = 10, output_dir = getwd()) {
+
+  rlang::check_installed("flexdashboard")
+
   parameters <- list(
     project_name = project_name,
     data = data_frame,

@@ -3,6 +3,7 @@ library(tidyr)
 library(shiny)
 library(shinycssloaders)
 library(bslib)
+library(bsicons)
 library(forcats)
 library(labelled)
 library(stringr)
@@ -75,7 +76,7 @@ ui <- page_sidebar(
   navset_card_tab(
     nav_panel(
       popover(
-        tagList("Data", bsicons::bs_icon("gear", class = "ms-auto")),
+        tagList("Data", bs_icon("gear", class = "ms-auto")),
         radioButtons(
           "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
           inline = TRUE
@@ -85,7 +86,7 @@ ui <- page_sidebar(
     nav_panel("Metadata", dataTableOutput("metadata") |> withSpinner()),
     nav_panel(
       popover(
-        tagList("Completeness", bsicons::bs_icon("gear", class = "ms-auto")),
+        tagList("Completeness", bs_icon("gear", class = "ms-auto")),
         checkboxInput(
           "count_user_na",
           "Consider user-defined missing values as regular missing values.",

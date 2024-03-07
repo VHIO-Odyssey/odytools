@@ -10,12 +10,8 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Imports: 
-    bsicons,
-    bslib,
-    conflicted,
     devtools,
     dplyr,
-    flexdashboard,
     forcats,
     ggplot2,
     ggridges,
@@ -42,12 +38,16 @@ Imports:
     rmarkdown,
     rstudioapi,
     scales,
-    shiny,
     shinycssloaders,
     stringr,
     tibble,
     tidyr,
     tidyselect
 Suggests:
+    bsicons,
+    bslib,
+    conflicted,
     DHARMa,
-    DT
+    DT,
+    flexdashboard,
+    shiny

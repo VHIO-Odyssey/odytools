@@ -122,6 +122,8 @@ ody_options <- function(label_size = 1,
 #' @export
 ody_proj_init <- function() {
 
+  rlang::check_installed("conflicted")
+
   project_name <- get_project_name()
 
   # Directories

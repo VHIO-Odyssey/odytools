@@ -884,6 +884,10 @@ ody_rc_format <- function(rc_df) {
 ody_rc_view <- function(data_app = NULL) {
 
   rlang::check_installed("DT")
+  rlang::check_installed("bsicons")
+  rlang::check_installed("shiny")
+  rlang::check_installed("bslib")
+
 
   if (is.null(data_app)) {
     if (exists("redcap_data")) {

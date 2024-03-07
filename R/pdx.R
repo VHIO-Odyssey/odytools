@@ -111,6 +111,9 @@ ody_pdx_model_sensitivity <- function(
     p_adjust = c("single-step", "Shaffer", "Westfall", "free", p.adjust.methods)
 ) {
 
+  # Check if required packages are installed
+  rlang::check_installed("DHARMa")
+
   model_type <- rlang::arg_match(model_type)
   p_adjust <- rlang::arg_match(p_adjust)
 

@@ -16,7 +16,6 @@ Imports:
     conflicted,
     devtools,
     dplyr,
-    DT,
     flexdashboard,
     forcats,
     ggplot2,
@@ -52,3 +51,4 @@ Imports:
     tidyselect
 Suggests:
     DHARMa
+    DT

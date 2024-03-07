@@ -30,6 +30,7 @@ ody_pdx_model_sensitivity <- function(
 
   # Check if required packages are installed
   rlang::check_installed("DHARMa")
+  rlang::check_installed("DT")
 
   model_type <- rlang::arg_match(model_type)
   p_adjust <- rlang::arg_match(p_adjust)

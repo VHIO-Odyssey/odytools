@@ -883,6 +883,8 @@ ody_rc_format <- function(rc_df) {
 #' @export
 ody_rc_view <- function(data_app = NULL) {
 
+  rlang::check_installed("DT")
+
   if (is.null(data_app)) {
     if (exists("redcap_data")) {
       data_app <- get("redcap_data")

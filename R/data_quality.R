@@ -643,6 +643,8 @@ ody_render_quality_report <- function(
   )
 
   if (add_data) {
+
+    rlang::check_installed("DT")
     template <- system.file(
       "quality_reports", "quality_report_template_with_data.Rmd",
       package = "odytools"

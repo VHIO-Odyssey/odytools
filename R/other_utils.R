@@ -303,3 +303,26 @@ ody_compare_1_vs_others <- function(data_frame, p_method = "BH") {
     dplyr::ungroup()
 
 }
+
+
+#' Glue to Languange
+#'
+#' Glue a string and convert it to a language object.
+#'
+#' @param ... Expressions to glue and transform into language objects.
+#' @param .envir Environment to evaluate each expression in.
+#' @param .eval If TRUE, the function evaluates the language object.
+#'
+#' @return A language object or the its evaluation if .eval = TRUE
+#' @export
+ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
+
+  rlang::check_installed("glue")
+
+  glued_lang <- glue::glue(..., .envir = .envir) |>
+    str2lang()
+
+  if (.eval) eval(glued_lang) else glued_lang
+
+}
+

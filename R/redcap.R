@@ -1105,3 +1105,86 @@ ody_rc_completeness <- function(
 
 }
 
+
+
+#' Spread a Classic REDCap project into a 2D table
+#'
+#' The function ody_rc_spread takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
+#'
+#' @param rc_data The object to spread.
+#'
+#' @details If no data provided, the function checks whether there is a redcap_data object in the environment.
+#'
+#' @return A tibble
+#' @export
+ody_rc_spread <- function(rc_data = NULL) {
+
+  if (is.null(rc_data)) {
+    if (exists("redcap_data")) {
+      rc_data <- get("redcap_data")
+    } else {
+      stop("No data provided.")
+    }
+  }
+
+  if (names(rc_data)[2] != "redcap_repeating_form") {
+    stop("This function only supports classic projects with no events.")
+  }
+
+  fields <- attr(rc_data, "metadata")$field_name
+  id_var <- attr(rc_data, "id_var")
+
+  has_repeating <- any(rc_data$redcap_repeating_form)
+  has_unique <- any(!rc_data$redcap_repeating_form)
+
+  if (has_unique) {
+    spread_unique <- rc_data |>
+      dplyr::filter(!.data$redcap_repeating_form) |>
+      dplyr::pull(.data$redcap_form_data) |>
+      purrr::map(
+        ~. |>
+          dplyr::select(
+            -redcap_instance_type,
+            -redcap_instance_number,
+            -tidyselect::matches("___")
+          ) |>
+          ody_rc_format()
+      ) |>
+      purrr::reduce(dplyr::full_join, by = id_var)
+
+  }
+
+  if (has_repeating) {
+    spread_repeating <- rc_data |>
+      dplyr::filter(.data$redcap_repeating_form) |>
+      dplyr::pull(.data$redcap_form_data) |>
+      purrr::map(
+        ~.|>
+          ody_rc_format() |>
+          dplyr::select(
+            -redcap_instance_type,
+            -tidyselect::matches("___")
+          ) |>
+          tidyr::pivot_wider(
+            names_from = redcap_instance_number,
+            values_from = c(
+              -tidyselect::all_of(id_var), -redcap_instance_number
+            ),
+            names_vary = "slowest"
+          )
+      ) |>
+      purrr::reduce(dplyr::full_join, by = id_var)
+  }
+
+  if (has_unique && has_repeating) {
+    dplyr::full_join(spread_unique, spread_repeating, by = id_var) |>
+      dplyr::select(tidyselect::starts_with(fields))
+  } else if (has_unique) {
+    spread_unique |>
+      dplyr::select(tidyselect::starts_with(fields))
+  } else {
+    spread_repeating |>
+      dplyr::select(tidyselect::starts_with(fields))
+  }
+
+}

@@ -99,8 +99,8 @@ rc_init_dirs_files <- function() {
 
 }
 
-# Helper function to store the datasets in an RData in ./datasets
-rc_store_datasets <- function(redcap_data) {
+# Helper function to make the datasets
+rc_make_datasets <- function(redcap_data) {
 
   project_name <- get_project_name()
 
@@ -149,14 +149,6 @@ rc_store_datasets <- function(redcap_data) {
 
   }
 
-  save(
-    datasets,
-    file = here::here(
-      "data", "datasets",
-      stringr::str_c(project_name, "_datasets_", import_date, ".RData")
-    )
-  )
-
   datasets
 
 }
@@ -197,7 +189,7 @@ rc_init_update <- function() {
     is_new_token <- FALSE
   }
 
-  # The import if wrapped with try in case the token has changed and the store
+  # The import if wrapped with try in case the token has changed and the stored
   # one is not valid anymore
   redcap_data <- try(ody_rc_import(token))
 
@@ -237,24 +229,19 @@ rc_init_update <- function() {
     message("This project has hardcoded values. Check them with attr(redcap_data, \"hardcoded_values\")\n")
   }
 
-  import_date <- get_import_date(redcap_data)
-  save(
-    redcap_data,
-    file = here::here(
-      "data", "imports",
-      stringr::str_c(project_name, "_import_", import_date, ".RData")
-    )
-  )
-
   message("Computing datasets...\n")
-  datasets <- rc_store_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data)
 
   save(
     redcap_data, datasets,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
-  message("Project successfully downloaded.\n")
+  if (is_update) {
+    message("Project successfully updated.\n")
+  } else {
+    message("Project successfully started.\n")
+  }
 
   if (is_new_token) {
     token_renviron <- stringr::str_c(api_renv_name, "=", token)
@@ -271,7 +258,7 @@ rc_init_update <- function() {
 
 }
 
-# Refresh the Datasets List. Only Addin
+# Refresh the Datasets List. Only Addin.
 rc_refresh_datasets <- function() {
 
   message("Refreshing datasets...\n")
@@ -279,7 +266,7 @@ rc_refresh_datasets <- function() {
   load(list.files(here::here(), ".RData$"))
 
   redcap_data <- get("redcap_data")
-  datasets <- rc_store_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data)
   project_name <- get_project_name()
 
   save(
@@ -293,6 +280,37 @@ rc_refresh_datasets <- function() {
   )
 
   message("Datasets successfully refreshed.\n")
+
+}
+
+# Save a copy of the current redcap_data and datasets. Only Addin
+rc_back_up <- function() {
+
+  load(list.files(here::here(), ".RData$"))
+
+  # this to avoid package check complains about undefined objects
+  redcap_data <- get("redcap_data")
+  datasets <- get("datasets")
+
+  project_name <- get_project_name()
+  import_date <- get_import_date(redcap_data)
+
+  backup_name <- stringr::str_c(
+    project_name, "_import_", import_date, ".RData"
+  )
+
+  backup_date <- Sys.time()
+  attr(redcap_data, "backup_date") <- backup_date
+  attr(datasets, "backup_date") <- backup_date
+
+  save(
+    redcap_data, datasets,
+    file = here::here("data", "imports", backup_name)
+  )
+
+  message(
+    "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
+  )
 
 }
 
@@ -327,7 +345,7 @@ ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
 #' "Last" and "Loaded" imports can be different. If so, CAUTION, you are a timetraveller
 #'
 #' @export
-ody_rc_current <- function (as_list = FALSE) {
+ody_rc_current <- function(as_list = FALSE) {
 
   # Current Redcap data in main RData
   rdatas <- list.files(here::here(), ".RData$")
@@ -364,7 +382,8 @@ ody_rc_current <- function (as_list = FALSE) {
     message(stringr::str_c(
       "Project: ", stringr::str_c(project_name, " (PID ", project_id, ")"),
       "\nLast import: ", import_date,
-      "\nLoaded import: ", loaded_import_date
+      "\nLoaded import: ", loaded_import_date,
+      "\n"
     ))
   }
 }
@@ -426,34 +445,31 @@ view_datasets <- function() {
 
 #' Paradox-Free Time Travelling
 #'
-#' Load previous imports and datasets.
+#' Replace the current redcap_data and datasets with the ones from a previous backup stored in the data/imports folder.
 #'
 #' @param timepoint Timepoint pattern.
 #'
+#' @details The back-ups are named after the project and the import date. The timepoint pattern is a regular expression to match the name of the back-up file. The pattern must match one and only one back-up file.
+#'
 #' @export
 ody_rc_timetravel <- function(timepoint) {
-
-  dataset <- list.files(here::here("data", "datasets"), ".RData$") |>
-    stringr::str_subset(timepoint)
-
 
   import <- list.files(here::here("data", "imports"), ".RData$") |>
     stringr::str_subset(timepoint)
 
 
-  if (length(dataset) == 0 || length(import) == 0) {
+  if (length(import) == 0) {
 
     stop("No available timepoint")
 
   }
 
-  if (length(dataset) > 1 || length(import) > 1) {
+  if (length(import) > 1) {
 
     stop("Ambiguous timepoint")
 
   }
 
-  load(here::here("data", "datasets", dataset), envir = .GlobalEnv)
   load(here::here("data", "imports", import), envir = .GlobalEnv)
 
   ody_rc_current()

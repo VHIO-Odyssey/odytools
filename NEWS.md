@@ -1,3 +1,7 @@
+# odytools 0.7.3.9000
+
+-   Added **ody_qlq_c30_v3** to calculate the scores of the scales of EORTC QLQ-C30 version 3.0.
+
 # odytools 0.7.3
 
 -   Added **ody_glue2lang**, a helping function to glue and transform into evaluable expressions.

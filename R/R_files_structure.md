@@ -149,6 +149,12 @@ Survival related functions.
 
 -   ody_extract_km
 
-## gpt
+## **gpt**
 
 -   ody_gpt
+
+## **scores_ct**
+
+Calcutation of scores commonly used in clinical trials.
+
+-   ody_qlq_c30

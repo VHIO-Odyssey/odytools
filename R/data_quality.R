@@ -635,7 +635,8 @@ ody_render_quality_report <- function(
     "janitor",
     "openxlsx",
     "htmltools",
-    "reactablefmtr"
+    "reactablefmtr",
+    "rmarkdown"
   ))
 
   parameters <- list(

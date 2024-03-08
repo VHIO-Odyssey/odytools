@@ -36,7 +36,8 @@ ody_pdx_model_sensitivity <- function(
     "knitr",
     "kableExtra",
     "lme4",
-    "multcomp"
+    "multcomp",
+    "rmarkdown"
   ))
 
   model_type <- rlang::arg_match(model_type)
@@ -190,7 +191,7 @@ ody_pdx_model_sensitivity <- function(
       stringr::str_sub(sys_time_num, 1, 8),
       stringr::str_sub(sys_time_num, 9, 12), sep = "_")
 
-    file_name <-stringr::str_c(
+    file_name <- stringr::str_c(
       names_df[4], "_", model_type, "_", date_time, ".html"
     )
 

@@ -190,6 +190,8 @@ ody_proj_init <- function() {
 # Helper function to create a lockfile
 save_lock <- function() {
 
+  rlang::check_installed("renv")
+
   lock_exists <- any(list.files(here::here()) == "renv.lock")
 
   if (lock_exists) {

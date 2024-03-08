@@ -1030,6 +1030,11 @@ ody_rc_completeness <- function(
     opt_reactable = ody_options()
 ) {
 
+  rlang::check_installed(c(
+    "htmltools",
+    "reactablefmtr"
+  ))
+
   data_frame <- data_frame |>
     dplyr::select(-dplyr::starts_with("redcap_")) |>
     dplyr::mutate(

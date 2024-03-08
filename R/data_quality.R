@@ -483,7 +483,7 @@ report_completeness <- function(
         wrap = TRUE, pagination = FALSE,
         searchable = TRUE, onClick = "expand",
         theme = reactable::reactableTheme(
-          borderWidth = 1, borderColor =opt_reactable$border_color
+          borderWidth = 1, borderColor = opt_reactable$border_color
         )
       )
   } else {
@@ -633,7 +633,9 @@ ody_render_quality_report <- function(
   rlang::check_installed(c(
     "flexdashboard",
     "janitor",
-    "openxlsx"
+    "openxlsx",
+    "htmltools",
+    "reactablefmtr"
   ))
 
   parameters <- list(

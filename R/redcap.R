@@ -883,6 +883,16 @@ ody_rc_format <- function(rc_df) {
 #' @export
 ody_rc_view <- function(data_app = NULL) {
 
+  rlang::check_installed(c(
+    "DT",
+    "bsicons",
+    "shiny",
+    "bslib",
+    "shinycssloaders",
+    "reactablefmtr",
+    "htmltools"
+  ))
+
   if (is.null(data_app)) {
     if (exists("redcap_data")) {
       data_app <- get("redcap_data")
@@ -1021,6 +1031,11 @@ ody_rc_completeness <- function(
     report = TRUE,
     opt_reactable = ody_options()
 ) {
+
+  rlang::check_installed(c(
+    "htmltools",
+    "reactablefmtr"
+  ))
 
   data_frame <- data_frame |>
     dplyr::select(-dplyr::starts_with("redcap_")) |>

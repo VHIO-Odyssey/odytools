@@ -51,9 +51,4 @@ Suggests:
     rmarkdown,
     scales,
     shiny,
-    shinycssloaders,
-    stringr,
-    tibble,
-    tidyr,
-    tidyselect
     shinycssloaders

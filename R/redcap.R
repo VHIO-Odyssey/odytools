@@ -888,7 +888,9 @@ ody_rc_view <- function(data_app = NULL) {
     "bsicons",
     "shiny",
     "bslib",
-    "shinycssloaders"
+    "shinycssloaders",
+    "reactablefmtr",
+    "htmltools"
   ))
 
   if (is.null(data_app)) {

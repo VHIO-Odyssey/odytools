@@ -211,6 +211,8 @@ save_lock <- function() {
 
 update_odytools <- function() {
 
+  rlang::check_installed("devtools")
+
   current_version <- as.character(packageVersion("odytools"))
 
   sure <- rstudioapi::showQuestion(

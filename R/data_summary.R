@@ -391,6 +391,8 @@ make_continuous_detail_table <- function(detail_tbl,
                                          opt_reactable = opt_reactable,
                                          output) {
 
+  rlang::check_installed("ggridges")
+
   if (output == "table") {
 
     detail_tbl |>
@@ -427,7 +429,7 @@ make_continuous_detail_table <- function(detail_tbl,
           x = names(var_list_case[[1]])[1],
           y = "Density"
         ) +
-        ggplot2::scale_fill_brewer(name = "")+
+        ggplot2::scale_fill_brewer(name = "") +
         ggplot2::xlim(min(plot_data$x), max(plot_data$x)) +
         ggridges::theme_ridges(font_size = 16) +
         ggplot2::theme(axis.text.y = ggplot2::element_blank())
@@ -448,7 +450,7 @@ make_continuous_detail_table <- function(detail_tbl,
                                       calc_ecdf = TRUE, scale = 2,
                                       geom = "density_ridges_gradient",
                                       show.legend = FALSE) +
-        ggplot2::scale_fill_brewer(name = "")+
+        ggplot2::scale_fill_brewer(name = "") +
         ggplot2::labs(
           x = names(var_list_case[[1]])[1],
           y = names(var_list_case[[1]])[2]
@@ -497,6 +499,12 @@ ody_summarise_df <- function(data_frame,
                              show_conditions = FALSE,
                              opt_reactable = ody_options(),
                              ...) {
+
+  rlang::check_installed(c(
+    "scales",
+    "htmltools",
+    "reactablefmtr"
+  ))
 
   use_NA <- rlang::arg_match(use_NA)
   compare_groups <- rlang::arg_match(compare_groups)
@@ -552,6 +560,8 @@ ody_summarise_df <- function(data_frame,
 
   # Group comparisons
   if (!is.null(grouping_var) && compare_groups != "no") {
+
+    rlang::check_installed("gtsummary")
 
     gt_summary <- gtsummary::tbl_summary(data_frame, by = grouping_var) |>
       gtsummary::add_p()

@@ -20,6 +20,8 @@ get_import_date <- function(redcap_data) {
 # Helper function to set the directories structure of a RedCap project
 rc_init_dirs_files <- function() {
 
+  rlang::check_installed("conflicted")
+
   project_name <- get_project_name()
 
   # Directories

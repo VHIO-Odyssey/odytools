@@ -28,6 +28,10 @@ Functions to summarise dataframes.
 
 -   summarise_discrete_var
 
+-   make_continuous_detail_tbl
+
+-   make_discrete_detail_tbl
+
 -   ody_summarise_df [complete_list, make_var_list, summarise_continuos_var, summarise_discrete_var, make_continuous_detail_tbl, make_discrete_detail_tbl]
 
 ## **data_wrangling**

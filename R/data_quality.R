@@ -483,7 +483,7 @@ report_completeness <- function(
         wrap = TRUE, pagination = FALSE,
         searchable = TRUE, onClick = "expand",
         theme = reactable::reactableTheme(
-          borderWidth = 1, borderColor =opt_reactable$border_color
+          borderWidth = 1, borderColor = opt_reactable$border_color
         )
       )
   } else {
@@ -629,6 +629,16 @@ ody_render_quality_report <- function(
     project_date = {lubridate::today() |> stringr::str_remove_all("-")},
     id_var = "row_number", conditions_list = "no", add_data = FALSE,
     max_integer_distinct = 10, output_dir = getwd()) {
+
+  rlang::check_installed(c(
+    "flexdashboard",
+    "janitor",
+    "openxlsx",
+    "htmltools",
+    "reactablefmtr",
+    "rmarkdown"
+  ))
+
   parameters <- list(
     project_name = project_name,
     data = data_frame,
@@ -643,6 +653,8 @@ ody_render_quality_report <- function(
   )
 
   if (add_data) {
+
+    rlang::check_installed("DT")
     template <- system.file(
       "quality_reports", "quality_report_template_with_data.Rmd",
       package = "odytools"

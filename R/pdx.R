@@ -1,87 +1,5 @@
 #' @importFrom stats p.adjust.methods
-
-# Old function. First version that only performs binomial GLMMs.
-# ody_pdx_model_senitivity is the current life function.
-# pdx_response_percentage.Rmd in inst/pdx_reports is also superseded by
-# pdx_model_sensitivity.Rmd
-ody_pdx_model_percentage_response <- function(
-    data_frame,
-    file_name = NULL,
-    file_dir = getwd(),
-    method = c("profile", "Wald", "boot")
-) {
-
-  # Data structure confirmation
-  names_df <- names(data_frame)
-
-  rnd_fct <- stringr::str_c(
-    "- PDX random factor:",
-    stringr::str_c("'", names_df[1], "'"), "with",
-    unique(data_frame[[1]]) |> length(),
-    "subjects", sep = " "
-  )
-
-  sen_fct <- stringr::str_c(
-    "- Sensitivity fixed factor:",
-    stringr::str_c("'", names_df[2], "'"), "with levels",
-    stringr::str_c(
-      stringr::str_c("'", unique(data_frame[[2]]), "'"),
-      collapse = " and "
-    ),
-    sep = " "
-  )
-
-  trt_fct <- stringr::str_c(
-    "- Treatment fixed factor:",
-    stringr::str_c("'", names_df[3], "'"), "with levels",
-    stringr::str_c(
-      stringr::str_c("'", unique(data_frame[[3]]), "'"),
-      collapse = " and "
-    ),
-    sep = " "
-  )
-
-  resp <- stringr::str_c(
-    "- Response variable:", stringr::str_c("'", names_df[4], "'"), sep = " "
-  )
-
-  cat(
-    stringr::str_c(
-      c("Data Structure:", rnd_fct, sen_fct, trt_fct, resp, "\n"),
-      collapse = "\n"
-    )
-  )
-
-  if (
-    length(unique(data_frame[[2]])) != 2 |
-    length(unique(data_frame[[3]])) != 2 |
-    !all(data_frame[[4]] == as.integer(data_frame[[4]])) |
-    any(data_frame[[4]] < 0) | any(data_frame[[4]] > 100)
-  ) stop("Unexpected data structure. See ?ody_pdx_model_percentage_response to check the right expected structure.")
-
-  ok <- readline("Please, confirm the data is correct to proceed (y/n): ")
-
-  if (ok == "n") stop("Analysis interrupted")
-
-  #Analysis
-  method <- rlang::arg_match(method)
-
-  if (is.null(file_name)) {
-    file_name <-stringr::str_c(
-      stringr::str_remove_all(lubridate::today(), "-"),
-      "_", names_df[4], "_response.html"
-    )
-  }
-
-  rmarkdown::render(
-    system.file("pdx_reports", "pdx_response_percentage.Rmd", package = "odytools"),
-    output_dir = file_dir,
-    output_file = file_name,
-    params = list(data_frame = data_frame, method = method)
-  )
-
-}
-
+NULL
 
 #' (Generalized) Linear Mixed Model to test PDX sensitivity
 #'
@@ -110,6 +28,17 @@ ody_pdx_model_sensitivity <- function(
     n_dec = 3,
     p_adjust = c("single-step", "Shaffer", "Westfall", "free", p.adjust.methods)
 ) {
+
+  # Check if required packages are installed
+  rlang::check_installed(c(
+    "DHARMa",
+    "DT",
+    "knitr",
+    "kableExtra",
+    "lme4",
+    "multcomp",
+    "rmarkdown"
+  ))
 
   model_type <- rlang::arg_match(model_type)
   p_adjust <- rlang::arg_match(p_adjust)
@@ -262,7 +191,7 @@ ody_pdx_model_sensitivity <- function(
       stringr::str_sub(sys_time_num, 1, 8),
       stringr::str_sub(sys_time_num, 9, 12), sep = "_")
 
-    file_name <-stringr::str_c(
+    file_name <- stringr::str_c(
       names_df[4], "_", model_type, "_", date_time, ".html"
     )
 

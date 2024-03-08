@@ -1,7 +1,8 @@
-# odytools 0.7.2.9000
+# odytools 0.7.3
 
--   The function **ody_rc_spread** takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
--   The new REDCap imports, obtained with the add-in,will no longer be backed up by default. Instead, we've introduced a new add-in that permits the user to save the current redcap_data and datasets objects into a single RData file. This file will be stored in the data/imports directory.
+-   Added **ody_glue2lang**, a helping function to glue and transform into evaluable expressions.
+-   Added **ody_rc_spread** that takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
+-   The new REDCap imports, obtained with the add-in, will no longer be backed up by default. Instead, we've introduced a new add-in that permits the user to save the current redcap_data and datasets objects into a single RData file. This file will be stored in the data/imports directory.
 
 # odytools 0.7.2
 

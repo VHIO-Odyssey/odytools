@@ -660,6 +660,7 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
 #' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
+#' @param .is_vector Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.
 #' @param .if_different_forms What action take if the selected variables belong to different forms.
 #'    - list: It returns a list with an element for each form so only variables belonging to the same form are joinned in the same data frame.
 #'    - join: Join all variables creating artifact NAs.
@@ -669,6 +670,7 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @export
 ody_rc_select <- function(rc_data,
                           ...,
+                          .is_vector = FALSE,
                           .if_different_forms = c("list", "join"),
                           .include_aux = FALSE) {
 
@@ -682,10 +684,8 @@ ody_rc_select <- function(rc_data,
     unique()
 
   # trick to permit character vectors
-  if (length(sel_vars) == 1 && exists(sel_vars[1])) {
-    if (get(sel_vars[1]) |> is.vector()) {
+  if (.is_vector) {
       sel_vars <- get(sel_vars[1])
-    }
   }
 
   if (names(rc_data)[1] == "redcap_event_name") {

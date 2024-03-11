@@ -777,7 +777,7 @@ ody_rc_select <- function(rc_data,
 
 # Helper function used in viewer apps that directly assume variable is
 # a vector
-rc_select_viewer <- function(redcap_data,
+rc_select_viewer <- function(rc_data,
                              sel_vars,
                              .if_different_forms = c("list", "join"),
                              .include_aux = FALSE) {

@@ -775,6 +775,102 @@ ody_rc_select <- function(rc_data,
 
 }
 
+# Helper function used in viewer apps that directly assume variable is
+# a vector
+rc_select_viewer <- function(redcap_data,
+                             sel_vars,
+                             .if_different_forms = c("list", "join"),
+                             .include_aux = FALSE) {
+
+  .if_different_forms <- rlang::arg_match(.if_different_forms)
+
+  if (names(rc_data)[1] == "redcap_event_name") {
+    select_rc_function <- select_rc_long
+  } else {
+    select_rc_function <- select_rc_classic
+  }
+
+  metadata <- attr(rc_data, "metadata")
+  checkbox_aux <- attr(rc_data, "checkbox_aux")
+
+  # If a form name is provided, all the variables of the form are extracted
+  if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
+    current_form <- metadata |>
+      dplyr::filter(
+        .data[["form_name"]] == sel_vars
+      ) |>
+      dplyr::pull("form_name") |>
+      unique()
+
+    # If the form contains phantom variables, the must be excluded since they do
+    # not actually exist and the selection function would fail.
+    phantom_vars <- attr(rc_data, "phantom_variables") |>
+      dplyr::pull("field_name")
+
+    sel_vars <- metadata |>
+      dplyr::filter(
+        .data[["form_name"]] == current_form,
+        !(.data[["field_name"]] %in% phantom_vars)
+      ) |>
+      dplyr::pull("field_name")
+
+    if (.include_aux) {
+      checkbox_vars <- metadata |>
+        dplyr::filter(
+          .data$field_name %in% sel_vars,
+          .data$field_type == "checkbox"
+        ) |>
+        dplyr::pull("field_name") |>
+        stringr::str_c(collapse = "|")
+
+      needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars)
+
+      sel_vars <- c(sel_vars, needed_aux)
+
+    }
+
+  }
+
+  if (.if_different_forms == "join") {
+
+    purrr::map(
+      sel_vars,
+      function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
+    ) |>
+      purrr::reduce(dplyr::full_join) |>
+      suppressMessages()
+
+  } else {
+
+    extracted_vars <- tibble::tibble(
+      variables = purrr::map(
+        sel_vars,
+        function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
+      ),
+      form = purrr::map_chr(
+        .data$variables, ~.$redcap_form_name |> unique()
+      )
+    ) |>
+      tidyr::nest(data = .data$variables)
+
+    extracted_list <- purrr::map(
+      extracted_vars[[2]],
+      ~purrr::reduce(.[[1]], dplyr::full_join)
+    ) |> suppressMessages()
+
+
+    names(extracted_list) <- extracted_vars$form
+
+    if (length(extracted_list) == 1) {
+      extracted_list[[1]]
+    } else {
+      extracted_list
+    }
+
+  }
+
+}
+
 #' Filter a RedCap import by subject id
 #'
 #' @param redcap_data RedCap data import.

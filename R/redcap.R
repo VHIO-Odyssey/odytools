@@ -682,12 +682,10 @@ ody_rc_select <- function(rc_data,
     unique()
 
   # trick to permit character vectors
-  if (
-    length(rlang::enquos(...)) == 1 &&
-    length(sel_vars) > 1 &&
-    sel_vars[1] == "c"
-  ) {
-    sel_vars <- sel_vars[-1]
+  if (length(sel_vars) == 1 && exists(sel_vars[1])) {
+    if (get(sel_vars[1]) |> is.vector()) {
+      sel_vars <- get(sel_vars[1])
+    }
   }
 
   if (names(rc_data)[1] == "redcap_event_name") {

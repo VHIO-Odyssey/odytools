@@ -1,5 +1,6 @@
 # odytools 0.7.3.9000
 
+-   Now **ody_rc_select** also accepts the variables in a single character vector.
 -   Added **ody_qlq_c30_v3** to calculate the scores of the scales of EORTC QLQ-C30 version 3.0.
 
 # odytools 0.7.3

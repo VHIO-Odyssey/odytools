@@ -751,7 +751,7 @@ ody_rc_select <- function(rc_data,
         sel_vars,
         function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
       ),
-      form = purrr::map_chr(
+      form = purrr::map(
         .data$variables, ~.$redcap_form_name |> unique()
       )
     ) |>
@@ -847,7 +847,7 @@ rc_select_viewer <- function(rc_data,
         sel_vars,
         function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
       ),
-      form = purrr::map_chr(
+      form = purrr::map(
         .data$variables, ~.$redcap_form_name |> unique()
       )
     ) |>

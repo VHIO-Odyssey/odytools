@@ -1291,3 +1291,20 @@ ody_rc_spread <- function(rc_data = NULL) {
   }
 
 }
+
+#' Add the redcap_data import date to a file name
+#'
+#' @param file_name The name of the file to be saved.
+#' @param extension The extension of the file. Default is "csv".
+#'
+#' @return A string with the new file name.
+#' @export
+ody_rc_add_import_date <- function(file_name, extension = "csv") {
+
+  loaded_date <- ody_rc_current(as_list = TRUE)$loaded |>
+    stringr::str_remove_all("-|:") |>
+    stringr::str_replace_all(" ", "_")
+
+  stringr::str_c(file_name, "_", loaded_date, ".", extension)
+
+}

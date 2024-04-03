@@ -80,6 +80,8 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]
 
+-   ody_rc_add_import_date
+
 ## redcap_project
 
 Functions to create and update RedCap projects in RStudio:

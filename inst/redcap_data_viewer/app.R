@@ -71,6 +71,14 @@ ui <- page_sidebar(
       "form", HTML("<b>Form</b>"), forms_choices,
       width = "100%"
     ),
+    textAreaInput(
+      "vars", HTML("<b>Variable Merger</b>"),
+      height = 375,
+      placeholder = "Type the names of the variables you wish to join in this box, following this pattern:\n\nvar1;\nvar2[1, 2];\nvar3[0, -1]\n\nThe values in brackets [] are used to select specific instances. The final result will be filtered according to the selected site and shown in the 'Merged Data' tab.",
+    ),
+    checkboxInput("hide_loc", "Hide __loc columns"),
+    checkboxInput("pivot", "Pivot repeating instances"),
+    actionButton("submit_join", HTML("<b>Merge</b>")),
     width = "15%"
   ),
   navset_card_tab(
@@ -95,30 +103,13 @@ ui <- page_sidebar(
       ),
       reactableOutput("completeness") |> withSpinner()
     ),
-    nav_panel("Descriptive", reactableOutput("descriptive") |> withSpinner())
+    nav_panel("Descriptive", reactableOutput("descriptive") |> withSpinner()),
+    nav_panel("Merged Data", DTOutput("joined_data") |> withSpinner())
   )
 )
 
 
 server <- function(input, output, session) {
-
-  # observeEvent(
-  #   input$event,
-  #   {
-  #     if (input$event != "All") {
-  #
-  #     temp <- data_app |>
-  #       filter(redcap_event_name == input$event) |>
-  #       unnest(cols = redcap_event_data) |>
-  #       pull(redcap_form_name)
-  #     } else {
-  #       temp <- data_app |>
-  #         unnest(cols = redcap_event_data) |>
-  #         pull(redcap_form_name)
-  #     }
-  #     updateSelectInput(session,"form",choices = unique(temp))
-  #   }
-  # )
 
   # Forms Selector Update
   observeEvent(
@@ -151,52 +142,37 @@ server <- function(input, output, session) {
     }
   )
 
-  # raw_table <- reactive({
-  #
-  #   if (input$event != "All") {
-  #
-  #     event_data <- data_app |>
-  #       filter(redcap_event_name == input$event)
-  #
-  #   } else {
-  #
-  #     event_data <- data_app
-  #
-  #   }
-  #
-  #   event_data |>
-  #     unnest(cols = redcap_event_data) |>
-  #     filter(redcap_form_name == input$form) |>
-  #     select(redcap_event_name, redcap_form_name, redcap_form_data) |>
-  #     unnest(cols = redcap_form_data)
-  #
-  # })
-
-  raw_table <- eventReactive(
-    c(input$dag, input$form, input$event),
+  filtered_data <- eventReactive(
+    input$dag,
     {
 
       if (input$dag %in% c("All", "No sites")) {
 
-        filtered_data <- data_app
+        data_app
 
       } else {
 
         site_subjects <- attr(data_app, "subjects_dag") |>
           filter(redcap_data_access_group == input$dag) |>
           pull(1)
-        filtered_data <- ody_rc_filter_subject(data_app, site_subjects)
+        ody_rc_filter_subject(data_app, site_subjects)
 
       }
 
+    })
+
+  raw_table <- eventReactive(
+    c(filtered_data(), input$form, input$event),
+    {
+
       if (input$event != "All") {
 
-        event_data <- filtered_data |>
+        event_data <- filtered_data() |>
           filter(redcap_event_name == input$event)
 
       } else {
 
-        event_data <- filtered_data
+        event_data <- filtered_data()
 
       }
 
@@ -389,6 +365,239 @@ output$descriptive <- renderReactable({
     )
 
 })
+
+variables_join <- eventReactive(
+  input$submit_join , {
+    raw_vars <- str_split(input$vars, ";")  |>
+      map(str_trim) |>
+      unlist()
+
+    raw_vars <- raw_vars[raw_vars != ""]
+
+    tibble(
+      vars = str_remove(raw_vars,"\\[.+\\]$"),
+      index = str_extract(raw_vars, "\\[.+\\]$") |>
+        str_remove_all("\\[|\\]") |>
+        str_split(",") |>
+        map(str_trim)
+    ) |>
+      left_join(
+        attr(data_app, "metadata") |>
+          select(field_name, form_name),
+        by = c("vars" = "field_name")
+      ) |>
+      nest(indexes = c(vars, index))
+  }
+)
+
+output$joined_data <- renderDT({
+
+  req(variables_join())
+
+  chossen_variables <- variables_join() |> unnest(indexes) |>
+    pull(vars)
+
+  wrong_variables <- chossen_variables[
+    !(chossen_variables %in% attr(data_app, "metadata")$field_name)
+  ]
+
+  validate(
+    need(
+      length(wrong_variables) == 0,
+      str_c("Wrong variable names: ", str_c(wrong_variables, collapse = ", "))
+    )
+  )
+
+  id_var <- attr(data_app, "id_var")
+
+  available_cases <- filtered_data() |>
+    odytools:::rc_select_viewer(
+      variables_join() |>
+        unnest(indexes) |>
+        pull(vars)
+    )
+
+  if (is.data.frame(available_cases)) {
+
+    there_are_cases <- nrow(available_cases) > 0
+
+  } else {
+
+    there_are_cases <- TRUE
+
+  }
+
+  validate(
+    need(
+      there_are_cases,
+      "No data available for the selected site."
+    )
+  )
+
+  extracted_vars <- map(
+    variables_join()$indexes,
+    function(x) {
+      selected_var <- filtered_data() |>
+        odytools:::rc_select_viewer(unique(x$vars)) |>
+        group_by(.data[[id_var]], redcap_event_name) |>
+        mutate(
+          double_index = str_c(
+            redcap_instance_number, " (-",
+            n() - as.numeric(redcap_instance_number) + 1, ")"
+          ),
+          double_index = if_else(is.na(double_index), "0", double_index),
+          .after = redcap_instance_number
+        )
+
+      index <- x$index |> unlist() |> unique() |> na.omit() |> as.numeric()
+
+      index_pos <- index[index > 0]
+      index_neg <- index[index < 0]
+      index_0 <- index[index == 0]
+
+
+      if (length(index_pos) == 0 && length(index_neg) == 0 && length(index_0) == 0) {
+
+        return(
+          selected_var |>
+            select(-redcap_instance_number) |>
+            ungroup()
+        )
+
+      }
+
+      if (length(index_pos) > 0) {
+
+        pos_filter <- selected_var |>
+          group_by(.data[[id_var]], redcap_event_name) |>
+          filter(redcap_instance_number %in% index_pos)
+
+      } else {
+
+        pos_filter <- selected_var |> slice(0)
+
+      }
+
+      if (length(index_neg) > 0) {
+
+        neg_filter <- selected_var |>
+          group_by(.data[[id_var]], redcap_event_name) |>
+          filter(redcap_instance_number %in% (n() + index_neg + 1))
+
+      } else {
+
+        neg_filter <- selected_var |> slice(0)
+
+      }
+
+      if (length(index_0) > 0) {
+
+        zero_filter <- selected_var |>
+          group_by(.data[[id_var]], redcap_event_name) |>
+          filter(is.na(redcap_instance_number))
+
+      } else {
+
+        zero_filter <- selected_var |> slice(0)
+
+      }
+
+
+      bind_rows(zero_filter, pos_filter, neg_filter) |>
+        select(-redcap_instance_number) |>
+        arrange(.data[[id_var]]) |>
+        ungroup()
+    }
+
+  )
+
+  extracted_df_v0 <-  map2(
+    extracted_vars,
+    variables_join()$form_name,
+    function(x, y) {
+      x |>
+        mutate(
+          "{y}__loc" := str_c(
+            redcap_event_name, "[", str_replace_na(double_index), "]"
+          ) |> str_remove_all("\\[NA\\]$") |>
+            str_remove("^No events"),
+          .after = 1
+        ) |>
+        select(-(3:6))
+    }
+  )
+
+  if (!input$pivot) {
+
+    extracted_df <- extracted_df_v0 |>
+      reduce(full_join, by = id_var) |>
+      select(where(~!all(is.na(.)))) |>
+      ody_rc_format() |>
+      unique() # need in case the same instance is choosen with both
+    # positive and negative index
+
+  } else {
+
+    extracted_df <- extracted_df_v0 |>
+      map(
+        function(x) {
+
+          n_rep <- count(x, .data[[id_var]]) |>
+            filter(n > 1) |>
+            nrow()
+
+          if (n_rep == 0) {
+
+            x |> select(!ends_with("__loc"))
+
+          } else {
+
+            x |>
+              group_by(.data[[id_var]]) |>
+              mutate(id_instance = row_number(), .after = 1) |>
+              select(-3) |>
+              pivot_wider(
+                values_from = -(1:2),
+                names_from = id_instance,
+                names_glue = "{.value}__{id_instance}",
+                names_vary = "slowest"
+              )
+          }
+        }
+      ) |>
+      reduce(full_join, by = id_var) |>
+      select(where(~!all(is.na(.)))) |>
+      ody_rc_format()
+
+  }
+
+  extracted_df[[1]] <- factor(extracted_df[[1]])
+
+  # Location columns are excluded if checked
+  if (input$hide_loc) {
+
+    extracted_df <- extracted_df |>
+      select(!ends_with("__loc"))
+
+  }
+
+  extracted_df |>
+    mutate(
+      across(ends_with("__loc"), factor)
+    ) |>
+    datatable(
+      filter = "top",
+      extensions = "Buttons",
+      class = "compact hover",
+      options = list(
+        paging = FALSE,
+        dom = "Bt",
+        buttons = c("copy", "csv", "excel")
+      )
+    )
+
+})
+
 
 }
 

@@ -80,6 +80,8 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]
 
+-   ody_rc_add_import_date
+
 ## redcap_project
 
 Functions to create and update RedCap projects in RStudio:
@@ -149,6 +151,12 @@ Survival related functions.
 
 -   ody_extract_km
 
-## gpt
+## **gpt**
 
 -   ody_gpt
+
+## **scores_ct**
+
+Calcutation of scores commonly used in clinical trials.
+
+-   ody_qlq_c30

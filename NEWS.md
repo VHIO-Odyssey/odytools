@@ -1,3 +1,10 @@
+# odytools 0.7.4
+
+-   Added a data merger in the REDCap Data Viewer to show in the same table variables belonging to different forms.
+-   Added **ody_rc_add_import_date** to add the import date of the redcap_data object to a file name.
+-   Now **ody_rc_select** also accepts the variables in a single character vector.
+-   Added **ody_qlq_c30_v3** to calculate the scores of the scales of EORTC QLQ-C30 version 3.0.
+
 # odytools 0.7.3
 
 -   Added **ody_glue2lang**, a helping function to glue and transform into evaluable expressions.

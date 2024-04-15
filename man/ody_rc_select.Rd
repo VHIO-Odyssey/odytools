@@ -7,6 +7,7 @@
 ody_rc_select(
   rc_data,
   ...,
+  .is_vector = FALSE,
   .if_different_forms = c("list", "join"),
   .include_aux = FALSE
 )
@@ -15,6 +16,8 @@ ody_rc_select(
 \item{rc_data}{RedCap data imported with ody_rc_import.}
 
 \item{...}{Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.}
+
+\item{.is_vector}{Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.}
 
 \item{.if_different_forms}{What action take if the selected variables belong to different forms.
 \itemize{

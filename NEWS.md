@@ -1,4 +1,4 @@
-# odytools 0.7.3.9000
+# odytools 0.7.4
 
 -   Added a data merger in the REDCap Data Viewer to show in the same table variables belonging to different forms.
 -   Added **ody_rc_add_import_date** to add the import date of the redcap_data object to a file name.

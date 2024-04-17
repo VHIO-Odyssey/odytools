@@ -230,7 +230,7 @@ rc_init_update <- function() {
   }
 
   message("Computing datasets...\n")
-  datasets <- rc_make_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
   save(
     redcap_data, datasets,
@@ -266,7 +266,7 @@ rc_refresh_datasets <- function() {
   load(list.files(here::here(), ".RData$"))
 
   redcap_data <- get("redcap_data")
-  datasets <- rc_make_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
   project_name <- get_project_name()
 
   save(

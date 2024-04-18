@@ -1,3 +1,11 @@
+# odytools 0.7.4.9000
+
+-   Minor corrections and improvements:
+
+    -   Now ody_glue2lang evaluates as expeted when used inside another function.
+
+    -   Now datasets refresh silently.
+
 # odytools 0.7.4
 
 -   Added a data merger in the REDCap Data Viewer to show in the same table variables belonging to different forms.

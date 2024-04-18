@@ -318,7 +318,7 @@ rc_back_up <- function() {
 #'
 #' @param object Object to add to datasets. Usually a data frame.
 #' @param description Optional description of the object.
-#' @param export Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at quality/tables/
+#' @param export Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at data/exports/
 #'
 #' @export
 ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {

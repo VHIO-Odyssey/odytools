@@ -322,7 +322,7 @@ ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
   glued_lang <- glue::glue(..., .envir = .envir) |>
     str2lang()
 
-  if (.eval) eval(glued_lang) else glued_lang
+  if (.eval) eval(glued_lang, envir = .envir) else glued_lang
 
 }
 

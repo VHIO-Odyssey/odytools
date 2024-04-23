@@ -2,6 +2,8 @@
 
 -   Minor corrections and improvements:
 
+    -   New "render" chunk in the analysis template.
+
     -   Now ody_glue2lang evaluates as expeted when used inside another function.
 
     -   Now datasets refresh silently.

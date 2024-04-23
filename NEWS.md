@@ -2,6 +2,8 @@
 
 -   Minor corrections and improvements:
 
+    -   Added "html-table-processing: none" in the YML header of the analysis templates.
+
     -   New "render" chunk in the analysis template.
 
     -   Now ody_glue2lang evaluates as expeted when used inside another function.

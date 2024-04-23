@@ -5,6 +5,7 @@ format:
   html:
     fontsize: medium
     embed-resources: true
+    html-table-processing: none
 toc: true
 execute:
   echo: false

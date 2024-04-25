@@ -1308,3 +1308,32 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
   stringr::str_c(file_name, "_", loaded_date, ".", extension)
 
 }
+
+#' Add the sites to a RedCap table
+#'
+#' @param tbl The table to add the site to.
+#' @param redcap_data The redcap_data object. By default, the function looks for a redcap_data object in the environment.
+#' @param position The position of the site column. Default is 1.
+#'
+#' @return The same tbl with the site column added.
+#' @export
+ody_rc_add_site <- function(tbl,
+                              redcap_data = redcap_data,
+                              position = 1) {
+
+  id_var <- attr(redcap_data, "id_var")
+  sites <- attr(redcap_data, "subjects_dag") |>
+    dplyr::left_join(
+      attr(redcap_data, "dag"),
+      by = c(redcap_data_access_group =  "unique_group_name")
+    ) |>
+    dplyr::select(
+      tidyselect::all_of(id_var),
+      site = data_access_group_name
+    )
+
+  tbl |>
+    dplyr::left_join(sites) |>
+    dplyr::relocate(site, .before = position)
+
+}

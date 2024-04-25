@@ -26,6 +26,7 @@ Write your awesome report here.
 #| eval: false
 # Not evaluated chunk, execute it to render a final version of the report.
 # Keep this chunk at the end of the file.
+rlang::check_installed("withr")
 
 withr::with_dir(
   rstudioapi::getActiveDocumentContext()$path |> dirname(),

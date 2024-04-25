@@ -11,7 +11,7 @@ ody_add_to_datasets(object, description = NULL, export = FALSE)
 
 \item{description}{Optional description of the object.}
 
-\item{export}{Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at quality/tables/}
+\item{export}{Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at data/exports/}
 }
 \description{
 Declare an object as belonging to datasets list

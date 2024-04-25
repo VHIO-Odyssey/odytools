@@ -1,10 +1,12 @@
 # odytools 0.7.4.9000
 
+-   Added **ody_rc_add_site** to add the site the patients belong to to any REDCap derived data table.
+
 -   Minor corrections and improvements:
 
     -   Added "html-table-processing: none" in the YML header of the analysis templates.
 
-    -   New "render" chunk in the analysis template.
+    -   New "render" chunk in the analysis template based on withr.
 
     -   Now ody_glue2lang evaluates as expeted when used inside another function.
 

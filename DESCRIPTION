@@ -51,4 +51,5 @@ Suggests:
     rmarkdown,
     scales,
     shiny,
-    shinycssloaders
+    shinycssloaders,
+    withr

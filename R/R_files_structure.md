@@ -82,6 +82,8 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_add_import_date
 
+-   ody_rc_add_site
+
 ## redcap_project
 
 Functions to create and update RedCap projects in RStudio:

@@ -64,7 +64,7 @@ Functions to export and work on redcap projects.
 
 -   restore_attributes
 
--   ody_rc_import [import_rc, label_rc_import, nest_rc, restore_attributes]
+-   ody_rc_import [import_rc, label_rc_import, rc_clean_single_form, nest_rc, restore_attributes]
 
 -   select_rc_long
 

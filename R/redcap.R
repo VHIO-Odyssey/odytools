@@ -110,6 +110,17 @@ import_rc <- function(
     )
 
 
+  # Add to metadata complete_info variables to include them when nesting
+  complete_vars <- stringr::str_c(forms$instrument_name, "_complete")
+  avail_complete_vars <- names(redcap_data)[names(redcap_data) %in% complete_vars]
+  complete_metadata <- tibble::tibble(
+    field_name = avail_complete_vars,
+    form_name = stringr::str_remove(avail_complete_vars, "_complete"),
+    field_type = "complete_info",
+    select_choices_or_calculations = "0, Incomplete | 1, Unverified | 2, Complete"
+  )
+  metadata <- dplyr::bind_rows(metadata, complete_metadata)
+
   # attributes
   attr(redcap_data, "project_info") <- project_info
   attr(redcap_data, "metadata") <- metadata
@@ -509,6 +520,10 @@ nest_rc <- function(rc_raw) {
     dplyr::select(-"data_raw")
 
   # Clean artifacts
+  # Need to know the complete variables to exclude them from the empty-form checks.
+  complete_vars <- metadata |>
+    dplyr::filter(field_type == "complete_info") |>
+    dplyr::pull(field_name)
   redcap_data <- redcap_data |>
     dplyr::mutate(
       cleaned_data = purrr::map(
@@ -525,7 +540,8 @@ nest_rc <- function(rc_raw) {
                         c(
                           id_var,
                           "redcap_instance_type",
-                          "redcap_instance_number"
+                          "redcap_instance_number",
+                          complete_vars
                         )
                       ),
                       -tidyselect::where(is.logical)

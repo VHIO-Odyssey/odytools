@@ -1,4 +1,6 @@
-# odytools 0.7.4.9000
+# odytools 0.7.5
+
+-   The **ody_rc_import** function now also creates the *form_complete* variable, which indicates the form's status (Incomplete, Unverified, or Complete).
 
 -   Added the *form* argument to **ody_rc_import** to allow for the download of a specific form, as opposed to downloading the entire database.
 
@@ -8,7 +10,7 @@
 
     -   Added "html-table-processing: none" in the YML header of the analysis templates.
     -   New "render" chunk in the analysis template based on withr.
-    -   Now ody_glue2lang evaluates as expeted when used inside another function.
+    -   Now **ody_glue2lang** evaluates as expeted when used inside another function.
     -   Now datasets refresh silently.
 
 # odytools 0.7.4

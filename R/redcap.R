@@ -522,8 +522,8 @@ nest_rc <- function(rc_raw) {
   # Clean artifacts
   # Need to know the complete variables to exclude them from the empty-form checks.
   complete_vars <- metadata |>
-    dplyr::filter(field_type == "complete_info") |>
-    dplyr::pull(field_name)
+    dplyr::filter(.data[["field_type"]] == "complete_info") |>
+    dplyr::pull("field_name")
   redcap_data <- redcap_data |>
     dplyr::mutate(
       cleaned_data = purrr::map(

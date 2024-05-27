@@ -230,7 +230,7 @@ rc_init_update <- function() {
   }
 
   message("Computing datasets...\n")
-  datasets <- rc_make_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
   save(
     redcap_data, datasets,
@@ -266,7 +266,7 @@ rc_refresh_datasets <- function() {
   load(list.files(here::here(), ".RData$"))
 
   redcap_data <- get("redcap_data")
-  datasets <- rc_make_datasets(redcap_data)
+  datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
   project_name <- get_project_name()
 
   save(
@@ -318,7 +318,7 @@ rc_back_up <- function() {
 #'
 #' @param object Object to add to datasets. Usually a data frame.
 #' @param description Optional description of the object.
-#' @param export Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at quality/tables/
+#' @param export Should the object be exported as a table? If TRUE (and the object is a data frame) the table is exported at data/exports/
 #'
 #' @export
 ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {

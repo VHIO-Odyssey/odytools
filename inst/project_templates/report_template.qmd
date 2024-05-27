@@ -5,6 +5,7 @@ format:
   html:
     fontsize: medium
     embed-resources: true
+    html-table-processing: none
 toc: true
 execute:
   echo: false
@@ -25,18 +26,17 @@ Write your awesome report here.
 #| eval: false
 # Not evaluated chunk, execute it to render a final version of the report.
 # Keep this chunk at the end of the file.
+rlang::check_installed("withr")
 
-path <- rstudioapi::getActiveDocumentContext()$path
-folder <- stringr::str_remove(path, "/[^/]+$")
-file <- stringr::str_remove(path, "^.+/") |> 
-  stringr::str_remove("\\..+$")
-
-setwd(here::here(folder))
-quarto::quarto_render(
-  input = path,
-  output_file = odytools::ody_add_version(file)
+withr::with_dir(
+  rstudioapi::getActiveDocumentContext()$path |> dirname(),
+  quarto::quarto_render(
+    input = rstudioapi::getActiveDocumentContext()$path,
+    output_file = odytools::ody_add_version(
+      rstudioapi::getActiveDocumentContext()$path |> 
+        stringr::str_remove_all("^.*/|\\..*$")
+    )
+  )
 )
-setwd(here::here())
 
-rm(path, folder, file)
 ```

@@ -18,26 +18,53 @@ extract_data <- function(content, token, url) {
 
 # Helper function to import a RedCap project
 import_rc <- function(
-    token = NULL, url = "https://redcap.vhio.net/redcap/api/"
+    token = NULL,  form = NULL, url = "https://redcap.vhio.net/redcap/api/"
   ) {
 
   # Data import
   import_date <- Sys.time()
 
-  formData <- list(
-    "token" = token,
-    content = 'record',
-    action = 'export',
-    format = 'csv',
-    type = 'flat',
-    csvDelimiter = '',
-    rawOrLabel = 'raw',
-    rawOrLabelHeaders = 'raw',
-    exportCheckboxLabel = 'false',
-    exportSurveyFields = 'false',
-    exportDataAccessGroups = 'true',
-    returnFormat = 'json'
-  )
+  metadata <- extract_data("metadata", token, url)
+
+  if (is.null(form)) {
+
+    formData <- list(
+      "token" = token,
+      content = 'record',
+      action = 'export',
+      format = 'csv',
+      type = 'flat',
+      csvDelimiter = '',
+      rawOrLabel = 'raw',
+      rawOrLabelHeaders = 'raw',
+      exportCheckboxLabel = 'false',
+      exportSurveyFields = 'false',
+      exportDataAccessGroups = 'true',
+      returnFormat = 'json'
+    )
+
+  } else {
+
+    id_var <- metadata[[1]][1]
+
+    formData <- list(
+      "token" = token,
+      content = 'record',
+      action = 'export',
+      format = 'csv',
+      type = 'flat',
+      csvDelimiter = '',
+      rawOrLabel = 'raw',
+      rawOrLabelHeaders = 'raw',
+      'fields[0]' = id_var,
+      'forms[0]' = form,
+      exportCheckboxLabel = 'false',
+      exportSurveyFields = 'false',
+      exportDataAccessGroups = 'true',
+      returnFormat = 'json'
+    )
+
+  }
 
   redcap_data <- httr::POST(url, body = formData, encode = "form") |>
     httr::content(
@@ -48,7 +75,6 @@ import_rc <- function(
 
   # Metadata imports
   project_info <- extract_data("project", token, url)
-  metadata <- extract_data("metadata", token, url)
   forms <- extract_data("instrument", token, url)
   events <- extract_data("event", token, url)
   forms_event_mapping <- extract_data("formEventMapping", token, url)
@@ -83,6 +109,17 @@ import_rc <- function(
       )
     )
 
+
+  # Add to metadata complete_info variables to include them when nesting
+  complete_vars <- stringr::str_c(forms$instrument_name, "_complete")
+  avail_complete_vars <- names(redcap_data)[names(redcap_data) %in% complete_vars]
+  complete_metadata <- tibble::tibble(
+    field_name = avail_complete_vars,
+    form_name = stringr::str_remove(avail_complete_vars, "_complete"),
+    field_type = "complete_info",
+    select_choices_or_calculations = "0, Incomplete | 1, Unverified | 2, Complete"
+  )
+  metadata <- dplyr::bind_rows(metadata, complete_metadata)
 
   # attributes
   attr(redcap_data, "project_info") <- project_info
@@ -176,12 +213,22 @@ label_rc_import <- function(rc_import) {
 
 
   # checkbox variables formating
+  # All existing variables in the import
+  available_vars <- names(rc_import) |>
+    stringr::str_remove("___.+$") |>
+    unique()
+
   checkbox_fields <- metadata |>
-    dplyr::filter(.data[["field_type"]] == "checkbox") |>
+    dplyr::filter(
+      .data[["field_type"]] == "checkbox",
+      # Only variables present in the import are processed. This is needed because
+      # the current import can contain the full databae or just one form.
+      .data[[ "field_name"]] %in% available_vars
+    ) |>
     dplyr::pull("field_name")
 
   for (checkbox_field in checkbox_fields) {
-    print(stringr::str_c("Processing checkbox variable ", checkbox_field))
+    cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
     # Columns involved in the definition of the selections
     field_cols <- colnames(rc_import) |>
       stringr::str_subset(
@@ -281,7 +328,7 @@ label_rc_import <- function(rc_import) {
   # Labeling
   for (field in metadata$field_name) {
     if (is.null(rc_import[[field]]) | field == id_var) next
-    print(stringr::str_c("Labelling ", field))
+    cat(stringr::str_c("Labelling ", field, "\n"))
     # Variable label
     form <- metadata |>
       dplyr::filter(.data[["field_name"]] == field) |>
@@ -473,6 +520,10 @@ nest_rc <- function(rc_raw) {
     dplyr::select(-"data_raw")
 
   # Clean artifacts
+  # Need to know the complete variables to exclude them from the empty-form checks.
+  complete_vars <- metadata |>
+    dplyr::filter(.data[["field_type"]] == "complete_info") |>
+    dplyr::pull("field_name")
   redcap_data <- redcap_data |>
     dplyr::mutate(
       cleaned_data = purrr::map(
@@ -489,7 +540,8 @@ nest_rc <- function(rc_raw) {
                         c(
                           id_var,
                           "redcap_instance_type",
-                          "redcap_instance_number"
+                          "redcap_instance_number",
+                          complete_vars
                         )
                       ),
                       -tidyselect::where(is.logical)
@@ -557,10 +609,61 @@ restore_attributes <- function(rc_nested, rc_raw) {
 }
 
 
+# Helper funcion to clean the form directly from the import
+rc_clean_single_form <- function(rc_import, form) {
+
+  fields <- attr(rc_import, "metadata") |>
+    dplyr::filter(.data[["form_name"]] == form) |>
+    dplyr::pull("field_name")
+
+  id_var <- attr(rc_import, "id_var")
+
+  rows_with_data <- rc_import |>
+    dplyr::select(tidyselect::all_of(fields)) |>
+    apply(1, function(x) !all(is.na(x)))
+
+  if (any(names(rc_import) == "redcap_repeat_instance")) {
+
+  rc_import[rows_with_data, ] |>
+    dplyr::mutate(
+      redcap_form_name = form,
+      redcap_instance_type = dplyr::case_when(
+        is.na(.data[["redcap_repeat_instance"]]) ~ "unique",
+        is.na(.data[["redcap_repeat_instrument"]]) ~ "event",
+        TRUE ~ "form"
+      ),
+      redcap_instance_number = .data[["redcap_repeat_instance"]]
+    ) |>
+    dplyr::select(
+      tidyselect::all_of(id_var),
+      tidyselect::any_of("redcap_event_name"), "redcap_form_name",
+      "redcap_instance_type", "redcap_instance_number",
+      tidyselect::all_of(fields)
+    )
+  } else {
+
+    rc_import[rows_with_data, ] |>
+      dplyr::mutate(
+        redcap_form_name = form,
+        redcap_instance_type = "unique",
+        redcap_instance_number = NA
+      ) |>
+      dplyr::select(
+        tidyselect::all_of(id_var),
+        "redcap_form_name",
+        "redcap_instance_type", "redcap_instance_number",
+        tidyselect::all_of(fields)
+      )
+
+  }
+
+}
+
 
 #' Import a RedCap Project
 #'
 #' @param token Project token. If not provided, a dialog promp will ask for it
+#' @param form Form name to import. If NULL, all the forms will be imported.
 #' @param url URL of the RedCap server (VHIO server by default).
 #' @param label Logical. Should the variables be labelled according to the metadata?
 #' @param nest Logical. Should the data be nested?
@@ -568,7 +671,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
 #' @return A Tibble wiht metadata attributes (nested if nest = TRUE)
 #' @export
 ody_rc_import <- function(
-    token = NULL, url = "https://redcap.vhio.net/redcap/api/",
+    token = NULL, form = NULL, url = "https://redcap.vhio.net/redcap/api/",
     label = TRUE, nest = TRUE
   ) {
 
@@ -579,9 +682,9 @@ ody_rc_import <- function(
   }
 
   message("Importing data from RedCap\n")
-  rc_raw_import <- import_rc(token, url)
+  rc_raw_import <- import_rc(token, form, url)
 
-  if (!label && !nest) return(rc_raw_import)
+  if (!label && !nest && is.null(form)) return(rc_raw_import)
 
   if (label) {
     rc_import <- label_rc_import(rc_raw_import)
@@ -589,8 +692,9 @@ ody_rc_import <- function(
     rc_import <- rc_raw_import
   }
 
-  if (nest) {
+  if (!is.null(form)) return(rc_clean_single_form(rc_import, form))
 
+  if (nest) {
     rc_import <- nest_rc(rc_import) |>
       restore_attributes(rc_raw_import)
   }
@@ -1306,5 +1410,34 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
     stringr::str_replace_all(" ", "_")
 
   stringr::str_c(file_name, "_", loaded_date, ".", extension)
+
+}
+
+#' Add the sites to a RedCap table
+#'
+#' @param tbl The table to add the site to.
+#' @param redcap_data The redcap_data object with the sites information as attribute (the dag attribute of an ody_rc_import output). By default, the function looks for a redcap_data object in the environment.
+#' @param position The position of the site column. Default is 1.
+#'
+#' @return The same tbl with the site column added.
+#' @export
+ody_rc_add_site <- function(tbl,
+                              redcap_data = redcap_data,
+                              position = 1) {
+
+  id_var <- attr(redcap_data, "id_var")
+  sites <- attr(redcap_data, "subjects_dag") |>
+    dplyr::left_join(
+      attr(redcap_data, "dag"),
+      by = c(redcap_data_access_group =  "unique_group_name")
+    ) |>
+    dplyr::select(
+      tidyselect::all_of(id_var),
+      site = "data_access_group_name"
+    )
+
+  tbl |>
+    dplyr::left_join(sites) |>
+    dplyr::relocate("site", .before = position)
 
 }

@@ -56,7 +56,9 @@ Functions to export and work on redcap projects.
 
 -   extract_data
 
--   import_rc [extract_data]
+-   import_rc [extract_data, get_single_field]
+
+-   get_single_field
 
 -   label_rc_import
 

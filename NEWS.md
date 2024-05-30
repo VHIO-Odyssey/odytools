@@ -1,5 +1,11 @@
 # odytools .7.5.9000
 
+-   **ody_rc_import** now includes the attributes:
+
+    -   *meddra_fields*: Vector of the field names coded with MedDRA.
+
+    -   *meddra_codes*: A tibble with the MedDRA codes used by all *meddra_fields*.
+
 # odytools 0.7.5
 
 -   The **ody_rc_import** function now also creates the *form_complete* variable, which indicates the form's status (Incomplete, Unverified, or Complete).

@@ -121,7 +121,7 @@ import_rc <- function(
       meddra_fields,
       function(x) {
         tbl <- tibble::tibble(
-          code = get_single_field(token, x, "raw", url),
+          code = get_single_field(token, x, "raw", url) |> as.character(),
           label = get_single_field(token, x, "label", url)
         )
         if (nrow(tbl) == 0) {
@@ -200,7 +200,7 @@ import_rc <- function(
 get_single_field <- function(
     token,
     field,
-    raw_label = c("raw", "label"),
+    raw_label,
     url) {
 
   formData <- list(

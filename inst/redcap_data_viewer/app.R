@@ -611,6 +611,26 @@ output$joined_data <- renderDT({
 
   }
 
+  current_meddra_fields <- names(extracted_df)[
+    names(extracted_df) %in% attr(data_app, "meddra_fields")
+  ]
+
+  if (length(current_meddra_fields) > 0) {
+
+    extracted_df <- extracted_df |>
+      mutate(
+        across(
+          all_of(current_meddra_fields),
+          function(x) {
+            code_tbl <- tibble(code = x)
+            label_tbl <- attr(data_app, "meddra_codes")
+            left_join(code_tbl, label_tbl, by = "code") |>
+              pull("label")
+          }
+        )
+      )
+  }
+
   extracted_df |>
     mutate(
       across(ends_with("__loc"), factor)

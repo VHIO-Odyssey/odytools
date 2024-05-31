@@ -903,7 +903,7 @@ ody_rc_select <- function(rc_data,
 
   if (.if_different_forms == "join") {
 
-    purrr::map(
+    selection <- purrr::map(
       sel_vars,
       function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
     ) |>
@@ -932,12 +932,22 @@ ody_rc_select <- function(rc_data,
     names(extracted_list) <- extracted_vars$form
 
     if (length(extracted_list) == 1) {
-      extracted_list[[1]]
+      selection <- extracted_list[[1]]
     } else {
-      extracted_list
+      selection <- extracted_list
     }
 
   }
+
+  # If the selected vars are meddra variables, dctionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "meddra_fields"))) {
+    all_meddra <- attr(rc_data, "meddra_fields")
+    attr(selection, "meddra_fields") <- sel_vars[sel_vars %in% all_meddra]
+    attr(selection, "meddra_codes") <- attr(rc_data, "meddra_codes")
+  }
+
+  selection
 
 }
 
@@ -1138,6 +1148,29 @@ ody_rc_format <- function(rc_df) {
     )
   )
 }
+
+
+ody_rc_translate_meddra <- function(rc_df) {
+
+  meddra_fields <- attr(rc_df, "meddra_fields")
+
+  if (is.null(meddra_fields)) return(rc_df)
+
+  rc_df |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(meddra_fields),
+        function(x) {
+          tibble::tibble(
+            code = x
+          ) |>
+            dplyr::left_join(attr(rc_df, "meddra_codes"), by = "code") |>
+            dplyr::pull("label")
+        }
+      )
+    )
+}
+
 
 #' View a RedCap project
 #'

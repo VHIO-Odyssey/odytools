@@ -112,9 +112,9 @@ import_rc <- function(
   # MedDRA fields (if present) and their codes
   meddra_fields <- metadata |>
     dplyr::filter(
-      select_choices_or_calculations == "BIOPORTAL:MEDDRA"
+      .data[["select_choices_or_calculations"]] == "BIOPORTAL:MEDDRA"
     ) |>
-    dplyr::pull(field_name)
+    dplyr::pull("field_name")
 
   if (length(meddra_fields) > 0) {
     meddra_codes <- purrr::map_dfr(
@@ -132,7 +132,7 @@ import_rc <- function(
       }
     ) |>
       unique() |>
-      dplyr::arrange(code)
+      dplyr::arrange("code")
   }
 
   # Add to metadata complete_info variables to include them when nesting
@@ -1150,6 +1150,15 @@ ody_rc_format <- function(rc_df) {
 }
 
 
+#' Translate MedDRA Codes
+#'
+#' Replace MedDRA codes in the dataframe with their corresponding descriptions.
+#'
+#' @param rc_df A dataframe obtained from a RedCap import using the function `ody_rc_select`.
+#'
+#' @return A dataframe with MedDRA codes substituted by their corresponding labels.
+#'
+#' @export
 ody_rc_translate_meddra <- function(rc_df) {
 
   meddra_fields <- attr(rc_df, "meddra_fields")

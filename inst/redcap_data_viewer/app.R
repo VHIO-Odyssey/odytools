@@ -25,6 +25,19 @@ app_title <- str_c(
 
 # Puede haber events 100% vacíos. Se eliminan.
 data_app_events <- attr(data_app, "events")
+data_app_arms <- attr(data_app, "arms")
+
+if (!is.null(data_app_arms)) {
+  data_app_events <- left_join(
+    data_app_events,
+    data_app_arms,
+    by = join_by(arm_num)
+  ) |>
+    mutate(
+      event_name = str_c(name, " - ", event_name)
+    )
+}
+
 
 # DAGS
 dag <- attr(data_app, "dag")

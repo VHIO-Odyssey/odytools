@@ -1,5 +1,6 @@
 # odytools 0.7.5.9000
 
+-   In the REDCap Data Viewer, the *Event* dropdown list now also shows the Arm (if any) the event belongs to.
 -   **ody_rc_import** now includes the attributes:
     -   *meddra_fields*: Vector of the field names coded with MedDRA.
     -   *meddra_codes*: A tibble with the MedDRA codes used by all *meddra_fields*.

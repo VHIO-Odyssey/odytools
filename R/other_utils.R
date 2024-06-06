@@ -185,6 +185,14 @@ ody_proj_init <- function() {
     )
   )
 
+  # Gitignore template
+  file.copy(
+    system.file(
+      "project_templates", "gitignore_template", package = "odytools"
+    ),
+    here::here(".gitignore")
+  )
+
 }
 
 # Helper function to create a lockfile

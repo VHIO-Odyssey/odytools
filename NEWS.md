@@ -1,5 +1,6 @@
 # odytools 0.7.5.9000
 
+-   When a project is started (both plain and REDCap-based), a template .gitignore file is now added.
 -   In the REDCap Data Viewer, the *Event* dropdown list now also shows the Arm (if any) the event belongs to.
 -   **ody_rc_import** now includes the attributes:
     -   *meddra_fields*: Vector of the field names coded with MedDRA.

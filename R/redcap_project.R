@@ -96,6 +96,14 @@ rc_init_dirs_files <- function() {
     )
   )
 
+  # Gitignore template
+  file.copy(
+    system.file(
+      "redcap_templates", "gitignore_template", package = "odytools"
+    ),
+    here::here(".gitignore")
+  )
+
 
 }
 

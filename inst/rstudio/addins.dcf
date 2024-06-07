@@ -38,7 +38,7 @@ Description: Add a new Quarto template in analysis/.
 Binding: add_analysis_template
 Interactive: false
 
-Name: Create lockfile
+Name: Create/Update lockfile
 Description:  Record the state of the project at this time point.
 Binding: save_lock
 Interactive: false

@@ -136,6 +136,7 @@ Miscelaneous utilities.
 -   update_odytools ADDIN
 -   compare_1_vs_others
 -   ody_compare_1_vs_others [compare_1_vs_others]
+-   check_renvlock
 
 ## **aes**
 

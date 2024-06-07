@@ -334,3 +334,25 @@ ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
 
 }
 
+# Function to check if exists and updated renv.lock
+# update_threshold is the number of days to consider the lockfile outdated
+check_renvlock <- function(update_threshold = 30) {
+
+  renvlock_last_modif <- file.mtime(here::here("renv.lock"))
+  last_modif_days <- as.numeric(lubridate::now() - renvlock_last_modif)
+
+  if (is.na(last_modif_days)) {
+    rstudioapi::showDialog(
+      "Odytools Message",
+      "Please, take care of your future self and consider adding a Lockfile to
+     this project with the Odytools add-in 'Create/Update Lockfile'."
+    )
+  } else if (last_modif_days >= update_threshold) {
+    rstudioapi::showDialog(
+      "Odytools Message",
+      "Please, take care of your future self and consider updating the Lockfile of
+    this project with the Odytools add-in 'Create/Update Lockfile'."
+    )
+  }
+
+}

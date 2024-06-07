@@ -342,17 +342,9 @@ check_renvlock <- function(update_threshold = 30) {
   last_modif_days <- as.numeric(lubridate::now() - renvlock_last_modif)
 
   if (is.na(last_modif_days)) {
-    rstudioapi::showDialog(
-      "Odytools Message",
-      "Please, take care of your future self and consider adding a Lockfile to
-     this project with the Odytools add-in 'Create/Update Lockfile'."
-    )
+    message("\nPlease, take care of your future self and consider adding a Lockfile to this project with the Odytools add-in 'Create/Update Lockfile'.\n")
   } else if (last_modif_days >= update_threshold) {
-    rstudioapi::showDialog(
-      "Odytools Message",
-      "Please, take care of your future self and consider updating the Lockfile of
-    this project with the Odytools add-in 'Create/Update Lockfile'."
-    )
+    message("\nYour Lockfile seems outdated (", lubridate::as_date(renvlock_last_modif), "). Please, consider updating it with the Odytools add-in 'Create/Update Lockfile'.\n")
   }
 
 }

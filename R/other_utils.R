@@ -342,9 +342,48 @@ check_renvlock <- function(update_threshold = 30) {
   last_modif_days <- as.numeric(lubridate::now() - renvlock_last_modif)
 
   if (is.na(last_modif_days)) {
-    message("\nPlease, take care of your future self and consider adding a Lockfile to this project with the Odytools add-in 'Create/Update Lockfile'.\n")
+    message("Please, take care of your future self.\nConsider adding a Lockfile to this project with the Odytools add-in 'Create/Update Lockfile'.")
   } else if (last_modif_days >= update_threshold) {
-    message("\nYour Lockfile seems outdated (", lubridate::as_date(renvlock_last_modif), "). Please, consider updating it with the Odytools add-in 'Create/Update Lockfile'.\n")
+    message("Your Lockfile seems outdated (", lubridate::as_date(renvlock_last_modif), ").\nPlease, consider updating it with the Odytools add-in 'Create/Update Lockfile'.")
   }
 
 }
+
+#' Convert GT Table to Image
+#'
+#' This function converts a GT table object into an image file. It supports outputting
+#' the image either as a raster image directly or as a plot made with ggplot.
+#'
+#' @param gt_table The GT table object to be converted into an image.
+#' @param type The type of output image. Either "raster" for a raster image or "ggplot"
+#'        for a plot created with ggplot. Defaults to "raster".
+#' @param zoom Zoom factor for the GT table rendering, where higher values result in
+#'        higher resolution images. Defaults to 2.
+#'
+#' @return An image object, either of class `magick-image` (for "raster" type) or
+#'         a ggplot object (for "ggplot" type).
+#'
+#' @export
+ody_gt2image <- function(gt_table, type = c("raster", "ggplot"), zoom = 2) {
+
+  rlang::check_installed(c("webshot2", "magick", "grDevices"))
+
+  type <- rlang::arg_match(type)
+
+  path_gt_table_image <- tempfile(fileext = ".png")
+
+  gt::gtsave(
+    gt_table,
+    filename = path_gt_table_image,
+    zoom = zoom
+  )
+
+  table_image <- magick::image_read(path_gt_table_image)
+
+  if (type == "raster") return(table_image)
+
+  magick::image_ggplot(table_image, interpolate = TRUE)
+
+}
+
+

@@ -52,4 +52,7 @@ Suggests:
     scales,
     shiny,
     shinycssloaders,
-    withr
+    withr,
+    webshot2,
+    magick,
+    grDevices

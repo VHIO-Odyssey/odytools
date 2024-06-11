@@ -341,7 +341,7 @@ check_renvlock <- function(update_threshold = 30) {
   git_last_modif <- file.mtime(here::here(".git"))
   renvlock_last_modif <- file.mtime(here::here("renv.lock"))
 
-  if (!is.null(git_last_modif)) {
+  if (!is.na(git_last_modif)) {
     repository <- git2r::repository(here::here())
     last_commit <- git2r::commits(repo = repository)[[1]]
   }
@@ -352,11 +352,11 @@ check_renvlock <- function(update_threshold = 30) {
     "- Consider starting a git repository."
   )
 
-  if (is.null(renvlock_last_modif) && is.null(last_commit)) {
+  if (is.na(renvlock_last_modif) && is.na(last_commit)) {
     messages |> stringr::str_c(collapse = "\n") |> message()
-  } else if (is.null(renvlock_last_modif)) {
+  } else if (is.na(renvlock_last_modif)) {
     messages[1:2] |> stringr::str_c(collapse = "\n") |> message()
-  } else if (is.null(last_commit)) {
+  } else if (is.na(last_commit)) {
     messages[c(1, 3)] |> stringr::str_c(collapse = "\n") |> message()
   } else {
     last_commit_date <- last_commit$author$when |>

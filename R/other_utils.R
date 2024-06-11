@@ -352,11 +352,11 @@ check_renvlock <- function(update_threshold = 30) {
     "- Consider starting a git repository."
   )
 
-  if (is.na(renvlock_last_modif) && is.na(last_commit)) {
+  if (is.na(renvlock_last_modif) && is.na(git_last_modif)) {
     messages |> stringr::str_c(collapse = "\n") |> message()
   } else if (is.na(renvlock_last_modif)) {
     messages[1:2] |> stringr::str_c(collapse = "\n") |> message()
-  } else if (is.na(last_commit)) {
+  } else if (is.na(git_last_modif)) {
     messages[c(1, 3)] |> stringr::str_c(collapse = "\n") |> message()
   } else {
     last_commit_date <- last_commit$author$when |>

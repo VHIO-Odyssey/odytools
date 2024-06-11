@@ -55,4 +55,5 @@ Suggests:
     withr,
     webshot2,
     magick,
-    grDevices
+    grDevices,
+    git2r

@@ -164,6 +164,8 @@ rc_make_datasets <- function(redcap_data) {
 # Start/Update a RedCap Project. Only Addin
 rc_init_update <- function() {
 
+  rlang::check_installed("git2r")
+
   project_name <- get_project_name()
   if (length(project_name) == 0) stop("No RStudio project detected.")
 

@@ -122,7 +122,7 @@ ody_options <- function(label_size = 1,
 #' @export
 ody_proj_init <- function() {
 
-  rlang::check_installed("conflicted")
+  rlang::check_installed(c("conflicted", "git2r"))
 
   project_name <- get_project_name()
 
@@ -334,17 +334,42 @@ ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
 
 }
 
-# Function to check if exists and updated renv.lock
+# Function to check if exists and updated renv.lock and a git repository
 # update_threshold is the number of days to consider the lockfile outdated
 check_renvlock <- function(update_threshold = 30) {
 
+  git_last_modif <- file.mtime(here::here(".git"))
   renvlock_last_modif <- file.mtime(here::here("renv.lock"))
-  last_modif_days <- as.numeric(lubridate::now() - renvlock_last_modif)
 
-  if (is.na(last_modif_days)) {
-    message("Please, take care of your future self.\nConsider adding a Lockfile to this project with the Odytools add-in 'Create/Update Lockfile'.")
-  } else if (last_modif_days >= update_threshold) {
-    message("Your Lockfile seems outdated (", lubridate::as_date(renvlock_last_modif), ").\nPlease, consider updating it with the Odytools add-in 'Create/Update Lockfile'.")
+  if (!is.null(git_last_modif)) {
+    repository <- git2r::repository(here::here())
+    last_commit <- git2r::commits(repo = repository)[[1]]
+  }
+
+  messages <- list(
+    "Please, take care of your future self:",
+    "- Consider adding a Lockfile to this project.",
+    "- Consider starting a git repository."
+  )
+
+  if (is.null(renvlock_last_modif) && is.null(last_commit)) {
+    messages |> stringr::str_c(collapse = "\n") |> message()
+  } else if (is.null(renvlock_last_modif)) {
+    messages[1:2] |> stringr::str_c(collapse = "\n") |> message()
+  } else if (is.null(last_commit)) {
+    messages[c(1, 3)] |> stringr::str_c(collapse = "\n") |> message()
+  } else {
+    last_commit_date <- last_commit$author$when |>
+      lubridate::as_datetime(tz = Sys.timezone())
+    last_renvlock_date <- renvlock_last_modif |>
+      lubridate::as_datetime(tz = Sys.timezone())
+    dif_time <- round(last_commit_date - last_renvlock_date, 2)
+
+    message(
+      "Last commit: ", lubridate::as_date(last_commit_date), "\n",
+      "Last renv.lock: ", lubridate::as_date(last_renvlock_date), "\n",
+      "Time difference of ", dif_time, " days"
+    )
   }
 
 }

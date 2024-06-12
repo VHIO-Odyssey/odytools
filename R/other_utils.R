@@ -363,12 +363,12 @@ check_renvlock <- function(update_threshold = 30) {
       lubridate::as_datetime(tz = Sys.timezone())
     last_renvlock_date <- renvlock_last_modif |>
       lubridate::as_datetime(tz = Sys.timezone())
-    dif_time <- round(last_commit_date - last_renvlock_date, 2)
+    dif_time <- round(last_renvlock_date - last_commit_date, 2)
 
     message(
-      "Last commit: ", lubridate::as_date(last_commit_date), "\n",
       "Last renv.lock: ", lubridate::as_date(last_renvlock_date), "\n",
-      "Time difference of ", dif_time, " days"
+      "Last commit: ", lubridate::as_date(last_commit_date), "\n",
+      "Time difference of ", dif_time, " days\n"
     )
   }
 

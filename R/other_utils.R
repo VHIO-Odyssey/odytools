@@ -205,7 +205,7 @@ save_lock <- function() {
   if (lock_exists) {
 
     question <- rstudioapi::showQuestion(
-      "Lock file already exists",
+      "Save Lock file",
       "This action will overwrite an already existing Lock file. Are you sure?",
       ok = "Yes, overwrite.", cancel = "No, cancel."
     )

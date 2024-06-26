@@ -2,6 +2,7 @@
 
 -   Added **ody_gt2image** to convert a GT table to an image.
 -   When accessing a project (both plain and REDCap-based), the existence and update status of the renv.lock file and a git repo are now checked.
+-   When rendering a report via the render chunk, the lockfile is now updated if the report is successfully rendered.
 -   When a project is started (both plain and REDCap-based), a template .gitignore file is now added.
 -   In the REDCap Data Viewer, the *Event* dropdown list now also shows the Arm (if any) the event belongs to.
 -   **ody_rc_import** now includes the attributes:

@@ -387,6 +387,8 @@ check_renvlock <- function(update_threshold = 30) {
 #' @param zoom Zoom factor for the GT table rendering, where higher values result in
 #'        higher resolution images. Defaults to 2.
 #'
+#' @details "raster" output can be used with ggplot2::annotate_raster to add the image on a ggplot. "ggplot" output is usefull in combination with "patchwork".
+#'
 #' @return An image object, either of class `magick-image` (for "raster" type) or
 #'         a ggplot object (for "ggplot" type).
 #'

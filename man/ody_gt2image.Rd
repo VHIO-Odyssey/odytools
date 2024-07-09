@@ -23,3 +23,6 @@ a ggplot object (for "ggplot" type).
 This function converts a GT table object into an image file. It supports outputting
 the image either as a raster image directly or as a plot made with ggplot.
 }
+\details{
+"raster" output can be used with ggplot2::annotate_raster to add the image on a ggplot. "ggplot" output is usefull in combination with "patchwork".
+}

@@ -5,16 +5,25 @@ qlq_c30_scores_transform <- function(rs, range) ((rs - 1) / range) * 100
 
 qlq_c30_scores_transform_1 <- function(rs, range) (1 - (rs - 1) / range) * 100
 
-qlq_c30_scores_scale <- function(qlq_c30,
-                                 items,
-                                 range,
-                                 transformation,
-                                 na_rm) {
+qlq_c30_scores_scale <- function(
+    qlq_c30,
+    items,
+    range,
+    transformation,
+    completeness) {
 
-  if (all(is.na(qlq_c30[items]))) return(NA_real_)
+  n_missing <- sum(is.na(qlq_c30[items]))
+  n_items <- length(items)
+
+  # Always Na if no items available.
+  if (n_missing == n_items) return(NA_real_)
+  # completenes = "half": NA if half or more of the items are missing
+  if (completeness == "half" && n_missing > (n_items / 2)) return(NA_real_)
+  # completeness = "all": NA if any item is missing
+  if (completeness == "all" && n_missing > 0) return(NA_real_)
 
   qlq_c30[items] |>
-    mean(na.rm = na_rm) |>
+    mean(na.rm = TRUE) |>
     transformation(range)
 }
 
@@ -47,15 +56,52 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, na_rm) {
 #' @param id_col An optional parameter specifying the column index of the
 #'               identifier column in `qlq_c30` dataframe. The default index is 1.
 #'               This parameter is used only when `qlq_c30` contains 31 columns.
-#' @param na_rm A logical value indicating whether NA values should be removed before
-#'             calculating the scores. The default is FALSE, so all items needed
-#'             to calculate a specific score must be non-NA.
+#' @param completeness A character vector specifying the completeness criteria:
+#' - "half": At least half of the items must be available to calculate the score.
+#' - "all": All items must be available to calculate the score.
+#' - "none": The score is always calculated as long as at least one item is available.
 #'
-#' @return A dataframe with the calculated scores for each scale in the
+#' @section Global Health Status:
+#'
+#' A high score represent a high quality of life (the HIGHER the BETTER).
+#'
+#' - QL2: Global health status / Quality of life.
+#'
+
+#' @section Functional scales:
+#'
+#' High scores represent a high level of functioning (the HIGHER the BETTER)
+#'
+#' - PF2: Physical functioning.
+#' - RF2: Role functioning.
+#' - EF: Emotional functioning.
+#' - CF: Cognitive functioning.
+#' - SF: Social functioning.
+#'
+#' @section Symptom scales:
+#'
+#' High scores represent a high level of symptoms/problems (the HIGHER the WORSE).
+#'
+#' - FA: Fatigue.
+#' - NV: Nausea and vomiting.
+#' - PA: Pain.
+#' - DY: Dyspnoea.
+#' - SL: Insomnia.
+#' - AP: Appetite loss.
+#' - CO: Constipation.
+#' - DI: Diarrhoea.
+#' - FI: Financial difficulties.
+#'
+#' @return A dataframe with the calculated scores for each scale (see below) in the
 #'         QLQ-C30 questionnaire, optionally binded with the identifier column.
 #'
 #' @export
-ody_qlq_c30_v3 <- function(qlq_c30, id_col = 1, na_rm = FALSE) {
+ody_qlq_c30_v3 <- function(
+    qlq_c30,
+    id_col = 1,
+    completeness = c("half", "all", "none")) {
+
+  completeness <- rlang::arg_match(completeness)
 
   # Check if dataframe has 31 columns, indicating an ID column is present
   if (ncol(qlq_c30) == 31) {
@@ -102,7 +148,7 @@ ody_qlq_c30_v3 <- function(qlq_c30, id_col = 1, na_rm = FALSE) {
 
   # Calculate scores for each scale based on the scoring table
   scores <- purrr::map_dfr(
-    as.data.frame(t(qlq_c30)), ~qlq_c30_scores(., scoring_tbl, na_rm),
+    as.data.frame(t(qlq_c30)), ~qlq_c30_scores(., scoring_tbl, completeness),
     .progress = "Calculating scores..."
   )
   # Optionally bind the identifier column with calculated scores and return

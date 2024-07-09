@@ -4,7 +4,7 @@
 \alias{ody_qlq_c30_v3}
 \title{Calculate QLQ-C30 Version 3 Scores}
 \usage{
-ody_qlq_c30_v3(qlq_c30, id_col = 1, na_rm = FALSE)
+ody_qlq_c30_v3(qlq_c30, id_col = 1, completeness = c("half", "all", "none"))
 }
 \arguments{
 \item{qlq_c30}{A dataframe containing the QLQ-C30 questionnaire responses.
@@ -15,12 +15,15 @@ columns are present, one column is treated as an identifier column.}
 identifier column in \code{qlq_c30} dataframe. The default index is 1.
 This parameter is used only when \code{qlq_c30} contains 31 columns.}
 
-\item{na_rm}{A logical value indicating whether NA values should be removed before
-calculating the scores. The default is FALSE, so all items needed
-to calculate a specific score must be non-NA.}
+\item{completeness}{A character vector specifying the completeness criteria:
+\itemize{
+\item "half": At least half of the items must be available to calculate the score.
+\item "all": All items must be available to calculate the score.
+\item "none": The score is always calculated as long as at least one item is available.
+}}
 }
 \value{
-A dataframe with the calculated scores for each scale in the
+A dataframe with the calculated scores for each scale (see below) in the
 QLQ-C30 questionnaire, optionally binded with the identifier column.
 }
 \description{
@@ -29,3 +32,42 @@ the scores for each scale according to predefined scoring rules. The dataset
 should have 30 item columns representing questionnaire items and optionally
 an identifier column.
 }
+\section{Global Health Status}{
+
+
+A high score represent a high quality of life (the HIGHER the BETTER).
+\itemize{
+\item QL2: Global health status / Quality of life.
+}
+}
+
+\section{Functional scales}{
+
+
+High scores represent a high level of functioning (the HIGHER the BETTER)
+\itemize{
+\item PF2: Physical functioning.
+\item RF2: Role functioning.
+\item EF: Emotional functioning.
+\item CF: Cognitive functioning.
+\item SF: Social functioning.
+}
+}
+
+\section{Symptom scales}{
+
+
+High scores represent a high level of symptoms/problems (the HIGHER the WORSE).
+\itemize{
+\item FA: Fatigue.
+\item NV: Nausea and vomiting.
+\item PA: Pain.
+\item DY: Dyspnoea.
+\item SL: Insomnia.
+\item AP: Appetite loss.
+\item CO: Constipation.
+\item DI: Diarrhoea.
+\item FI: Financial difficulties.
+}
+}
+

@@ -50,6 +50,10 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #' should have at least 30 columns representing the questionnaire items.
 #'
 #' @param qlq_c30_df A dataframe containing the QLQ-C30 questionnaire responses.
+#' @param group_delta An optional character specifying the column name of the
+#' grouping variable to calculate the deltas. The function assumes that the first
+#' row of each group is the baseline so make sure the data is properly sorted
+#' before using this option. If NULL, the default, no deltas are calculated.
 #' @param items_index A numeric vector specifying the column indexes of the items
 #' in the QLQ-C30 questionnaire. If NULL, the last 30 columns are assumed to be the items sorted as they are presented in the questionnaire.
 #' @param completeness A character vector specifying the completeness criteria:
@@ -96,6 +100,7 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #' @export
 ody_qlq_c30_v3 <- function(
     qlq_c30_df,
+    group_delta = NULL,
     items_index = NULL,
     completeness = c("half", "all", "none")
   ) {
@@ -186,9 +191,34 @@ ody_qlq_c30_v3 <- function(
       FI  = "Financial difficulties"
     )
 
+
   # Result
   ## Bind extra columns with calculated scores
   scores <- dplyr::bind_cols(extra_cols, scores)
+
+  scales_names <- scores |>
+    dplyr::select(QL2:FI) |>
+    names()
+
+  ## Add deltas if a grouping variable is provided
+  if (!is.null(group_delta))  {
+
+    scores <-
+      scores |>
+      dplyr::group_by(.data[[group_delta]]) |>
+      dplyr::mutate(
+        dplyr::across(
+          QL2:FI, ~ . - dplyr::first(.), .names = "{.col}_delta"
+        )
+      ) |>
+      dplyr::ungroup() |>
+      dplyr::select(
+        dplyr::all_of(names(extra_cols)),
+        tidyselect::starts_with(scales_names)
+      )
+
+  }
+
   ##attributes
   item_mapping <-
     tibble::tibble(

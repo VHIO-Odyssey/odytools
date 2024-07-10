@@ -60,7 +60,7 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #' grouping variable to calculate the deltas. The function assumes that the first
 #' row of each group is the baseline so make sure the data is properly sorted
 #' before using this option. If NULL, the default, no deltas are calculated.
-#' @param items_index A numeric vector specifying the column indexes of the items
+#' @param items_index Optional numeric vector specifying the column indexes of the items
 #' in the QLQ-C30 questionnaire. If NULL, the last 30 columns are assumed to be the items sorted as they are presented in the questionnaire.
 #' @param completeness A character vector specifying the completeness criteria:
 #' - "half" (default): At least half of the items must be available to calculate the score.
@@ -98,11 +98,11 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #' - DI: Diarrhoea.
 #' - FI: Financial difficulties.
 #'
-#' @return A dataframe with the calculated scores for each scale (see below) in the
-#'         QLQ-C30 questionnaire,binded with any extra column. The item mapping, a
-#'         relation between the item number, the scale it belongs to and the column
-#'         name in the input data frame, is stored as an attribute called "item_mapping".
-#'
+#' @return The function returns the original qlq_c30_df with the calculated scores
+#' for each scale (see below) bound at the end as new columns. The item mapping,
+#' which is the relation between the item number, the scale it belongs to, and the
+#' column name in the input data frame, is stored as an attribute called
+#' 'item_mapping'.
 #' @export
 ody_qlq_c30_v3 <- function(
     qlq_c30_df,
@@ -139,17 +139,6 @@ ody_qlq_c30_v3 <- function(
       # Factors must be transformed to integer before the checking.
       dplyr::across(tidyselect::where(is.factor), as.integer)
     )
-  extra_cols <- qlq_c30_df[-items_index]
-
-  # Item mapping message
-  stringr::str_c(
-    "Item mapping:\n",
-    stringr::str_c(
-      "item ", 1:30, ": " , names(qlq_c30_df[items_index]),
-      collapse = "\n"
-    )
-  ) |>
-    message()
 
   # Verify that all item columns have expected values
   expected_values <- c(
@@ -157,7 +146,7 @@ ody_qlq_c30_v3 <- function(
     rep(list(1:7), 2)
   )
 
-  have_expected <- purrr::map2_lgl(qlq_c30, values, check_values)
+  have_expected <- purrr::map2_lgl(qlq_c30, expected_values, check_values)
 
   if (!all(have_expected)) {
     unexpeted <- have_expected[!have_expected] |>
@@ -214,32 +203,39 @@ ody_qlq_c30_v3 <- function(
     )
 
 
-  # Result
-  ## Bind extra columns with calculated scores
-  scores <- dplyr::bind_cols(extra_cols, scores)
+  # Add deltas if a grouping variable is provided
 
-  scales_names <- scores |>
-    dplyr::select(QL2:FI) |>
-    names()
 
-  ## Add deltas if a grouping variable is provided
   if (!is.null(group_delta))  {
 
+    # names needed to ensure ach delta is after the items it belongs to
+    scales_names <- c(
+      "QL2", "PF2", "RF2", "EF", "CF", "SF",
+      "FA", "NV", "PA", "DY", "SL",
+      "AP", "CO", "DI", "FI"
+    )
+
     scores <-
-      scores |>
+      qlq_c30_df |>
+      dplyr::select(tidyselect::all_of(group_delta)) |>
+      dplyr::bind_cols(scores) |>
       dplyr::group_by(.data[[group_delta]]) |>
       dplyr::mutate(
         dplyr::across(
-          QL2:FI, ~ . - dplyr::first(.), .names = "{.col}_delta"
+          tidyselect::all_of(scales_names),
+          ~ . - dplyr::first(.), .names = "{.col}_delta"
         )
       ) |>
       dplyr::ungroup() |>
+      dplyr::select(!tidyselect::all_of(group_delta)) |>
       dplyr::select(
-        dplyr::all_of(names(extra_cols)),
         tidyselect::starts_with(scales_names)
       )
 
   }
+
+  # result
+  result <- dplyr::bind_cols(qlq_c30_df, scores)
 
   ##attributes
   item_mapping <-
@@ -254,9 +250,9 @@ ody_qlq_c30_v3 <- function(
       ),
       column = names(qlq_c30_df[items_index])
     )
-  attr(scores, "item_mapping") <- item_mapping
+  attr(result, "item_mapping") <- item_mapping
 
-scores
+result
 
 }
 

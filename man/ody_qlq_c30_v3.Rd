@@ -6,6 +6,7 @@
 \usage{
 ody_qlq_c30_v3(
   qlq_c30_df,
+  group_delta = NULL,
   items_index = NULL,
   completeness = c("half", "all", "none")
 )
@@ -13,7 +14,12 @@ ody_qlq_c30_v3(
 \arguments{
 \item{qlq_c30_df}{A dataframe containing the QLQ-C30 questionnaire responses.}
 
-\item{items_index}{A numeric vector specifying the column indexes of the items
+\item{group_delta}{An optional character specifying the column name of the
+grouping variable to calculate the deltas. The function assumes that the first
+row of each group is the baseline so make sure the data is properly sorted
+before using this option. If NULL, the default, no deltas are calculated.}
+
+\item{items_index}{Optional numeric vector specifying the column indexes of the items
 in the QLQ-C30 questionnaire. If NULL, the last 30 columns are assumed to be the items sorted as they are presented in the questionnaire.}
 
 \item{completeness}{A character vector specifying the completeness criteria:
@@ -24,10 +30,11 @@ in the QLQ-C30 questionnaire. If NULL, the last 30 columns are assumed to be the
 }}
 }
 \value{
-A dataframe with the calculated scores for each scale (see below) in the
-QLQ-C30 questionnaire,binded with any extra column. The item mapping, a
-relation between the item number, the scale it belongs to and the column
-name in the input data frame, is stored as an attribute called "item_mapping".
+The function returns the original qlq_c30_df with the calculated scores
+for each scale (see below) bound at the end as new columns. The item mapping,
+which is the relation between the item number, the scale it belongs to, and the
+column name in the input data frame, is stored as an attribute called
+'item_mapping'.
 }
 \description{
 This function takes a QLQ-C30 Version 3 questionnaire dataset and calculates

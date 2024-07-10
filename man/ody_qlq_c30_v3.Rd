@@ -4,33 +4,28 @@
 \alias{ody_qlq_c30_v3}
 \title{Calculate QLQ-C30 Version 3 Scores}
 \usage{
-ody_qlq_c30_v3(qlq_c30, id_col = 1, completeness = c("half", "all", "none"))
+ody_qlq_c30_v3(qlq_c30, completeness = c("half", "all", "none"))
 }
 \arguments{
-\item{qlq_c30}{A dataframe containing the QLQ-C30 questionnaire responses.
-This dataframe must contain exactly 30 or 31 columns. If 31
-columns are present, one column is treated as an identifier column.}
-
-\item{id_col}{An optional parameter specifying the column index of the
-identifier column in \code{qlq_c30} dataframe. The default index is 1.
-This parameter is used only when \code{qlq_c30} contains 31 columns.}
+\item{qlq_c30}{A dataframe containing the QLQ-C30 questionnaire responses.}
 
 \item{completeness}{A character vector specifying the completeness criteria:
 \itemize{
-\item "half": At least half of the items must be available to calculate the score.
+\item "half" (default): At least half of the items must be available to calculate the score.
 \item "all": All items must be available to calculate the score.
 \item "none": The score is always calculated as long as at least one item is available.
 }}
 }
 \value{
 A dataframe with the calculated scores for each scale (see below) in the
-QLQ-C30 questionnaire, optionally binded with the identifier column.
+QLQ-C30 questionnaire,binded with any extra column.
 }
 \description{
 This function takes a QLQ-C30 Version 3 questionnaire dataset and calculates
-the scores for each scale according to predefined scoring rules. The dataset
-should have 30 item columns representing questionnaire items and optionally
-an identifier column.
+the scores for each scale according to the predefined scoring rules. The dataset
+should have at least 30 columns representing the questionnaire items, sorted
+in the same order they are presented in the questionnaire. If extra columns are
+present, the 30 item columns must be located at the end of the dataframe.
 }
 \section{Global Health Status}{
 

@@ -27,14 +27,14 @@ qlq_c30_scores_scale <- function(
     transformation(range)
 }
 
-qlq_c30_scores <- function(qlq_c30, scoring_tbl, na_rm) {
+qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 
   purrr::pmap(
     scoring_tbl,
     function(scale, items, range, transformation) {
       tibble::tibble(
         "{stringr::str_to_upper(scale)}" := qlq_c30_scores_scale(
-          qlq_c30, items, range, transformation, na_rm
+          qlq_c30, items, range, transformation, completeness
         )
       )
     }
@@ -46,18 +46,14 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, na_rm) {
 #' Calculate QLQ-C30 Version 3 Scores
 #'
 #' This function takes a QLQ-C30 Version 3 questionnaire dataset and calculates
-#' the scores for each scale according to predefined scoring rules. The dataset
-#' should have 30 item columns representing questionnaire items and optionally
-#' an identifier column.
+#' the scores for each scale according to the predefined scoring rules. The dataset
+#' should have at least 30 columns representing the questionnaire items, sorted
+#' in the same order they are presented in the questionnaire. If extra columns are
+#' present, the 30 item columns must be located at the end of the dataframe.
 #'
 #' @param qlq_c30 A dataframe containing the QLQ-C30 questionnaire responses.
-#'                This dataframe must contain exactly 30 or 31 columns. If 31
-#'                columns are present, one column is treated as an identifier column.
-#' @param id_col An optional parameter specifying the column index of the
-#'               identifier column in `qlq_c30` dataframe. The default index is 1.
-#'               This parameter is used only when `qlq_c30` contains 31 columns.
 #' @param completeness A character vector specifying the completeness criteria:
-#' - "half": At least half of the items must be available to calculate the score.
+#' - "half" (default): At least half of the items must be available to calculate the score.
 #' - "all": All items must be available to calculate the score.
 #' - "none": The score is always calculated as long as at least one item is available.
 #'
@@ -93,35 +89,32 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, na_rm) {
 #' - FI: Financial difficulties.
 #'
 #' @return A dataframe with the calculated scores for each scale (see below) in the
-#'         QLQ-C30 questionnaire, optionally binded with the identifier column.
+#'         QLQ-C30 questionnaire,binded with any extra column.
 #'
 #' @export
 ody_qlq_c30_v3 <- function(
     qlq_c30,
-    id_col = 1,
     completeness = c("half", "all", "none")) {
 
   completeness <- rlang::arg_match(completeness)
 
-  # Check if dataframe has 31 columns, indicating an ID column is present
-  if (ncol(qlq_c30) == 31) {
+  # Check if dataframe has more than 30 columns
+  if (ncol(qlq_c30) > 30) {
     message(
-      "The provided data frame has 31 columns.\nColumn ",
-      id_col, " is assumed as the ID column."
+      "The provided data frame has ",  ncol(qlq_c30), " columns.\nThe last 30 columns are used for scoring."
     )
-    id_column <- qlq_c30 |>
-      dplyr::select(tidyselect::all_of(id_col))
+    extra_cols <- qlq_c30 |>
+      dplyr::select(1:tidyselect::last_col(30))
+
     qlq_c30 <- qlq_c30 |>
-      dplyr::select(-tidyselect::all_of(id_col))
+      dplyr::select(tidyselect::last_col(29):tidyselect::last_col())
+
   } else {
-    id_column <- NULL
+    extra_cols <- NULL
   }
 
-  # Verify that 30 item columns are present for scoring
-  if (ncol(qlq_c30) != 30) stop("qlq_c30 must have 30 item columns")
-
-  # Verify that all item columns are numeric
-  if (!all(purrr::map_lgl(qlq_c30, is.numeric))) {
+  # Verify that all item columns are integer
+  if (!all(purrr::map_lgl(qlq_c30, is.integer))) {
     stop("All item columns in qlq_c30 must be numeric")
   }
 
@@ -150,8 +143,27 @@ ody_qlq_c30_v3 <- function(
   scores <- purrr::map_dfr(
     as.data.frame(t(qlq_c30)), ~qlq_c30_scores(., scoring_tbl, completeness),
     .progress = "Calculating scores..."
-  )
+  ) |>
+    labelled::set_variable_labels(
+      QL2 = "Global health status / Quality of life",
+      PF2 = "Functional - Physical functioning",
+      RF2 = "Functional - Role functioning",
+      EF  = "Functional - Emotional functioning",
+      CF  = "Functional - Cognitive functioning",
+      SF  = "Functional - Social functioning",
+      FA  = "Symptom - Fatigue",
+      NV  = "Symptom - Nausea and vomiting",
+      PA  = "Symptom - Pain",
+      DY  = "Symptom - Dyspnoea",
+      SL  = "Symptom - Insomnia",
+      AP  = "Symptom - Appetite loss",
+      CO  = "Symptom - Constipation",
+      DI  = "Symptom - Diarrhoea",
+      FI  = "Symptom - Financial difficulties"
+    )
+
   # Optionally bind the identifier column with calculated scores and return
-  dplyr::bind_cols(id_column, scores)
+  if (!is.null(extra_cols)) return(dplyr::bind_cols(extra_cols, scores))
+  scores
 }
 

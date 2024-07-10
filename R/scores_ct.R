@@ -1,5 +1,11 @@
 # Función para calcular los scores de cada escala del EORTC QLQ-C30
 
+# Function to check if the items have the expected values.
+check_values <- function(variable, values) {
+  variable <- na.omit(variable)
+  all(variable %in% values)
+}
+
 # QLQ-C30 transformation functons
 qlq_c30_scores_transform <- function(rs, range) ((rs - 1) / range) * 100
 
@@ -127,7 +133,12 @@ ody_qlq_c30_v3 <- function(
     stop("Item indexes out of range")
   }
 
-  qlq_c30 <- qlq_c30_df[items_index]
+  # This is the final items dataframe properly sorted
+  qlq_c30 <- qlq_c30_df[items_index] |>
+    dplyr::mutate(
+      # Factors must be transformed to integer before the checking.
+      dplyr::across(tidyselect::where(is.factor), as.integer)
+    )
   extra_cols <- qlq_c30_df[-items_index]
 
   # Item mapping message
@@ -140,13 +151,24 @@ ody_qlq_c30_v3 <- function(
   ) |>
     message()
 
-  # Verify that all item columns are integer
-  # Mejorar para que se asegure que son exactamente los valores esperados
-  # y que acepte factores para luego pasarlo a integer.
-  if (!all(purrr::map_lgl(qlq_c30, is.integer))) {
-    stop("All item columns in qlq_c30_df must be integers. Review the item mapping")
+  # Verify that all item columns have expected values
+  expected_values <- c(
+    rep(list(1:4), 28),
+    rep(list(1:7), 2)
+  )
+
+  have_expected <- purrr::map2_lgl(qlq_c30, values, check_values)
+
+  if (!all(have_expected)) {
+    unexpeted <- have_expected[!have_expected] |>
+      names() |>
+      stringr::str_c(collapse = ", ")
+    stop("Unexpected values in: ", unexpeted)
   }
 
+  # Only after checking, all the columns are transformed to integer
+  qlq_c30 <- qlq_c30 |>
+    dplyr::mutate(dplyr::across(tidyselect::everything(), as.integer))
 
   # Define the scoring table for transformation of questionnaire responses
   scoring_tbl <- tibble::tribble(

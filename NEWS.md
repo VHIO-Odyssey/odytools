@@ -1,6 +1,7 @@
 # odytools 0.7.5.9000
 
--   Added **ody_gt2image** to convert a GT table to an image.
+-   Improved **ody_qlq_c30_v3** with new criteria for the calculation of scales when some items are missing, and added the capability for delta calculation.
+-   Added **ody_gt2image** to convert a GT table into an image.
 -   When accessing a project (both plain and REDCap-based), the existence and update status of the renv.lock file and a git repo are now checked.
 -   When rendering a report via the render chunk, the lockfile is now updated if the report is successfully rendered.
 -   When a project is started (both plain and REDCap-based), a template .gitignore file is now added.

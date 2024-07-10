@@ -47,11 +47,11 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #'
 #' This function takes a QLQ-C30 Version 3 questionnaire dataset and calculates
 #' the scores for each scale according to the predefined scoring rules. The dataset
-#' should have at least 30 columns representing the questionnaire items, sorted
-#' in the same order they are presented in the questionnaire. If extra columns are
-#' present, the 30 item columns must be located at the end of the dataframe.
+#' should have at least 30 columns representing the questionnaire items.
 #'
-#' @param qlq_c30 A dataframe containing the QLQ-C30 questionnaire responses.
+#' @param qlq_c30_df A dataframe containing the QLQ-C30 questionnaire responses.
+#' @param items_index A numeric vector specifying the column indexes of the items
+#' in the QLQ-C30 questionnaire. If NULL, the last 30 columns are assumed to be the items sorted as they are presented in the questionnaire.
 #' @param completeness A character vector specifying the completeness criteria:
 #' - "half" (default): At least half of the items must be available to calculate the score.
 #' - "all": All items must be available to calculate the score.
@@ -89,7 +89,9 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #' - FI: Financial difficulties.
 #'
 #' @return A dataframe with the calculated scores for each scale (see below) in the
-#'         QLQ-C30 questionnaire,binded with any extra column.
+#'         QLQ-C30 questionnaire,binded with any extra column. The item mapping, a
+#'         relation between the item number, the scale it belongs to and the column
+#'         name in the input data frame, is stored as an attribute called "item_mapping".
 #'
 #' @export
 ody_qlq_c30_v3 <- function(
@@ -123,11 +125,21 @@ ody_qlq_c30_v3 <- function(
   qlq_c30 <- qlq_c30_df[items_index]
   extra_cols <- qlq_c30_df[-items_index]
 
+  # Item mapping message
+  stringr::str_c(
+    "Item mapping:\n",
+    stringr::str_c(
+      "item ", 1:30, ": " , names(qlq_c30_df[items_index]),
+      collapse = "\n"
+    )
+  ) |>
+    message()
+
   # Verify that all item columns are integer
   # Mejorar para que se asegure que son exactamente los valores esperados
   # y que acepte factores para luego pasarlo a integer.
   if (!all(purrr::map_lgl(qlq_c30, is.integer))) {
-    stop("All item columns in qlq_c30_df must be integers")
+    stop("All item columns in qlq_c30_df must be integers. Review the item mapping")
   }
 
 
@@ -158,23 +170,41 @@ ody_qlq_c30_v3 <- function(
   ) |>
     labelled::set_variable_labels(
       QL2 = "Global health status / Quality of life",
-      PF2 = "Functional - Physical functioning",
-      RF2 = "Functional - Role functioning",
-      EF  = "Functional - Emotional functioning",
-      CF  = "Functional - Cognitive functioning",
-      SF  = "Functional - Social functioning",
-      FA  = "Symptom - Fatigue",
-      NV  = "Symptom - Nausea and vomiting",
-      PA  = "Symptom - Pain",
-      DY  = "Symptom - Dyspnoea",
-      SL  = "Symptom - Insomnia",
-      AP  = "Symptom - Appetite loss",
-      CO  = "Symptom - Constipation",
-      DI  = "Symptom - Diarrhoea",
-      FI  = "Symptom - Financial difficulties"
+      PF2 = "Physical functioning",
+      RF2 = "Role functioning",
+      EF  = "Emotional functioning",
+      CF  = "Cognitive functioning",
+      SF  = "Social functioning",
+      FA  = "Fatigue",
+      NV  = "Nausea and vomiting",
+      PA  = "Pain",
+      DY  = "Dyspnoea",
+      SL  = "Insomnia",
+      AP  = "Appetite loss",
+      CO  = "Constipation",
+      DI  = "Diarrhoea",
+      FI  = "Financial difficulties"
     )
 
-  # Bind extra columns with calculated scores
-  dplyr::bind_cols(extra_cols, scores)
+  # Result
+  ## Bind extra columns with calculated scores
+  scores <- dplyr::bind_cols(extra_cols, scores)
+  ##attributes
+  item_mapping <-
+    tibble::tibble(
+      item = 1:30,
+      scale = c(
+        "PF2", "PF2", "PF2", "PF2", "PF2",
+        "RF2", "RF2", "DY", "PA", "FA", "SL",
+        "FA", "AP", "NV", "NV", "CO", "DI",
+        "FA","PA", "CF", "EF", "EF", "EF",
+        "EF", "CF", "SF", "SF", "FI", "QL2", "QL2"
+      ),
+      column = names(qlq_c30_df[items_index])
+    )
+  attr(scores, "item_mapping") <- item_mapping
+
+scores
+
 }
 

@@ -93,29 +93,41 @@ qlq_c30_scores <- function(qlq_c30, scoring_tbl, completeness) {
 #'
 #' @export
 ody_qlq_c30_v3 <- function(
-    qlq_c30,
-    completeness = c("half", "all", "none")) {
+    qlq_c30_df,
+    items_index = NULL,
+    completeness = c("half", "all", "none")
+  ) {
 
   completeness <- rlang::arg_match(completeness)
 
-  # Check if dataframe has more than 30 columns
-  if (ncol(qlq_c30) > 30) {
-    message(
-      "The provided data frame has ",  ncol(qlq_c30), " columns.\nThe last 30 columns are used for scoring."
-    )
-    extra_cols <- qlq_c30 |>
-      dplyr::select(1:tidyselect::last_col(30))
-
-    qlq_c30 <- qlq_c30 |>
-      dplyr::select(tidyselect::last_col(29):tidyselect::last_col())
-
-  } else {
-    extra_cols <- NULL
+  # Previous checks
+  ## qlq_30 checks
+  if (!is.data.frame(qlq_c30_df)) {
+    stop("qlq_c30_df must be a data frame")
+  }
+  if (ncol(qlq_c30_df) < 30) {
+    stop("The provided data frame must have at least 30 columns")
+  }
+  ## items_index checks
+  if (!is.null(items_index) && length(items_index) != 30) {
+      stop("The items_index argument must have 30 elements")
+  }
+  if (is.null(items_index)) {
+  # If no items_index is provided, assume the last 30 columns are the items.
+    items_index <- (ncol(qlq_c30_df) - 29):ncol(qlq_c30_df)
+  }
+  if (!all(items_index %in% 1:ncol(qlq_c30_df))) {
+    stop("Item indexes out of range")
   }
 
+  qlq_c30 <- qlq_c30_df[items_index]
+  extra_cols <- qlq_c30_df[-items_index]
+
   # Verify that all item columns are integer
+  # Mejorar para que se asegure que son exactamente los valores esperados
+  # y que acepte factores para luego pasarlo a integer.
   if (!all(purrr::map_lgl(qlq_c30, is.integer))) {
-    stop("All item columns in qlq_c30 must be numeric")
+    stop("All item columns in qlq_c30_df must be integers")
   }
 
 
@@ -162,8 +174,7 @@ ody_qlq_c30_v3 <- function(
       FI  = "Symptom - Financial difficulties"
     )
 
-  # Optionally bind the identifier column with calculated scores and return
-  if (!is.null(extra_cols)) return(dplyr::bind_cols(extra_cols, scores))
-  scores
+  # Bind extra columns with calculated scores
+  dplyr::bind_cols(extra_cols, scores)
 }
 

@@ -94,3 +94,16 @@ ody_gpt <- function(
   }
 }
 
+
+#' Text corrector
+#'
+#' Simple shortcut to use OdyGPT as a text corrector
+#'
+#' @param prompt Text to correct
+#'
+#' @return Corrected text
+#' @export
+ody_correct <- function(prompt) {
+  ody_gpt(prompt, role = "english_corrector")
+}
+

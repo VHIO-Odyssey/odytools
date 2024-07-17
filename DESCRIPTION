@@ -56,4 +56,5 @@ Suggests:
     webshot2,
     magick,
     grDevices,
-    git2r
+    git2r,
+    tidychatmodels

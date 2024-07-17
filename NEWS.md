@@ -1,9 +1,10 @@
 # odytools 0.7.5.9000
 
+-   Improved **ody_gpt**. Now it is based on `tidychatmodels` package and you can call it using the add-in OdyGPT.
 -   Improved **ody_qlq_c30_v3**:
-    - The functions checks if the items have the expected range of values.
-    - New criteria for the calculation of scales when some items are missing.
-    - Added the capability for delta calculation.
+    -   The functions checks if the items have the expected range of values.
+    -   New criteria for the calculation of scales when some items are missing.
+    -   Added the capability for delta calculation.
 -   Added **ody_gt2image** to convert a GT table into an image.
 -   When accessing a project (both plain and REDCap-based), the existence and update status of the renv.lock file and a git repo are now checked.
 -   When rendering a report via the render chunk, the lockfile is now updated if the report is successfully rendered.

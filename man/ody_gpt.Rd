@@ -4,14 +4,25 @@
 \alias{ody_gpt}
 \title{Ask to OdyGPT}
 \usage{
-ody_gpt(prompt)
+ody_gpt(
+  prompt = NULL,
+  role = "ody_gpt",
+  model = "gpt-4o",
+  api_key_name = "OPENAI_API_KEY"
+)
 }
 \arguments{
 \item{prompt}{Text with your question}
+
+\item{role}{Role of the chatbot. Predefined options are "ody_gpt" and "english_corrector" but any text can be provided.}
+
+\item{model}{Model to use. Default is "gpt-4o"}
+
+\item{api_key_name}{Name of the API key stored in .Renviron. Default is "OPENAI_API_KEY"}
 }
 \description{
 Ask to OdyGPT
 }
 \details{
-A valid OPEN_API_kEY stored in .Renviron is required.
+The chat is stored in the Global Environment, so successive questions are based on the previous ones, creating the illusion of a conversation (it is not; ody_gpt is not human and thus not your friend). A valid OPEN_API_KEY stored in .Renviron is required.
 }

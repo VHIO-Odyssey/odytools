@@ -43,6 +43,11 @@ Description:  Record the state of the project at this time point.
 Binding: save_lock
 Interactive: false
 
+Name: OdyGPT
+Description: Ask to OdyGPT (GPT-4o)
+Binding: ody_gpt
+Interactive: false
+
 Name: Update odytools
 Description: Update odytools from GitHub.
 Binding: update_odytools

@@ -1,5 +1,6 @@
 # odytools 0.7.5.9000
 
+-   Now, when a project is started (both plain and REDCap-based), a template "memento" markdown file is added to docs.
 -   Improved **ody_gpt**. Now it is based on `tidychatmodels` package and you can call it using the add-in OdyGPT.
 -   Improved **ody_qlq_c30_v3**:
     -   The functions checks if the items have the expected range of values.

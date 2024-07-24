@@ -104,6 +104,13 @@ rc_init_dirs_files <- function() {
     here::here(".gitignore")
   )
 
+  # Memento template
+  file.copy(
+    system.file(
+      "redcap_templates", "memento_template.md", package = "odytools"
+    ),
+    here::here("docs", stringr::str_c(project_name, "_memento.md"))
+  )
 
 }
 

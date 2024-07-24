@@ -193,6 +193,14 @@ ody_proj_init <- function() {
     here::here(".gitignore")
   )
 
+  # Memento template
+  file.copy(
+    system.file(
+      "project_templates", "memento_template.md", package = "odytools"
+    ),
+    here::here("docs", stringr::str_c(project_name, "_memento.md"))
+  )
+
 }
 
 # Helper function to create a lockfile

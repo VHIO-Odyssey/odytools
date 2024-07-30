@@ -168,3 +168,7 @@ Survival related functions.
 Calcutation of scores commonly used in clinical trials.
 
 -   ody_qlq_c30
+
+## pdf_extraction
+
+Tools to extract data from some pdf reports.

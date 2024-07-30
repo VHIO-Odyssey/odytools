@@ -57,4 +57,5 @@ Suggests:
     magick,
     grDevices,
     git2r,
-    tidychatmodels
+    tidychatmodels,
+    pdftools

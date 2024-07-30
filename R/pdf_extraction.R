@@ -256,7 +256,7 @@ ody_extract_vhlab_pdf <- function(pdf_path, write_xlsx = TRUE) {
     )
 
   if (write_xlsx) {
-    xlsx_path <- stringr::str_replace(pdf_path, "\\.pdf", ".xlsx")
+    xlsx_path <- stringr::str_replace(pdf_path, "\\.pdf$|\\.PDF$", ".xlsx")
     openxlsx::write.xlsx(final_tbl, xlsx_path)
   }
 

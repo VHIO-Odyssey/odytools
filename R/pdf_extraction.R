@@ -36,8 +36,8 @@ correct_fail_data <- function(lab_tbl, line_pos, lab_split) {
 
   fail_cases <-
     lab_tbl |>
-    dplyr::filter(is.na(valor)) |>
-    dplyr::pull(line_index)
+    dplyr::filter(is.na(.data[["valor"]])) |>
+    dplyr::pull(.data[["line_index"]])
 
   lines_index_fail <- fail_cases + line_pos
 
@@ -196,8 +196,8 @@ ody_extract_vhlab_pdf <- function(pdf_path, write_xlsx = TRUE) {
     dplyr::mutate(
       line_index = lines_index,
       valor = dplyr::case_when(
-        valor == "." ~ NA,
-        .default = valor
+        .data[["valor"]] == "." ~ NA,
+        .default = .data[["valor"]]
       )
     )
 
@@ -231,21 +231,21 @@ ody_extract_vhlab_pdf <- function(pdf_path, write_xlsx = TRUE) {
     lab_tbl |>
     correct_fail_data(1, lab_split) |>
     correct_fail_data(2, lab_split) |>
-    dplyr::select(-line_index) |>
+    dplyr::select(-"line_index") |>
     dplyr::mutate(
       #A veces no hau unidad y el rango se cuela en la casilla de la unidad
-      rango_en_unidades = is.na(rango) & stringr::str_detect(unidad, " - "),
+      rango_en_unidades = is.na(.data[["rango"]]) & stringr::str_detect(.data[["unidad"]], " - "),
       rango = dplyr::if_else(
-        rango_en_unidades, unidad, rango
+        .data[["rango_en_unidades"]], .data[["unidad"]], .data[["rango"]]
       ),
       unidad = dplyr::if_else(
-        rango_en_unidades, NA, unidad
+        .data[["rango_en_unidades"]], NA, .data[["unidad"]]
       ),
       valor_rango = dplyr::if_else(
-        is.na(rango), NA, valor_rango
+        is.na(.data[["rango"]]), NA, .data[["valor_rango"]]
       )
     ) |>
-    dplyr::select(-rango_en_unidades) |>
+    dplyr::select(-"rango_en_unidades") |>
     dplyr::mutate(
       nhc = nhc,
       # nacimiento = nacimiento,

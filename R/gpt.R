@@ -24,6 +24,8 @@ ody_gpt <- function(
 
   if (exists("odygpt_chat", envir = .GlobalEnv)) {
 
+    odygpt_chat <- get("odygpt_chat", envir = .GlobalEnv)
+
     chat <-
       odygpt_chat |>
       tidychatmodels::add_message(prompt) |>

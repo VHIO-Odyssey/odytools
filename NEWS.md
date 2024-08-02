@@ -1,4 +1,4 @@
-# odytools 0.7.5.9000
+# odytools 0.8.0
 
 -   Added **ody_extract_vhlab_pdf** to extract data from VH Lab PDFs.
 -   Now, when a project is started (both plain and REDCap-based), a template "memento" markdown file is added to docs.

@@ -1099,7 +1099,7 @@
     },
     "httr2": {
       "Package": "httr2",
-      "Version": "1.0.1",
+      "Version": "1.0.2",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1116,7 +1116,7 @@
         "vctrs",
         "withr"
       ],
-      "Hash": "03d741c92fda96d98c3a3f22494e3b4a"
+      "Hash": "320c8fe23fcb25a6690ef7bdb6a3a705"
     },
     "ini": {
       "Package": "ini",
@@ -1551,6 +1551,17 @@
       ],
       "Hash": "c03b4c18d42da881fb8e15a085c2b9d6"
     },
+    "pdftools": {
+      "Package": "pdftools",
+      "Version": "3.4.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Rcpp",
+        "qpdf"
+      ],
+      "Hash": "9f04cfdc668ad1149d865a2996ac2045"
+    },
     "pillar": {
       "Package": "pillar",
       "Version": "1.9.0",
@@ -1804,6 +1815,18 @@
         "shiny"
       ],
       "Hash": "e3bd5ade848251657381d2a0668def59"
+    },
+    "qpdf": {
+      "Package": "qpdf",
+      "Version": "1.3.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Rcpp",
+        "askpass",
+        "curl"
+      ],
+      "Hash": "479ebe6dca0a57c63d306e1b6a4bf30c"
     },
     "ragg": {
       "Package": "ragg",
@@ -2327,6 +2350,29 @@
         "vctrs"
       ],
       "Hash": "a84e2cc86d07289b3b6f5069df7a004c"
+    },
+    "tidychatmodels": {
+      "Package": "tidychatmodels",
+      "Version": "0.1.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "tidychatmodels",
+      "RemoteUsername": "AlbertRapp",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "72fb616cf93a227f8f8c09a56abbabb24d96d8c9",
+      "Requirements": [
+        "R",
+        "cli",
+        "glue",
+        "httr2",
+        "knitr",
+        "purrr",
+        "rlang",
+        "tibble",
+        "utils"
+      ],
+      "Hash": "9bdb7d701f7d108212341061bd52b0b0"
     },
     "tidyr": {
       "Package": "tidyr",

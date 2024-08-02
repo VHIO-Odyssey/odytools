@@ -24,5 +24,5 @@ This function converts a GT table object into an image file. It supports outputt
 the image either as a raster image directly or as a plot made with ggplot.
 }
 \details{
-"raster" output can be used with ggplot2::annotate_raster to add the image on a ggplot. "ggplot" output is usefull in combination with "patchwork".
+"raster" output can be used with \code{ggplot2::annotate_raster} to add the image on a ggplot. "ggplot" output is usefull in combination with \code{patchwork} (since gt 0.11.0 this last option is better achieved with the function \code{gt::as_gtable()}).
 }

@@ -19,7 +19,7 @@ source(here::here(list.files(here::here(), "_dependencies.R$")))
 
 ```
 
-**RedCap Project:** `r ody_rc_current(as_list = TRUE)$project`
+**REDCap Project:** `r ody_rc_current(as_list = TRUE)$project`
 
 **Import:** `r ody_rc_current(as_list = TRUE)$loaded`
 
@@ -42,5 +42,7 @@ withr::with_dir(
     )
   )
 )
+
+odytools:::save_lock()
 
 ```

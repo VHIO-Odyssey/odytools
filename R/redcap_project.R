@@ -96,6 +96,21 @@ rc_init_dirs_files <- function() {
     )
   )
 
+  # Gitignore template
+  file.copy(
+    system.file(
+      "redcap_templates", "gitignore_template", package = "odytools"
+    ),
+    here::here(".gitignore")
+  )
+
+  # Memento template
+  file.copy(
+    system.file(
+      "redcap_templates", "memento_template.md", package = "odytools"
+    ),
+    here::here("docs", stringr::str_c(project_name, "_memento.md"))
+  )
 
 }
 
@@ -155,6 +170,8 @@ rc_make_datasets <- function(redcap_data) {
 
 # Start/Update a RedCap Project. Only Addin
 rc_init_update <- function() {
+
+  rlang::check_installed("git2r")
 
   project_name <- get_project_name()
   if (length(project_name) == 0) stop("No RStudio project detected.")

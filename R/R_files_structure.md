@@ -56,7 +56,9 @@ Functions to export and work on redcap projects.
 
 -   extract_data
 
--   import_rc [extract_data]
+-   import_rc [extract_data, get_single_field]
+
+-   get_single_field
 
 -   label_rc_import
 
@@ -75,6 +77,8 @@ Functions to export and work on redcap projects.
 -   ody_rc_filter_subject
 
 -   ody_rc_format
+
+-   ody_rc_translate_meddra
 
 -   ody_rc_view [restore_attributes, ody_rc_completeness, ody_rc_format, ody_summarise_df]
 
@@ -132,6 +136,8 @@ Miscelaneous utilities.
 -   update_odytools ADDIN
 -   compare_1_vs_others
 -   ody_compare_1_vs_others [compare_1_vs_others]
+-   check_renvlock
+-   ody_gt2image
 
 ## **aes**
 
@@ -162,3 +168,7 @@ Survival related functions.
 Calcutation of scores commonly used in clinical trials.
 
 -   ody_qlq_c30
+
+## pdf_extraction
+
+Tools to extract data from some pdf reports.

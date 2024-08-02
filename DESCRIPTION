@@ -1,6 +1,6 @@
 Package: odytools
 Title: Oncology Data Science Group (ODysSey) tools
-Version: 0.7.5
+Version: 0.8.0
 Authors@R: 
     person("Eduardo", "García-Galea", , "eduardogarcia@vhio.net", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4699-0786"))
@@ -8,7 +8,7 @@ Description: A miscellany of data science tools developed by the Oncology Data S
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports: 
     dplyr,
     forcats,
@@ -52,4 +52,10 @@ Suggests:
     scales,
     shiny,
     shinycssloaders,
-    withr
+    withr,
+    webshot2,
+    magick,
+    grDevices,
+    git2r,
+    tidychatmodels,
+    pdftools

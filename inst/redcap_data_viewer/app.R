@@ -25,6 +25,19 @@ app_title <- str_c(
 
 # Puede haber events 100% vacíos. Se eliminan.
 data_app_events <- attr(data_app, "events")
+data_app_arms <- attr(data_app, "arms")
+
+if (!is.null(data_app_arms)) {
+  data_app_events <- left_join(
+    data_app_events,
+    data_app_arms,
+    by = join_by(arm_num)
+  ) |>
+    mutate(
+      event_name = str_c(name, " - ", event_name)
+    )
+}
+
 
 # DAGS
 dag <- attr(data_app, "dag")
@@ -86,7 +99,8 @@ ui <- page_sidebar(
       popover(
         tagList("Data", bs_icon("gear", class = "ms-auto")),
         radioButtons(
-          "data_type",  HTML("<b>Field Type</b>"), c("Labels", "Raw", "Raw + Labels"),
+          "data_type",  HTML("<b>Field Type</b>"),
+          c("Labels", "Raw", "Raw [Label]"),
           inline = TRUE
         )
       ), DTOutput("table") |> withSpinner()
@@ -242,15 +256,44 @@ server <- function(input, output, session) {
       ) |>
       select(where(~ !is.logical(.)))
 
-    if (data_app[1, 1] == "No events") formatted_form[ ,-1] else formatted_form
+    if (data_app[1, 1] == "No events") formatted_form <- formatted_form[ ,-1]
 
+    current_meddra_fields <- names(formatted_form)[
+      names(formatted_form) %in% attr(data_app, "meddra_fields")
+    ]
+
+    if (input$data_type != "Raw" && length(current_meddra_fields) > 0) {
+
+      formatted_form |>
+        mutate(
+          across(
+            all_of(current_meddra_fields),
+            function(x) {
+              code_tbl <- tibble(code = x)
+              if (input$data_type == "Raw [Label]") {
+                label_tbl <- attr(data_app, "meddra_codes") |>
+                  mutate(
+                    label = str_c(code, " [", label, "]")
+                  )
+              } else {
+                label_tbl <- attr(data_app, "meddra_codes")
+              }
+              left_join(code_tbl, label_tbl, by = "code") |>
+                pull("label")
+            }
+          )
+        )
+
+    } else {
+      formatted_form
+    }
 
   })
 
-output$table <- renderDT({
+  output$table <- renderDT({
 
-  validate(
-    need(
+    validate(
+      need(
       nrow(raw_table()) > 0,
       "No data available for the selected site.")
   )
@@ -579,6 +622,26 @@ output$joined_data <- renderDT({
     extracted_df <- extracted_df |>
       select(!ends_with("__loc"))
 
+  }
+
+  current_meddra_fields <- names(extracted_df)[
+    names(extracted_df) %in% attr(data_app, "meddra_fields")
+  ]
+
+  if (length(current_meddra_fields) > 0) {
+
+    extracted_df <- extracted_df |>
+      mutate(
+        across(
+          all_of(current_meddra_fields),
+          function(x) {
+            code_tbl <- tibble(code = x)
+            label_tbl <- attr(data_app, "meddra_codes")
+            left_join(code_tbl, label_tbl, by = "code") |>
+              pull("label")
+          }
+        )
+      )
   }
 
   extracted_df |>

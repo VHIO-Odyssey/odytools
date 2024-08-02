@@ -4,28 +4,79 @@
 \alias{ody_qlq_c30_v3}
 \title{Calculate QLQ-C30 Version 3 Scores}
 \usage{
-ody_qlq_c30_v3(qlq_c30, id_col = 1, na_rm = FALSE)
+ody_qlq_c30_v3(
+  qlq_c30_df,
+  group_delta = NULL,
+  items_index = NULL,
+  completeness = c("half", "all", "none")
+)
 }
 \arguments{
-\item{qlq_c30}{A dataframe containing the QLQ-C30 questionnaire responses.
-This dataframe must contain exactly 30 or 31 columns. If 31
-columns are present, one column is treated as an identifier column.}
+\item{qlq_c30_df}{A dataframe containing the QLQ-C30 questionnaire responses.}
 
-\item{id_col}{An optional parameter specifying the column index of the
-identifier column in \code{qlq_c30} dataframe. The default index is 1.
-This parameter is used only when \code{qlq_c30} contains 31 columns.}
+\item{group_delta}{An optional character specifying the column name of the
+grouping variable to calculate the deltas. The function assumes that the first
+row of each group is the baseline so make sure the data is properly sorted
+before using this option. If NULL, the default, no deltas are calculated.}
 
-\item{na_rm}{A logical value indicating whether NA values should be removed before
-calculating the scores. The default is FALSE, so all items needed
-to calculate a specific score must be non-NA.}
+\item{items_index}{Optional numeric vector specifying the column indexes of the items
+in the QLQ-C30 questionnaire. If NULL, the last 30 columns are assumed to be the items sorted as they are presented in the questionnaire.}
+
+\item{completeness}{A character vector specifying the completeness criteria:
+\itemize{
+\item "half" (default): At least half of the items must be available to calculate the score.
+\item "all": All items must be available to calculate the score.
+\item "none": The score is always calculated as long as at least one item is available.
+}}
 }
 \value{
-A dataframe with the calculated scores for each scale in the
-QLQ-C30 questionnaire, optionally binded with the identifier column.
+The function returns the original qlq_c30_df with the calculated scores
+for each scale (see below) bound at the end as new columns. The item mapping,
+which is the relation between the item number, the scale it belongs to, and the
+column name in the input data frame, is stored as an attribute called
+'item_mapping'.
 }
 \description{
 This function takes a QLQ-C30 Version 3 questionnaire dataset and calculates
-the scores for each scale according to predefined scoring rules. The dataset
-should have 30 item columns representing questionnaire items and optionally
-an identifier column.
+the scores for each scale according to the predefined scoring rules. The dataset
+should have at least 30 columns representing the questionnaire items.
 }
+\section{Global Health Status}{
+
+
+A high score represent a high quality of life (the HIGHER the BETTER).
+\itemize{
+\item QL2: Global health status / Quality of life.
+}
+}
+
+\section{Functional scales}{
+
+
+High scores represent a high level of functioning (the HIGHER the BETTER)
+\itemize{
+\item PF2: Physical functioning.
+\item RF2: Role functioning.
+\item EF: Emotional functioning.
+\item CF: Cognitive functioning.
+\item SF: Social functioning.
+}
+}
+
+\section{Symptom scales}{
+
+
+High scores represent a high level of symptoms/problems (the HIGHER the WORSE).
+\itemize{
+\item FA: Fatigue.
+\item NV: Nausea and vomiting.
+\item PA: Pain.
+\item DY: Dyspnoea.
+\item SL: Insomnia.
+\item AP: Appetite loss.
+\item CO: Constipation.
+\item DI: Diarrhoea.
+\item FI: Financial difficulties.
+}
+}
+

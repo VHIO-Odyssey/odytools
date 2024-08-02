@@ -1,13 +1,29 @@
+# odytools 0.8.0
+
+-   Added **ody_extract_vhlab_pdf** to extract data from VH Lab PDFs.
+-   Now, when a project is started (both plain and REDCap-based), a template "memento" markdown file is added to docs.
+-   Improved **ody_gpt**. Now it is based on `tidychatmodels` package and you can call it using the add-in OdyGPT.
+-   Improved **ody_qlq_c30_v3**:
+    -   The functions checks if the items have the expected range of values.
+    -   New criteria for the calculation of scales when some items are missing.
+    -   Added the capability for delta calculation.
+-   Added **ody_gt2image** to convert a GT table into an image.
+-   When accessing a project (both plain and REDCap-based), the existence and update status of the renv.lock file and a git repo are now checked.
+-   When rendering a report via the render chunk, the lockfile is now updated if the report is successfully rendered.
+-   When a project is started (both plain and REDCap-based), a template .gitignore file is now added.
+-   In the REDCap Data Viewer, the *Event* dropdown list now also shows the Arm (if any) the event belongs to.
+-   **ody_rc_import** now includes the attributes:
+    -   *meddra_fields*: Vector of the field names coded with MedDRA.
+    -   *meddra_codes*: A tibble with the MedDRA codes used by all *meddra_fields*.
+-   **ody_rc_select** now adds the attributes *medra_fields* and *meddra_codes* to the output in case any of the selected variables are coded with MedDRA.
+-   Added **ody_rc_translate_meddra** to translate MedDRA codes to their descriptions.
+
 # odytools 0.7.5
 
 -   The **ody_rc_import** function now also creates the *form_complete* variable, which indicates the form's status (Incomplete, Unverified, or Complete).
-
 -   Added the *form* argument to **ody_rc_import** to allow for the download of a specific form, as opposed to downloading the entire database.
-
 -   Added **ody_rc_add_site.** Appends patient site to any REDCap-derived table.
-
 -   Minor corrections and improvements:
-
     -   Added "html-table-processing: none" in the YML header of the analysis templates.
     -   New "render" chunk in the analysis template based on withr.
     -   Now **ody_glue2lang** evaluates as expeted when used inside another function.
@@ -72,23 +88,14 @@
 # odytools 0.6.0
 
 -   Added **ody_add_to_datasets,** a function to create datsets.
-
 -   Added **ody_rc_current**, a function to print the current project and import of the loaded REDCap database.
-
 -   First "REDCap structure" implementation. Added several addins to manage a REDCap database in RStudio.
-
     -   **Where am I?**: Print the name and import date of the current REDCap project if any. (it just calls ody_rc_current.
-
     -   **Start/update a REDCap project**: Start, or update if already started, a REDCap project in RStudio.
-
     -   **Refresh datasets**: Refresh the datasets content.
-
     -   **REDCap viewer**: Explore the data of a REDCap project. (it calls ody_rc_view)
-
     -   **View metadata**: Show the metadata of the current project on the Viewer.
-
     -   **View datasets description**: Show the descriptions of the datasets on the Viewer.
-
     -   **Add analysis template**: Add a new Quarto template in analysis/.
 
 # odytools 0.5.2
@@ -118,16 +125,13 @@
 # odytools 0.4.0
 
 -   Added AE related functions.
-
     -   **ody_make_ae_tbl**: It makes a "max grade" count of patients.
     -   **ody_make_ae_gt**: It inputs the output of ody_make_ae_tbl and makes a gt display table.
 
 # odytools 0.3.2
 
 -   Added other_utils functions:
-
     -   **ody_add_version**: This function creates a file name with a date version at the end. It takes care no repeated file names exist in the same folder.
-
     -   **ody_change_names**: It changes the names of a data frame according to the names provided by a second data frame.
 
 # odytools 0.3.1

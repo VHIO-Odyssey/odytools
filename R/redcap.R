@@ -109,6 +109,31 @@ import_rc <- function(
       )
     )
 
+  # MedDRA fields (if present) and their codes
+  meddra_fields <- metadata |>
+    dplyr::filter(
+      .data[["select_choices_or_calculations"]] == "BIOPORTAL:MEDDRA"
+    ) |>
+    dplyr::pull("field_name")
+
+  if (length(meddra_fields) > 0) {
+    meddra_codes <- purrr::map_dfr(
+      meddra_fields,
+      function(x) {
+        tbl <- tibble::tibble(
+          code = get_single_field(token, x, "raw", url) |> as.character(),
+          label = get_single_field(token, x, "label", url)
+        )
+        if (nrow(tbl) == 0) {
+          return(NULL)
+        } else {
+          return(tbl)
+        }
+      }
+    ) |>
+      unique() |>
+      dplyr::arrange("code")
+  }
 
   # Add to metadata complete_info variables to include them when nesting
   complete_vars <- stringr::str_c(forms$instrument_name, "_complete")
@@ -157,6 +182,10 @@ import_rc <- function(
     attr(redcap_data, "dag") <- dag
     attr(redcap_data, "subjects_dag") <- subjects_dag
   }
+  if (length(meddra_fields) > 0) {
+    attr(redcap_data, "meddra_fields") <- meddra_fields
+    attr(redcap_data, "meddra_codes") <- meddra_codes
+  }
   attr(redcap_data, "import_date") <- import_date
 
   # Delete unnecessary attributes
@@ -166,6 +195,37 @@ import_rc <- function(
   redcap_data
 
 }
+
+# Helper function to get a single field from a RedCap project in a vector
+get_single_field <- function(
+    token,
+    field,
+    raw_label,
+    url) {
+
+  formData <- list(
+    "token" = token,
+    content = "record",
+    action = "export",
+    format = "csv",
+    type = "flat",
+    csvDelimiter = "",
+    'fields[0]' = field,
+    rawOrLabel = raw_label,
+    rawOrLabelHeaders = "raw",
+    exportCheckboxLabel = "false",
+    exportSurveyFields = "false",
+    exportDataAccessGroups = "false",
+    returnFormat = "json"
+  )
+  response <- httr::POST(url, body = formData, encode = "form")
+  result <- httr::content(response) |>
+    suppressMessages()
+
+  result[[1]]
+
+}
+
 
 # Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
@@ -594,7 +654,9 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "project_info", "metadata", "forms", "events",
     "forms_events_mapping", "repeating", "arms",
     "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
-    "subjects","subjects_dag", "dag", "import_date"
+    "subjects","subjects_dag", "dag",
+    "meddra_fields", "meddra_codes",
+    "import_date"
   )
 
   needed_attributes <-  possible_attributes[
@@ -841,7 +903,7 @@ ody_rc_select <- function(rc_data,
 
   if (.if_different_forms == "join") {
 
-    purrr::map(
+    selection <- purrr::map(
       sel_vars,
       function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
     ) |>
@@ -870,12 +932,22 @@ ody_rc_select <- function(rc_data,
     names(extracted_list) <- extracted_vars$form
 
     if (length(extracted_list) == 1) {
-      extracted_list[[1]]
+      selection <- extracted_list[[1]]
     } else {
-      extracted_list
+      selection <- extracted_list
     }
 
   }
+
+  # If the selected vars are meddra variables, dctionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "meddra_fields"))) {
+    all_meddra <- attr(rc_data, "meddra_fields")
+    attr(selection, "meddra_fields") <- sel_vars[sel_vars %in% all_meddra]
+    attr(selection, "meddra_codes") <- attr(rc_data, "meddra_codes")
+  }
+
+  selection
 
 }
 
@@ -1076,6 +1148,38 @@ ody_rc_format <- function(rc_df) {
     )
   )
 }
+
+
+#' Translate MedDRA Codes
+#'
+#' Replace MedDRA codes in the dataframe with their corresponding descriptions.
+#'
+#' @param rc_df A dataframe obtained from a RedCap import using the function `ody_rc_select`.
+#'
+#' @return A dataframe with MedDRA codes substituted by their corresponding labels.
+#'
+#' @export
+ody_rc_translate_meddra <- function(rc_df) {
+
+  meddra_fields <- attr(rc_df, "meddra_fields")
+
+  if (is.null(meddra_fields)) return(rc_df)
+
+  rc_df |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(meddra_fields),
+        function(x) {
+          tibble::tibble(
+            code = x
+          ) |>
+            dplyr::left_join(attr(rc_df, "meddra_codes"), by = "code") |>
+            dplyr::pull("label")
+        }
+      )
+    )
+}
+
 
 #' View a RedCap project
 #'

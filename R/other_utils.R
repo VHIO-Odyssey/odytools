@@ -122,7 +122,7 @@ ody_options <- function(label_size = 1,
 #' @export
 ody_proj_init <- function() {
 
-  rlang::check_installed("conflicted")
+  rlang::check_installed(c("conflicted", "git2r"))
 
   project_name <- get_project_name()
 
@@ -185,6 +185,22 @@ ody_proj_init <- function() {
     )
   )
 
+  # Gitignore template
+  file.copy(
+    system.file(
+      "project_templates", "gitignore_template", package = "odytools"
+    ),
+    here::here(".gitignore")
+  )
+
+  # Memento template
+  file.copy(
+    system.file(
+      "project_templates", "memento_template.md", package = "odytools"
+    ),
+    here::here("docs", stringr::str_c(project_name, "_memento.md"))
+  )
+
 }
 
 # Helper function to create a lockfile
@@ -197,7 +213,7 @@ save_lock <- function() {
   if (lock_exists) {
 
     question <- rstudioapi::showQuestion(
-      "Lock file already exists",
+      "Save Lock file",
       "This action will overwrite an already existing Lock file. Are you sure?",
       ok = "Yes, overwrite.", cancel = "No, cancel."
     )
@@ -325,4 +341,86 @@ ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
   if (.eval) eval(glued_lang, envir = .envir) else glued_lang
 
 }
+
+# Function to check if exists and updated renv.lock and a git repository
+# update_threshold is the number of days to consider the lockfile outdated
+check_renvlock <- function(update_threshold = 30) {
+
+  git_last_modif <- file.mtime(here::here(".git"))
+  renvlock_last_modif <- file.mtime(here::here("renv.lock"))
+
+  if (!is.na(git_last_modif)) {
+    repository <- git2r::repository(here::here())
+    last_commit <- git2r::commits(repo = repository)[[1]]
+  }
+
+  messages <- list(
+    "Please, take care of your future self:",
+    "- Consider adding a Lockfile to this project.",
+    "- Consider starting a git repository."
+  )
+
+  if (is.na(renvlock_last_modif) && is.na(git_last_modif)) {
+    messages |> stringr::str_c(collapse = "\n") |> message()
+  } else if (is.na(renvlock_last_modif)) {
+    messages[1:2] |> stringr::str_c(collapse = "\n") |> message()
+  } else if (is.na(git_last_modif)) {
+    messages[c(1, 3)] |> stringr::str_c(collapse = "\n") |> message()
+  } else {
+    last_commit_date <- last_commit$author$when |>
+      lubridate::as_datetime(tz = Sys.timezone())
+    last_renvlock_date <- renvlock_last_modif |>
+      lubridate::as_datetime(tz = Sys.timezone())
+    dif_time <- lubridate::interval(last_commit_date, last_renvlock_date) |>
+      lubridate::time_length("days") |>
+      round(2)
+
+    message(
+      "Last renv.lock: ", lubridate::as_date(last_renvlock_date), "\n",
+      "Last commit: ", lubridate::as_date(last_commit_date), "\n",
+      "Time difference of ", dif_time, " days\n"
+    )
+  }
+
+}
+
+#' Convert GT Table to Image
+#'
+#' This function converts a GT table object into an image file. It supports outputting
+#' the image either as a raster image directly or as a plot made with ggplot.
+#'
+#' @param gt_table The GT table object to be converted into an image.
+#' @param type The type of output image. Either "raster" for a raster image or "ggplot"
+#'        for a plot created with ggplot. Defaults to "raster".
+#' @param zoom Zoom factor for the GT table rendering, where higher values result in
+#'        higher resolution images. Defaults to 2.
+#'
+#' @details "raster" output can be used with `ggplot2::annotate_raster` to add the image on a ggplot. "ggplot" output is usefull in combination with `patchwork` (since gt 0.11.0 this last option is better achieved with the function `gt::as_gtable()`).
+#'
+#' @return An image object, either of class `magick-image` (for "raster" type) or
+#'         a ggplot object (for "ggplot" type).
+#'
+#' @export
+ody_gt2image <- function(gt_table, type = c("raster", "ggplot"), zoom = 2) {
+
+  rlang::check_installed(c("webshot2", "magick", "grDevices"))
+
+  type <- rlang::arg_match(type)
+
+  path_gt_table_image <- tempfile(fileext = ".png")
+
+  gt::gtsave(
+    gt_table,
+    filename = path_gt_table_image,
+    zoom = zoom
+  )
+
+  table_image <- magick::image_read(path_gt_table_image)
+
+  if (type == "raster") return(table_image)
+
+  magick::image_ggplot(table_image, interpolate = TRUE)
+
+}
+
 

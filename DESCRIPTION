@@ -58,4 +58,6 @@ Suggests:
     grDevices,
     git2r,
     tidychatmodels,
-    pdftools
+    pdftools,
+    ggpubr,
+    gghalves

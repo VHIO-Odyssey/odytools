@@ -1,5 +1,7 @@
 # odytools 0.8.0.9000
 
+-  Added **ody_plot_violindoplot** which plots a half violin, a jitter dot plot and boxplot in the same graph. It also performs comparisons between groups.
+
 # odytools 0.8.0
 
 -   Added **ody_extract_vhlab_pdf** to extract data from VH Lab PDFs.

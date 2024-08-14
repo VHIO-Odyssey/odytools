@@ -172,3 +172,9 @@ Calcutation of scores commonly used in clinical trials.
 ## pdf_extraction
 
 Tools to extract data from some pdf reports.
+
+## graphics
+
+Functions to plot graphics commonly used in the reports
+
+-   ody_plot_violindotbox

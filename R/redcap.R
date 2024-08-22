@@ -761,7 +761,12 @@ ody_rc_import <- function(
       restore_attributes(rc_raw_import)
   }
 
+  class(rc_import) <- c("odytools_redcap", class(rc_import))
+
+  attr(rc_import, "odytools_version") <- packageVersion("odytools")
+
   rc_import
+
 }
 
 
@@ -832,13 +837,21 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #'    - join: Join all variables creating artifact NAs.
 #' @param .include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
 #'
+#' @details An S3 method for class 'odytools_redcap' is also available for the generic \code{dplyr::select}
+#'
+#'
 #' @return A tibble with the selected variables.
 #' @export
-ody_rc_select <- function(rc_data,
-                          ...,
-                          .is_vector = FALSE,
-                          .if_different_forms = c("list", "join"),
-                          .include_aux = FALSE) {
+ody_rc_select <- function(
+    rc_data,
+    ...,
+    .is_vector = FALSE,
+    .if_different_forms = c("list", "join"),
+    .include_aux = FALSE) {
+
+  # Critical: We need to avoid dplyr::select dispatches the odytools_redcap method
+  # inside this function
+  class(rc_data) <- class(rc_data)[-1]
 
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 

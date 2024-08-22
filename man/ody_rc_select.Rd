@@ -33,3 +33,6 @@ A tibble with the selected variables.
 \description{
 Select variables from a RedCap import
 }
+\details{
+An S3 method for class 'odytools_redcap' is also available for the generic \code{dplyr::select}
+}

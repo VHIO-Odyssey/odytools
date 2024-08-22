@@ -88,6 +88,10 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_add_site
 
+## redcap_methods
+
+Methods exported to external generic functions
+
 ## redcap_project
 
 Functions to create and update RedCap projects in RStudio:

@@ -243,10 +243,10 @@ rc_init_update <- function() {
 
   if (nrow(hardcoded_values) > 0) {
     redcap_data <- hardcode_values(redcap_data, hardcoded_values)
-    message("This project has hardcoded values. Check them with attr(redcap_data, \"hardcoded_values\")\n")
+    cli::cli_alert_info("This project has hardcoded values. Check them with {.code attr(redcap_data, \"hardcoded_values\")}")
   }
 
-  message("Computing datasets...\n")
+  cli::cli_alert_info("Computing datasets...")
   datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
   save(
@@ -255,9 +255,9 @@ rc_init_update <- function() {
   )
 
   if (is_update) {
-    message("Project successfully updated.\n")
+    cli::cli_alert_success("Project successfully updated.")
   } else {
-    message("Project successfully started.\n")
+    cli::cli_alert_success("Project successfully started.")
   }
 
   if (is_new_token) {
@@ -278,7 +278,7 @@ rc_init_update <- function() {
 # Refresh the Datasets List. Only Addin.
 rc_refresh_datasets <- function() {
 
-  message("Refreshing datasets...\n")
+  cli::cli_alert_info("Refreshing datasets...")
 
   load(list.files(here::here(), ".RData$"))
 
@@ -296,7 +296,7 @@ rc_refresh_datasets <- function() {
     envir = .GlobalEnv
   )
 
-  message("Datasets successfully refreshed.\n")
+  cli::cli_alert_success("Datasets successfully refreshed.\n")
 
 }
 

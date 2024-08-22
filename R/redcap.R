@@ -448,7 +448,7 @@ nest_rc <- function(rc_raw) {
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
 
-  message("Nesting the project...\n")
+  cli::cli_alert_info("Nesting the project")
 
   # Added structure for projects with no repating forms
   if (is.null(repeating)) {
@@ -743,7 +743,7 @@ ody_rc_import <- function(
     )
   }
 
-  message("Importing data from RedCap\n")
+  cli::cli_alert_info("Importing data from RedCap")
   rc_raw_import <- import_rc(token, form, url)
 
   if (!label && !nest && is.null(form)) return(rc_raw_import)

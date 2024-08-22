@@ -36,7 +36,7 @@ print.odytools_redcap <- function(x, ...) {
 
   cli::cli_alert_info(project_name)
   cli::cli_alert_info(import_text)
-  cli::cli_alert_info(version)
   print(x)
+  cli::cli_alert_info(version)
 
 }

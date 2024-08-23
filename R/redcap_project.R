@@ -367,12 +367,12 @@ ody_rc_current <- function(as_list = FALSE) {
   # Current Redcap data in main RData
   rdatas <- list.files(here::here(), ".RData$")
   if (length(rdatas) == 0) {
-    stop("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n")
+    return(cli::cli_alert_danger("No Redcap project detected. You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
   }
   else {
     purrr::walk(here::here(rdatas), load, envir = rlang::current_env())
     if (!exists("redcap_data", inherits = FALSE)) {
-      return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
+      return(cli::cli_alert_danger("No Redcap project detected.You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
     }
   }
 

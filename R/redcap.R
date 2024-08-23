@@ -448,7 +448,7 @@ nest_rc <- function(rc_raw) {
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
 
-  cli::cli_alert_info("Nesting the project")
+  cli::cli_alert_info("Nesting the project...")
 
   # Added structure for projects with no repating forms
   if (is.null(repeating)) {

@@ -4,13 +4,23 @@
 #' @param ... Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.
 #'
 #' @details
+#' The funtion first tries to use dplyr::select.tbl_df to select the variables. If the variables are not found, the function uses ody_rc_select to extract the variables from the RedCap import.
 #' See \link[odytools]{ody_rc_select} for further details on additional arguments.
 #'
 #' @return A tibble with the selected variables.
 #' @exportS3Method dplyr::select
 select.odytools_redcap <- function(.data, ...) {
 
- ody_rc_select(.data, ...)
+  try <-
+    .data |>
+    dplyr::as_tibble() |>
+    purrr::safely(dplyr::select)(...)
+
+  if (is.null(try$result)) {
+    ody_rc_select(.data, ...)
+  } else {
+    try$result
+  }
 
 }
 
@@ -22,7 +32,6 @@ select.odytools_redcap <- function(.data, ...) {
 #' @exportS3Method base::print
 print.odytools_redcap <- function(x, ...) {
 
-  class(x) <- class(x)[-1]
   project_name <- stringr::str_c(
     "REDCap Project {.strong ", attr(x, "project_info")$project_title, " (PID ",attr(x, "project_info")$project_id, ")}"
   )
@@ -36,7 +45,7 @@ print.odytools_redcap <- function(x, ...) {
 
   cli::cli_alert_info(project_name)
   cli::cli_alert_info(import_text)
-  print(x)
+  NextMethod("print", x)
   cli::cli_alert_info(version)
 
 }

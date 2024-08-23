@@ -849,10 +849,6 @@ ody_rc_select <- function(
     .if_different_forms = c("list", "join"),
     .include_aux = FALSE) {
 
-  # Critical: We need to avoid dplyr::select dispatches the odytools_redcap method
-  # inside this function
-  class(rc_data) <- class(rc_data)[-1]
-
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 
   sel_vars <- purrr::map(

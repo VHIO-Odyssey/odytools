@@ -18,5 +18,6 @@ A tibble with the selected variables.
 Select variables from a RedCap import
 }
 \details{
+The funtion first tries to use dplyr::select.tbl_df to select the variables. If the variables are not found, the function uses ody_rc_select to extract the variables from the RedCap import.
 See \link[odytools]{ody_rc_select} for further details on additional arguments.
 }

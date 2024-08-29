@@ -1,5 +1,6 @@
 # odytools 0.8.0.9000
 
+-   Added `ody_rc_add_label`. It labels the variables of a data frame according to the metadata of a REDCap project.
 -   The resulting object of `ody_rc_import` now has the class *odytools_redcap*. Speciall methods are dispatched for this class from the following generic funtions:
     -   `base::print`
     -   `dplyr::select`

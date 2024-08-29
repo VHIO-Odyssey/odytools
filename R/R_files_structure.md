@@ -88,9 +88,15 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_add_site
 
+-   ody_rc_add_label
+
 ## redcap_methods
 
 Methods exported to external generic functions
+
+-   print
+
+-   select
 
 ## redcap_project
 

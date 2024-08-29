@@ -234,6 +234,7 @@ label_rc_import <- function(rc_import) {
   missing_codes <- attr(rc_import, "missing_codes")
   id_var <- attr(rc_import, "id_var")
 
+  cli::cli_alert_info("Labelling variables...")
 
   # Dictionaries of all labeled variables
   field_dictionaries <- metadata |>
@@ -288,7 +289,7 @@ label_rc_import <- function(rc_import) {
     dplyr::pull("field_name")
 
   for (checkbox_field in checkbox_fields) {
-    cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
+    #cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
     # Columns involved in the definition of the selections
     field_cols <- colnames(rc_import) |>
       stringr::str_subset(
@@ -388,7 +389,7 @@ label_rc_import <- function(rc_import) {
   # Labeling
   for (field in metadata$field_name) {
     if (is.null(rc_import[[field]]) | field == id_var) next
-    cat(stringr::str_c("Labelling ", field, "\n"))
+    #cat(stringr::str_c("Labelling ", field, "\n"))
     # Variable label
     form <- metadata |>
       dplyr::filter(.data[["field_name"]] == field) |>
@@ -743,7 +744,7 @@ ody_rc_import <- function(
     )
   }
 
-  cli::cli_alert_info("Importing data from REDCap")
+  cli::cli_alert_info("Downloading data from REDCap...")
   rc_raw_import <- import_rc(token, form, url)
 
   if (!label && !nest && is.null(form)) return(rc_raw_import)

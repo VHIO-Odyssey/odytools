@@ -744,6 +744,7 @@ ody_rc_import <- function(
     )
   }
 
+  cat("\n")
   cli::cli_alert_info("Downloading data from REDCap...")
   rc_raw_import <- import_rc(token, form, url)
 

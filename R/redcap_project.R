@@ -256,8 +256,10 @@ rc_init_update <- function() {
 
   if (is_update) {
     cli::cli_alert_success("Project successfully updated.")
+    cat("\n")
   } else {
     cli::cli_alert_success("Project successfully started.")
+    cat("\n")
   }
 
   if (is_new_token) {

@@ -398,18 +398,18 @@ ody_rc_current <- function(as_list = FALSE) {
       loaded = loaded_import_date
     )
   }else {
-    cli::rule("odytools REDCap project")
-    cli::cli_alert_info(stringr::str_c(
-      "Project: {.strong ", stringr::str_c(project_name, " (PID ", project_id, ")}")
-    ))
+    cli::cat_rule(cli::col_blue("REDCap Project"))
+    cli::cli_alert_info(stringr::str_c("Name: {.strong ", project_name, "}"))
+    cli::cli_alert_info(stringr::str_c("PID: {.strong ", project_id, "}"))
     cli::cli_alert_info(stringr::str_c(
       "Last import: {.strong ", import_date, "}"
     ))
     cli::cli_alert_info(stringr::str_c(
       "Loaded import: {.strong ", loaded_import_date, "}"
     ))
-    cli::rule(right =  packageVersion("odytools"))
-    cat("\n")
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+    )
   }
 }
 # Helper function to copy a new analysis template.Onla addin

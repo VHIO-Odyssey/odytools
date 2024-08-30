@@ -398,12 +398,17 @@ ody_rc_current <- function(as_list = FALSE) {
       loaded = loaded_import_date
     )
   }else {
-    message(stringr::str_c(
-      "Project: ", stringr::str_c(project_name, " (PID ", project_id, ")"),
-      "\nLast import: ", import_date,
-      "\nLoaded import: ", loaded_import_date,
-      "\n"
+    cat("\n")
+    cli::cli_alert_info(stringr::str_c(
+      "Project: {.strong ", stringr::str_c(project_name, " (PID ", project_id, ")}")
     ))
+    cli::cli_alert_info(stringr::str_c(
+      "Last import: {.strong ", import_date, "}"
+    ))
+    cli::cli_alert_info(stringr::str_c(
+      "Loaded import: {.strong ", loaded_import_date, "}"
+    ))
+    cat("\n")
   }
 }
 # Helper function to copy a new analysis template.Onla addin

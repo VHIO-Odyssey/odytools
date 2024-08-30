@@ -398,7 +398,7 @@ ody_rc_current <- function(as_list = FALSE) {
       loaded = loaded_import_date
     )
   }else {
-    cat("\n")
+    cli::rule("odytools REDCap project")
     cli::cli_alert_info(stringr::str_c(
       "Project: {.strong ", stringr::str_c(project_name, " (PID ", project_id, ")}")
     ))
@@ -408,6 +408,7 @@ ody_rc_current <- function(as_list = FALSE) {
     cli::cli_alert_info(stringr::str_c(
       "Loaded import: {.strong ", loaded_import_date, "}"
     ))
+    cli::rule(right =  packageVersion("odytools"))
     cat("\n")
   }
 }

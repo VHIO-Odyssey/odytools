@@ -243,10 +243,10 @@ rc_init_update <- function() {
 
   if (nrow(hardcoded_values) > 0) {
     redcap_data <- hardcode_values(redcap_data, hardcoded_values)
-    message("This project has hardcoded values. Check them with attr(redcap_data, \"hardcoded_values\")\n")
+    cli::cli_alert_info("This project has hardcoded values. Check them with {.code attr(redcap_data, \"hardcoded_values\")}")
   }
 
-  message("Computing datasets...\n")
+  cli::cli_alert_info("Computing datasets...")
   datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
   save(
@@ -255,9 +255,11 @@ rc_init_update <- function() {
   )
 
   if (is_update) {
-    message("Project successfully updated.\n")
+    cli::cli_alert_success("Project successfully updated.")
+    cat("\n")
   } else {
-    message("Project successfully started.\n")
+    cli::cli_alert_success("Project successfully started.")
+    cat("\n")
   }
 
   if (is_new_token) {
@@ -278,7 +280,7 @@ rc_init_update <- function() {
 # Refresh the Datasets List. Only Addin.
 rc_refresh_datasets <- function() {
 
-  message("Refreshing datasets...\n")
+  cli::cli_alert_info("Refreshing datasets...")
 
   load(list.files(here::here(), ".RData$"))
 
@@ -296,7 +298,7 @@ rc_refresh_datasets <- function() {
     envir = .GlobalEnv
   )
 
-  message("Datasets successfully refreshed.\n")
+  cli::cli_alert_success("Datasets successfully refreshed.\n")
 
 }
 
@@ -367,12 +369,12 @@ ody_rc_current <- function(as_list = FALSE) {
   # Current Redcap data in main RData
   rdatas <- list.files(here::here(), ".RData$")
   if (length(rdatas) == 0) {
-    stop("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n")
+    return(cli::cli_alert_danger("No Redcap project detected. You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
   }
   else {
     purrr::walk(here::here(rdatas), load, envir = rlang::current_env())
     if (!exists("redcap_data", inherits = FALSE)) {
-      return(message("No Redcap project detected.\nYou can set up one by clicking on Addins/Odytools/Start|Update Redcap project.\n"))
+      return(cli::cli_alert_danger("No Redcap project detected.You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
     }
   }
 
@@ -396,12 +398,16 @@ ody_rc_current <- function(as_list = FALSE) {
       loaded = loaded_import_date
     )
   }else {
-    message(stringr::str_c(
-      "Project: ", stringr::str_c(project_name, " (PID ", project_id, ")"),
-      "\nLast import: ", import_date,
-      "\nLoaded import: ", loaded_import_date,
-      "\n"
+    cli::cat_rule(cli::col_blue("REDCap Project"))
+    cli::cli_alert_info(stringr::str_c("Name: {.strong ", project_name, "}"))
+    cli::cli_alert_info(stringr::str_c("PID: ", project_id))
+    cli::cli_alert_info(stringr::str_c(
+      "Last import: ", import_date
     ))
+    cli::cli_alert_info(stringr::str_c(
+      "Loaded import: {.strong ", loaded_import_date, "}"
+    ))
+    cat("\n")
   }
 }
 # Helper function to copy a new analysis template.Onla addin

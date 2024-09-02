@@ -356,30 +356,76 @@ check_renvlock <- function(update_threshold = 30) {
 
   messages <- list(
     "Please, take care of your future self:",
-    "- Consider adding a Lockfile to this project.",
-    "- Consider starting a git repository."
+    "Consider adding a Lockfile to this project.",
+    "Consider starting a git repository."
   )
 
   if (is.na(renvlock_last_modif) && is.na(git_last_modif)) {
-    messages |> stringr::str_c(collapse = "\n") |> message()
+    cli::cli_alert_warning(messages[1])
+    cli::cli_ul(messages[2:3])
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+    )
   } else if (is.na(renvlock_last_modif)) {
-    messages[1:2] |> stringr::str_c(collapse = "\n") |> message()
+    cli::cli_alert_warning(messages[1])
+    cli::cli_ul(messages[2])
   } else if (is.na(git_last_modif)) {
-    messages[c(1, 3)] |> stringr::str_c(collapse = "\n") |> message()
+    cli::cli_alert_warning(messages[1])
+    cli::cli_ul(messages[3])
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+    )
   } else {
     last_commit_date <- last_commit$author$when |>
       lubridate::as_datetime(tz = Sys.timezone())
     last_renvlock_date <- renvlock_last_modif |>
       lubridate::as_datetime(tz = Sys.timezone())
-    dif_time <- lubridate::interval(last_commit_date, last_renvlock_date) |>
-      lubridate::time_length("days") |>
+    dif_time <- lubridate::time_length(
+      last_renvlock_date - last_commit_date, "days"
+    ) |>
       round(2)
 
-    message(
-      "Last renv.lock: ", lubridate::as_date(last_renvlock_date), "\n",
-      "Last commit: ", lubridate::as_date(last_commit_date), "\n",
-      "Time difference of ", dif_time, " days\n"
+    if (dif_time < -1 * update_threshold) {
+
+    cli::cli_alert_warning(
+      stringr::str_c("Last renv.lock: ", lubridate::as_date(last_renvlock_date))
     )
+    cli::cli_alert_warning(
+      stringr::str_c("Last commit: ", lubridate::as_date(last_commit_date))
+    )
+    cli::cli_alert_warning(
+      stringr::str_c(
+        "Time difference of ", dif_time, " days"
+      )
+    )
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+    )
+
+    }
+
+    if (dif_time >= -1 * update_threshold) {
+
+      cli::cli_alert_success(
+        stringr::str_c(
+          "Last renv.lock: ", lubridate::as_date(last_renvlock_date)
+        )
+      )
+      cli::cli_alert_success(
+        stringr::str_c(
+          "Last commit: ", lubridate::as_date(last_commit_date)
+        )
+      )
+      cli::cli_alert_success(
+        stringr::str_c(
+          "Time difference of ", dif_time, " days"
+        )
+      )
+      cli::cat_rule(
+        right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+      )
+    }
+
   }
 
 }

@@ -234,6 +234,7 @@ label_rc_import <- function(rc_import) {
   missing_codes <- attr(rc_import, "missing_codes")
   id_var <- attr(rc_import, "id_var")
 
+  cli::cli_alert_info("Labelling variables...")
 
   # Dictionaries of all labeled variables
   field_dictionaries <- metadata |>
@@ -288,7 +289,7 @@ label_rc_import <- function(rc_import) {
     dplyr::pull("field_name")
 
   for (checkbox_field in checkbox_fields) {
-    cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
+    #cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
     # Columns involved in the definition of the selections
     field_cols <- colnames(rc_import) |>
       stringr::str_subset(
@@ -388,7 +389,7 @@ label_rc_import <- function(rc_import) {
   # Labeling
   for (field in metadata$field_name) {
     if (is.null(rc_import[[field]]) | field == id_var) next
-    cat(stringr::str_c("Labelling ", field, "\n"))
+    #cat(stringr::str_c("Labelling ", field, "\n"))
     # Variable label
     form <- metadata |>
       dplyr::filter(.data[["field_name"]] == field) |>
@@ -448,7 +449,7 @@ nest_rc <- function(rc_raw) {
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
 
-  message("Nesting the project...\n")
+  cli::cli_alert_info("Nesting the project...")
 
   # Added structure for projects with no repating forms
   if (is.null(repeating)) {
@@ -743,7 +744,8 @@ ody_rc_import <- function(
     )
   }
 
-  message("Importing data from RedCap\n")
+  cat("\n")
+  cli::cli_alert_info("Downloading data from REDCap...")
   rc_raw_import <- import_rc(token, form, url)
 
   if (!label && !nest && is.null(form)) return(rc_raw_import)
@@ -761,7 +763,12 @@ ody_rc_import <- function(
       restore_attributes(rc_raw_import)
   }
 
+  class(rc_import) <- c("odytools_redcap", class(rc_import))
+
+  attr(rc_import, "odytools_version") <- packageVersion("odytools")
+
   rc_import
+
 }
 
 
@@ -832,13 +839,17 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #'    - join: Join all variables creating artifact NAs.
 #' @param .include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
 #'
+#' @details An S3 method for class 'odytools_redcap' is also available for the generic \code{dplyr::select}
+#'
+#'
 #' @return A tibble with the selected variables.
 #' @export
-ody_rc_select <- function(rc_data,
-                          ...,
-                          .is_vector = FALSE,
-                          .if_different_forms = c("list", "join"),
-                          .include_aux = FALSE) {
+ody_rc_select <- function(
+    rc_data,
+    ...,
+    .is_vector = FALSE,
+    .if_different_forms = c("list", "join"),
+    .include_aux = FALSE) {
 
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 
@@ -1545,3 +1556,51 @@ ody_rc_add_site <- function(tbl,
     dplyr::relocate("site", .before = position)
 
 }
+
+
+#' Adds labels to a data frame using REDCap metadata.
+#'
+#' This function takes a data frame and applies variable labels derived from
+#' the REDCAp metadata column `field_label`. If no `redcap_data` from
+#' which to extract the metadata is provided, it will look for an object named
+#' `redcap_data` in the global environment.
+#'
+#' @param df A data frame to which the labels will be added.
+#' @param redcap_data Optional. A REDCap data frame containing the metadata as
+#' attribute. If not supplied, the function will use `redcap_data` from the
+#' global environment.
+#'
+#' @return A data frame with variable labels applied from the REDCap metadata.
+#' @export
+ody_rc_add_label <- function(df, redcap_data = NULL) {
+
+  if (is.null(redcap_data)) {
+    if (!exists("redcap_data", envir = .GlobalEnv)) {
+      stop("No redcap_data object found.")
+    }
+    redcap_data <- get("redcap_data", envir = .GlobalEnv)
+  }
+
+  var_names <- names(df)
+  labels <-
+    attr(redcap_data, "metadata") |>
+    dplyr::filter(
+      .data[["field_name"]] %in% var_names,
+      !is.na(.data[["field_label"]])
+    ) |>
+    dplyr::select("field_name", "field_label")
+
+  lab_lang <- stringr::str_c(
+    "list(",
+    stringr::str_c(
+      labels$field_name, " = '", labels$field_label, "'", collapse = ", "
+    ),
+    ")") |>
+    str2lang()
+
+  labelled::var_label(df) <- eval(lab_lang)
+
+  df
+
+}
+

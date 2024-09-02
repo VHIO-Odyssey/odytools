@@ -88,6 +88,16 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_add_site
 
+-   ody_rc_add_label
+
+## redcap_methods
+
+Methods exported to external generic functions
+
+-   print
+
+-   select
+
 ## redcap_project
 
 Functions to create and update RedCap projects in RStudio:
@@ -172,3 +182,9 @@ Calcutation of scores commonly used in clinical trials.
 ## pdf_extraction
 
 Tools to extract data from some pdf reports.
+
+## graphics
+
+Functions to plot graphics commonly used in the reports
+
+-   ody_plot_violindotbox

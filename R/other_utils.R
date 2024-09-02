@@ -344,7 +344,7 @@ ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
 
 # Function to check if exists and updated renv.lock and a git repository
 # update_threshold is the number of days to consider the lockfile outdated
-check_renvlock <- function() {
+check_renvlock <- function(update_threshold = 30) {
 
   git_last_modif <- file.mtime(here::here(".git"))
   renvlock_last_modif <- file.mtime(here::here("renv.lock"))
@@ -380,17 +380,20 @@ check_renvlock <- function() {
       lubridate::as_datetime(tz = Sys.timezone())
     last_renvlock_date <- renvlock_last_modif |>
       lubridate::as_datetime(tz = Sys.timezone())
-    dif_time <- lubridate::interval(last_commit_date, last_renvlock_date) |>
-      lubridate::time_length("days") |>
+    dif_time <- lubridate::time_length(
+      last_renvlock_date - last_commit_date, "days"
+    ) |>
       round(2)
 
-    cli::cli_alert_info(
+    if (dif_time < -1 * update_threshold) {
+
+    cli::cli_alert_warning(
       stringr::str_c("Last renv.lock: ", lubridate::as_date(last_renvlock_date))
     )
-    cli::cli_alert_info(
+    cli::cli_alert_warning(
       stringr::str_c("Last commit: ", lubridate::as_date(last_commit_date))
     )
-    cli::cli_alert_info(
+    cli::cli_alert_warning(
       stringr::str_c(
         "Time difference of ", dif_time, " days"
       )
@@ -398,6 +401,31 @@ check_renvlock <- function() {
     cli::cat_rule(
       right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
     )
+
+    }
+
+    if (dif_time >= -1 * update_threshold) {
+
+      cli::cli_alert_success(
+        stringr::str_c(
+          "Last renv.lock: ", lubridate::as_date(last_renvlock_date)
+        )
+      )
+      cli::cli_alert_success(
+        stringr::str_c(
+          "Last commit: ", lubridate::as_date(last_commit_date)
+        )
+      )
+      cli::cli_alert_success(
+        stringr::str_c(
+          "Time difference of ", dif_time, " days"
+        )
+      )
+      cli::cli_alert_success(
+        right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+      )
+    }
+
   }
 
 }

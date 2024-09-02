@@ -407,9 +407,6 @@ ody_rc_current <- function(as_list = FALSE) {
     cli::cli_alert_info(stringr::str_c(
       "Loaded import: {.strong ", loaded_import_date, "}"
     ))
-    cli::cat_rule(
-      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
-    )
   }
 }
 # Helper function to copy a new analysis template.Onla addin

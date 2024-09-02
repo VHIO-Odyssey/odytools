@@ -344,7 +344,7 @@ ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
 
 # Function to check if exists and updated renv.lock and a git repository
 # update_threshold is the number of days to consider the lockfile outdated
-check_renvlock <- function(update_threshold = 30) {
+check_renvlock <- function() {
 
   git_last_modif <- file.mtime(here::here(".git"))
   renvlock_last_modif <- file.mtime(here::here("renv.lock"))
@@ -356,16 +356,25 @@ check_renvlock <- function(update_threshold = 30) {
 
   messages <- list(
     "Please, take care of your future self:",
-    "- Consider adding a Lockfile to this project.",
-    "- Consider starting a git repository."
+    "Consider adding a Lockfile to this project.",
+    "Consider starting a git repository."
   )
 
   if (is.na(renvlock_last_modif) && is.na(git_last_modif)) {
-    messages |> stringr::str_c(collapse = "\n") |> message()
+    cli::cli_alert_warning(messages[1])
+    cli::cli_ul(messages[2:3])
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+    )
   } else if (is.na(renvlock_last_modif)) {
-    messages[1:2] |> stringr::str_c(collapse = "\n") |> message()
+    cli::cli_alert_warning(messages[1])
+    cli::cli_ul(messages[2])
   } else if (is.na(git_last_modif)) {
-    messages[c(1, 3)] |> stringr::str_c(collapse = "\n") |> message()
+    cli::cli_alert_warning(messages[1])
+    cli::cli_ul(messages[3])
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
+    )
   } else {
     last_commit_date <- last_commit$author$when |>
       lubridate::as_datetime(tz = Sys.timezone())
@@ -375,10 +384,19 @@ check_renvlock <- function(update_threshold = 30) {
       lubridate::time_length("days") |>
       round(2)
 
-    message(
-      "Last renv.lock: ", lubridate::as_date(last_renvlock_date), "\n",
-      "Last commit: ", lubridate::as_date(last_commit_date), "\n",
-      "Time difference of ", dif_time, " days\n"
+    cli::cli_alert_info(
+      stringr::str_c("Last renv.lock: ", lubridate::as_date(last_renvlock_date))
+    )
+    cli::cli_alert_info(
+      stringr::str_c("Last commit: ", lubridate::as_date(last_commit_date))
+    )
+    cli::cli_alert_info(
+      stringr::str_c(
+        "Time difference of ", dif_time, " days"
+      )
+    )
+    cli::cat_rule(
+      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
     )
   }
 

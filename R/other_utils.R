@@ -421,7 +421,7 @@ check_renvlock <- function(update_threshold = 30) {
           "Time difference of ", dif_time, " days"
         )
       )
-      cli::cli_alert_success(
+      cli::cat_rule(
         right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
       )
     }

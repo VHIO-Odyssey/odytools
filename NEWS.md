@@ -1,4 +1,5 @@
 # odytools 0.8.1.9000
+-   Info code moved from dependencies to .Rprofile
 
 # odytools 0.8.1
 -   Improved the general appearance of some in-console messages.

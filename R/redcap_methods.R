@@ -38,14 +38,9 @@ print.odytools_redcap <- function(x, ...) {
   import_date <- attr(x, "import_date") |>
     stringr::str_extract("....-..-.. ..:..")
   import_text <- stringr::str_c("Imported on ", import_date)
-  version <- stringr::str_c(
-    "{.pkg odytools} ", attr(x, "odytools_version")[1]
-  ) |>
-    suppressWarnings()
 
   cli::cli_alert_info(project_name)
   cli::cli_alert_info(import_text)
   NextMethod("print", x)
-  cli::cli_alert_info(version)
 
 }

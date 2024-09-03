@@ -363,18 +363,12 @@ check_renvlock <- function(update_threshold = 30) {
   if (is.na(renvlock_last_modif) && is.na(git_last_modif)) {
     cli::cli_alert_warning(messages[1])
     cli::cli_ul(messages[2:3])
-    cli::cat_rule(
-      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
-    )
   } else if (is.na(renvlock_last_modif)) {
     cli::cli_alert_warning(messages[1])
     cli::cli_ul(messages[2])
   } else if (is.na(git_last_modif)) {
     cli::cli_alert_warning(messages[1])
     cli::cli_ul(messages[3])
-    cli::cat_rule(
-      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
-    )
   } else {
     last_commit_date <- last_commit$author$when |>
       lubridate::as_datetime(tz = Sys.timezone())
@@ -398,9 +392,6 @@ check_renvlock <- function(update_threshold = 30) {
         "Time difference of ", dif_time, " days"
       )
     )
-    cli::cat_rule(
-      right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
-    )
 
     }
 
@@ -420,9 +411,6 @@ check_renvlock <- function(update_threshold = 30) {
         stringr::str_c(
           "Time difference of ", dif_time, " days"
         )
-      )
-      cli::cat_rule(
-        right = cli::col_blue(stringr::str_c( "odytools ", packageVersion("odytools")))
       )
     }
 

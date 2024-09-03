@@ -398,7 +398,6 @@ ody_rc_current <- function(as_list = FALSE) {
       loaded = loaded_import_date
     )
   }else {
-    cli::cat_rule(cli::col_blue("REDCap Project"))
     cli::cli_alert_info(stringr::str_c("Name: {.strong ", project_name, "}"))
     cli::cli_alert_info(stringr::str_c("PID: ", project_id))
     cli::cli_alert_info(stringr::str_c(
@@ -407,7 +406,6 @@ ody_rc_current <- function(as_list = FALSE) {
     cli::cli_alert_info(stringr::str_c(
       "Loaded import: {.strong ", loaded_import_date, "}"
     ))
-    cat("\n")
   }
 }
 # Helper function to copy a new analysis template.Onla addin

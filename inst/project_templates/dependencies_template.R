@@ -28,5 +28,3 @@ here(list.files(here(), ".RData$")) |>
 
 here("functions", list.files(here("functions"), ".R$")) |>
   walk(source)
-
-odytools:::check_renvlock()

@@ -61,4 +61,6 @@ Suggests:
     tidychatmodels,
     pdftools,
     ggpubr,
-    gghalves
+    gghalves,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

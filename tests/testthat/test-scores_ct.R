@@ -1,4 +1,4 @@
-test_that("ody_qlq_c30_v3 calcultaes right scales", {
+test_that("ody_qlq_c30_v3 calcultaes scales as expected", {
 
   # Create a dummy questionare data table
   n <- 50
@@ -46,5 +46,93 @@ test_that("ody_qlq_c30_v3 calcultaes right scales", {
   attr(result, "item_mapping") <- NULL
 
   expect_equal(result, result_expected)
+
+})
+
+test_that("qlq_c30_scores_scale handles missing values as expected", {
+
+  # Expectation when completeness = "all"
+  # all items must be present
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, 4), 1:3, 3, qlq_c30_scores_transform, "all")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(4, 4, NA), 1:3, 3, qlq_c30_scores_transform, "all")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(4, 4, NA, NA), 1:4, 3, qlq_c30_scores_transform, "all")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(4, NA, NA), 1:3, 3, qlq_c30_scores_transform, "all")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(NA, NA, NA), 1:3, 3, qlq_c30_scores_transform, "all")
+    )
+  )
+
+  # Expectation when completeness = "half"
+  # at least half of the items must be present
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, 4), 1:3, 3, qlq_c30_scores_transform, "half")
+    )
+  )
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, NA), 1:3, 3, qlq_c30_scores_transform, "half")
+    )
+  )
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, NA, NA), 1:4, 3, qlq_c30_scores_transform, "half")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(4, NA, NA), 1:3, 3, qlq_c30_scores_transform, "half")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(NA, NA, NA), 1:3, 3, qlq_c30_scores_transform, "half")
+    )
+  )
+
+  # Expectation when completeness = "none"
+  # Only one item is required to calculate the scale
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, 4), 1:3, 3, qlq_c30_scores_transform, "none")
+    )
+  )
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, NA), 1:3, 3, qlq_c30_scores_transform, "none")
+    )
+  )
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, 4, NA, NA), 1:4, 3, qlq_c30_scores_transform, "none")
+    )
+  )
+  expect_true(
+    !is.na(
+      qlq_c30_scores_scale(c(4, NA, NA), 1:3, 3, qlq_c30_scores_transform, "none")
+    )
+  )
+  expect_true(
+    is.na(
+      qlq_c30_scores_scale(c(NA, NA, NA), 1:3, 3, qlq_c30_scores_transform, "none")
+    )
+  )
 
 })

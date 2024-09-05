@@ -1569,10 +1569,12 @@ ody_rc_add_site <- function(tbl,
 #' @param redcap_data Optional. A REDCap data frame containing the metadata as
 #' attribute. If not supplied, the function will use `redcap_data` from the
 #' global environment.
+#' @param modify_names Logical. If TRUE, the function will modify the names of
+#' the data frame instead of adding labels.
 #'
 #' @return A data frame with variable labels applied from the REDCap metadata.
 #' @export
-ody_rc_add_label <- function(df, redcap_data = NULL) {
+ody_rc_add_label <- function(df, redcap_data = NULL, modify_names = FALSE) {
 
   if (is.null(redcap_data)) {
     if (!exists("redcap_data", envir = .GlobalEnv)) {
@@ -1590,15 +1592,23 @@ ody_rc_add_label <- function(df, redcap_data = NULL) {
     ) |>
     dplyr::select("field_name", "field_label")
 
-  lab_lang <- stringr::str_c(
-    "list(",
-    stringr::str_c(
-      labels$field_name, " = '", labels$field_label, "'", collapse = ", "
-    ),
-    ")") |>
-    str2lang()
+  if (modify_names) {
 
-  labelled::var_label(df) <- eval(lab_lang)
+    names(df)[names(df) %in% labels$field_name] <- labels$field_label
+
+  } else {
+
+    lab_lang <- stringr::str_c(
+      "list(",
+      stringr::str_c(
+        labels$field_name, " = '", labels$field_label, "'", collapse = ", "
+      ),
+      ")") |>
+      str2lang()
+
+    labelled::var_label(df) <- eval(lab_lang)
+
+  }
 
   df
 

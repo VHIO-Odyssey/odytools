@@ -131,6 +131,8 @@ test_that("ody_qlq_c30_v3 calculates deltas as expected", {
       FI  = apply(qs[28], 1, function(x) (mean(x) - 1) / 3 * 100)
     ) |>
     dplyr::group_by(group) |>
+    # Deltas are defined as the difference between the first value of the group
+    # and the rest
     dplyr::mutate(
       dplyr::across(
         QL2:FI,

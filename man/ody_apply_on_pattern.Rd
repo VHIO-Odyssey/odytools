@@ -9,17 +9,17 @@ ody_apply_on_pattern(df, fn, pattern, all_any = any, exclude = NULL)
 \arguments{
 \item{df}{A data frame.}
 
-\item{fn}{A function to apply to the elements that match the pattern.}
+\item{fn}{A function to apply to the columns that match the pattern.}
 
 \item{pattern}{A regular expression pattern to match.}
 
-\item{all_any}{A function to determine whether all or any of the elements should match the pattern (default is \code{any}).}
+\item{all_any}{A function (\code{all} or \code{any}) to determine whether all or any of the elements of a column should match the pattern (default is \code{any}).}
 
 \item{exclude}{A character vector of column names to exclude from the pattern matching. That means that the function will not be applied to these columns even if they match the pattern.}
 }
 \value{
-A data frame with the function applied to the matching elements.
+A data frame like the original input with the function applied to the matching columns.
 }
 \description{
-This function applies a specified function to elements of a data frame that match a given pattern.
+This function applies a specified function to columns of a data frame that match a given pattern.
 }

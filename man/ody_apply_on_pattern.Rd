@@ -4,7 +4,7 @@
 \alias{ody_apply_on_pattern}
 \title{Apply Function on Pattern}
 \usage{
-ody_apply_on_pattern(df, fn, pattern, all_any = any)
+ody_apply_on_pattern(df, fn, pattern, all_any = any, exclude = NULL)
 }
 \arguments{
 \item{df}{A data frame.}
@@ -14,6 +14,8 @@ ody_apply_on_pattern(df, fn, pattern, all_any = any)
 \item{pattern}{A regular expression pattern to match.}
 
 \item{all_any}{A function to determine whether all or any of the elements should match the pattern (default is \code{any}).}
+
+\item{exclude}{A character vector of column names to exclude from the pattern matching. That means that the function will not be applied to these columns even if they match the pattern.}
 }
 \value{
 A data frame with the function applied to the matching elements.

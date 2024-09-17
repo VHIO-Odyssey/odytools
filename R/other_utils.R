@@ -457,4 +457,29 @@ ody_gt2image <- function(gt_table, type = c("raster", "ggplot"), zoom = 2) {
 
 }
 
-
+#' Apply Function on Pattern
+#'
+#' This function applies a specified function to elements of a data frame that match a given pattern.
+#'
+#' @param df A data frame.
+#' @param fn A function to apply to the elements that match the pattern.
+#' @param pattern A regular expression pattern to match.
+#' @param all_any A function to determine whether all or any of the elements should match the pattern (default is `any`).
+#'
+#' @return A data frame with the function applied to the matching elements.
+#' @export
+ody_apply_on_pattern <-  function(df, fn, pattern, all_any = any) {
+  df |>
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::where(is.character),
+        function(x) {
+          if (all_any(stringr::str_detect(x, pattern), na.rm = TRUE)) {
+            fn(x)
+          } else {
+            x
+          }
+        }
+      )
+    )
+}

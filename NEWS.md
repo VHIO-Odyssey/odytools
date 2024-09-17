@@ -1,6 +1,9 @@
 # odytools 0.8.1.9000
 
+- Added `ody_apply_on_pattern` to apply a function to the columns of a data frame that match a given pattern.
+
 # odytools 0.8.1
+
 -   Improved the general appearance of some in-console messages.
 -   Added `ody_rc_add_label`. It labels the variables of a data frame according to the metadata of a REDCap project.
 -   The resulting object of `ody_rc_import` now has the S3 class *odytools_redcap*. 

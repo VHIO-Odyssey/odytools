@@ -148,6 +148,7 @@ Miscelaneous utilities.
 -   ody_compare_1_vs_others [compare_1_vs_others]
 -   check_renvlock
 -   ody_gt2image
+-   ody_apply_on_pattern
 
 ## **aes**
 

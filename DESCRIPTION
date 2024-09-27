@@ -62,5 +62,6 @@ Suggests:
     pdftools,
     ggpubr,
     gghalves,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    patchwork
 Config/testthat/edition: 3

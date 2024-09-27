@@ -30,8 +30,7 @@ ody_plot_violindotbox(
 
 \item{brackets_pos}{A numeric value indicating the relative position of the brackets that represent the statistical comparison.}
 
-\item{...}{Additional arguments to be passed to \link[ggpubr]{compare_means} (the function
-used to compare the means) and to \link[ggpubr]{geom_bracket} (the function used to add the brackets).}
+\item{...}{Additional arguments to be passed to \link[ggpubr]{geom_bracket} (the function used to add the brackets).}
 }
 \value{
 A ggplot object that can be further customized.
@@ -39,4 +38,7 @@ A ggplot object that can be further customized.
 \description{
 This function generates a composite plot that includes a half violin plot, a half dot plot,
 and a boxplot. It also adds statistical comparisons between groups.
+}
+\details{
+The data used for the plot is stored as an attribute of the returned ggplot object called \code{data}
 }

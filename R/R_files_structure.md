@@ -189,3 +189,4 @@ Tools to extract data from some pdf reports.
 Functions to plot graphics commonly used in the reports
 
 -   ody_plot_violindotbox
+-   ody_add_tbl_violindotbox

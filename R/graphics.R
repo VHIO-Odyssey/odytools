@@ -159,6 +159,7 @@ ody_add_tbl_violindotbox <- function(p, n_dec = 1, add_test = FALSE) {
       gt::tab_footnote(result_text)
 
   }
+
   p <- p +
     ggplot2::labs(x = NULL) +
     ggplot2::theme(
@@ -167,7 +168,7 @@ ody_add_tbl_violindotbox <- function(p, n_dec = 1, add_test = FALSE) {
     )
 
   patchwork::wrap_plots(
-    p, patchwork::wrap_table(desc_tbl, space = "fixed"),
+    p, patchwork::wrap_table(desc_tbl, space = "fixed", ignore_tag = TRUE),
     ncol = 1
   )
 

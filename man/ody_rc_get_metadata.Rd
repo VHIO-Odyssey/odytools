@@ -9,7 +9,7 @@ ody_rc_get_metadata(token, url = "https://redcap.vhio.net/redcap/api/")
 \arguments{
 \item{token}{A REDCap API token. If NULL, the user will be prompted to enter it.}
 
-\item{url}{The API URL for the RedCap instance. Defaults to \code{"https://redcap.vhio.net/redcap/api/"}.}
+\item{url}{The API URL for the REDCap instance. Defaults to \code{"https://redcap.vhio.net/redcap/api/"}.}
 }
 \value{
 The metadata of the RedCap project.

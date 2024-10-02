@@ -4,17 +4,12 @@
 \alias{ody_rc_add_label}
 \title{Adds labels to a data frame using REDCap metadata.}
 \usage{
-ody_rc_add_label(df, metadata = NULL, redcap_data = NULL, modify_names = FALSE)
+ody_rc_add_label(df, metadata = NULL, modify_names = FALSE)
 }
 \arguments{
 \item{df}{A data frame to which the labels will be added.}
 
-\item{metadata}{Optional. A REDCap metadata data frame. If not supplied, the
-function will get it from the \code{metadata} attribute of \code{redcap_data}.}
-
-\item{redcap_data}{Optional. A REDCap data frame containing the metadata as
-attribute. If not supplied, the function will use \code{redcap_data} from the
-global environment.}
+\item{metadata}{Either the metadata of a REDCap project or a \code{redcap_data} object imported by \code{ody_rc_import}. In the latter case, the metadata will be extracted from the \code{metadata} attribute. If NULL, the function will look for a \code{redcap_data} object in the global environment.}
 
 \item{modify_names}{Logical. If TRUE, the function will modify the names of
 the data frame instead of adding labels.}
@@ -24,7 +19,5 @@ A data frame with variable labels applied from the REDCap metadata.
 }
 \description{
 This function takes a data frame and applies variable labels derived from
-the REDCAp metadata column \code{field_label}. If no \code{redcap_data} from
-which to extract the metadata is provided, it will look for an object named
-\code{redcap_data} in the global environment.
+the REDCap metadata column \code{field_label}.
 }

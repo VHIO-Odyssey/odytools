@@ -1668,7 +1668,7 @@ ody_rc_add_label <- function(
 #' This function retrieves metadata from a RedCap project.
 #'
 #' @param token A REDCap API token. If NULL, the user will be prompted to enter it.
-#' @param url The API URL for the RedCap instance. Defaults to \code{"https://redcap.vhio.net/redcap/api/"}.
+#' @param url The API URL for the REDCap instance. Defaults to \code{"https://redcap.vhio.net/redcap/api/"}.
 #'
 #' @return The metadata of the RedCap project.
 #' @export

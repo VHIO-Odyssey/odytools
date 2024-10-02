@@ -226,6 +226,30 @@ get_single_field <- function(
 
 }
 
+# Helper function that transform a redcap dictionary into a named vector.
+process_raw_dic <- function(raw_dic) {
+  codes <- stringr::str_replace_all(
+    # trick to allow "|" inside the labels.
+    raw_dic, "\\|([^,]+,)", "[||] \\1"
+  ) |>
+    stringr::str_split("\\[\\|\\|\\]") |>
+    unlist() |>
+    #Clave, lo que separa el valor de la etiqueta es la primera coma.
+    stringr::str_split(",", n = 2) |>
+    purrr::map(
+      function(x) {
+        x <- stringr::str_trim(x)
+        c(
+          stringr::str_c("`", x[2], "`"),
+          stringr::str_c("'", x[1], "'")
+        )
+      }
+    ) |>
+    purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
+    stringr::str_c(collapse = ", ")
+  stringr::str_c("c(", codes, ")") |> str2lang()
+}
+
 
 # Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
@@ -247,28 +271,7 @@ label_rc_import <- function(rc_import) {
     dplyr::mutate(
       dictionary = purrr::map(
         .data[["select_choices_or_calculations"]],
-        function(raw_dic) {
-          codes <- stringr::str_replace_all(
-            # trick to allow "|" inside the labels.
-            raw_dic, "\\|([^,]+,)", "[||] \\1"
-          ) |>
-            stringr::str_split("\\[\\|\\|\\]") |>
-            unlist() |>
-            #Clave, lo que separa el valor de la etiqueta es la primera coma.
-            stringr::str_split(",", n = 2) |>
-            purrr::map(
-              function(x) {
-                x <- stringr::str_trim(x)
-                c(
-                  stringr::str_c("`", x[2], "`"),
-                  stringr::str_c("'", x[1], "'")
-                )
-              }
-            ) |>
-            purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
-            stringr::str_c(collapse = ", ")
-          stringr::str_c("c(", codes, ")") |> str2lang()
-        }
+        process_raw_dic
       )
     ) |>
     dplyr::select(-"select_choices_or_calculations")
@@ -1567,36 +1570,76 @@ ody_rc_add_site <- function(tbl,
 #' Adds labels to a data frame using REDCap metadata.
 #'
 #' This function takes a data frame and applies variable labels derived from
-#' the REDCAp metadata column `field_label`. If no `redcap_data` from
-#' which to extract the metadata is provided, it will look for an object named
-#' `redcap_data` in the global environment.
+#' the REDCap metadata column `field_label`.
 #'
 #' @param df A data frame to which the labels will be added.
-#' @param redcap_data Optional. A REDCap data frame containing the metadata as
-#' attribute. If not supplied, the function will use `redcap_data` from the
-#' global environment.
+#' @param metadata Either the metadata of a REDCap project or a `redcap_data` object imported by `ody_rc_import`. In the latter case, the metadata will be extracted from the `metadata` attribute. If NULL, the function will look for a `redcap_data` object in the global environment.
 #' @param modify_names Logical. If TRUE, the function will modify the names of
 #' the data frame instead of adding labels.
 #'
 #' @return A data frame with variable labels applied from the REDCap metadata.
 #' @export
-ody_rc_add_label <- function(df, redcap_data = NULL, modify_names = FALSE) {
+ody_rc_add_label <- function(
+    df,
+    metadata = NULL,
+    modify_names = FALSE
+  ) {
 
-  if (is.null(redcap_data)) {
+  if (is.null(metadata)) {
     if (!exists("redcap_data", envir = .GlobalEnv)) {
       stop("No redcap_data object found.")
     }
-    redcap_data <- get("redcap_data", envir = .GlobalEnv)
+    metadata <- attr(
+      get("redcap_data", envir = .GlobalEnv),
+      "metadata"
+    )
+  } else if (!is.null(attr(metadata, "metadata"))) {
+    metadata <- attr(metadata, "metadata")
   }
 
   var_names <- names(df)
   labels <-
-    attr(redcap_data, "metadata") |>
+    metadata |>
     dplyr::filter(
       .data[["field_name"]] %in% var_names,
       !is.na(.data[["field_label"]])
     ) |>
     dplyr::select("field_name", "field_label")
+
+  # ¿Hay columnas auxiliares de checkbox?
+  #Si es así, estas se etiquetan con el valor del checkbox que representan
+  aux_cols_index <- stringr::str_detect(names(df), "___\\d+")
+
+  if (any(aux_cols_index)) {
+
+  checkbox_var_names <- names(df)[aux_cols_index] |>
+    stringr::str_remove("___.+$") |>
+    unique()
+
+  checkbox_metadata <-
+    metadata  |>
+    dplyr::filter(.data[["field_name"]] %in% checkbox_var_names) |>
+    dplyr::select(
+      .data[["field_name"]],
+      raw_dic = .data[["select_choices_or_calculations"]]
+    )
+
+  aux_labels <-
+    purrr::pmap_df(
+      checkbox_metadata,
+      function(field_name, raw_dic) {
+        dic <- process_raw_dic(raw_dic) |> eval()
+        tibble::tibble(
+          field_name =  stringr::str_c(field_name, "___", dic),
+          field_label = names(dic)
+        )
+      }
+    ) |>
+    dplyr::filter(.data[["field_name"]] %in% names(df))
+
+  labels <- dplyr::bind_rows(labels, aux_labels)
+
+  }
 
   if (modify_names) {
 
@@ -1620,3 +1663,25 @@ ody_rc_add_label <- function(df, redcap_data = NULL, modify_names = FALSE) {
 
 }
 
+#' Get REDCap Metadata
+#'
+#' This function retrieves metadata from a RedCap project.
+#'
+#' @param token A REDCap API token. If NULL, the user will be prompted to enter it.
+#' @param url The API URL for the RedCap instance. Defaults to \code{"https://redcap.vhio.net/redcap/api/"}.
+#'
+#' @return The metadata of the RedCap project.
+#' @export
+ody_rc_get_metadata <- function(
+    token,
+    url = "https://redcap.vhio.net/redcap/api/") {
+
+  if (is.null(token)) {
+    token <- rstudioapi::askForPassword(
+      prompt = "Please enter a RedCap token:"
+    )
+  }
+
+  extract_data("metadata", token, url)
+
+}

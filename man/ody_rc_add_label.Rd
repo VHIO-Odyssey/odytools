@@ -4,10 +4,13 @@
 \alias{ody_rc_add_label}
 \title{Adds labels to a data frame using REDCap metadata.}
 \usage{
-ody_rc_add_label(df, redcap_data = NULL, modify_names = FALSE)
+ody_rc_add_label(df, metadata = NULL, redcap_data = NULL, modify_names = FALSE)
 }
 \arguments{
 \item{df}{A data frame to which the labels will be added.}
+
+\item{metadata}{Optional. A REDCap metadata data frame. If not supplied, the
+function will get it from the \code{metadata} attribute of \code{redcap_data}.}
 
 \item{redcap_data}{Optional. A REDCap data frame containing the metadata as
 attribute. If not supplied, the function will use \code{redcap_data} from the

@@ -60,7 +60,9 @@ Functions to export and work on redcap projects.
 
 -   get_single_field
 
--   label_rc_import
+-   process_raw_dic
+
+-   label_rc_import [process_raw_dic]
 
 -   nest_rc
 
@@ -89,6 +91,8 @@ Functions to export and work on redcap projects.
 -   ody_rc_add_site
 
 -   ody_rc_add_label
+
+-   ody_rc_get_metadata
 
 ## redcap_methods
 

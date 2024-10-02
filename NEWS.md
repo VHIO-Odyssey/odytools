@@ -1,5 +1,7 @@
 # odytools 0.8.1.9000
 
+- Added `ody_rc_get_metadata`...
+- Improved `ody_plot_violindotplot`...
 - Added `ody_apply_on_pattern` to apply a function to the columns of a data frame that match a given pattern.
 
 # odytools 0.8.1

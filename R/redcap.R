@@ -288,12 +288,13 @@ label_rc_import <- function(rc_import) {
       .data[["field_type"]] == "checkbox",
       # Only variables present in the import are processed. This is needed because
       # the current import can contain the full databae or just one form.
-      .data[[ "field_name"]] %in% available_vars
+      .data[["field_name"]] %in% available_vars,
+      .data[["select_choices_or_calculations"]] != "1,"
     ) |>
     dplyr::pull("field_name")
 
   for (checkbox_field in checkbox_fields) {
-    #cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
+    # cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
     # Columns involved in the definition of the selections
     field_cols <- colnames(rc_import) |>
       stringr::str_subset(

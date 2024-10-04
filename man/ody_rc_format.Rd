@@ -4,10 +4,12 @@
 \alias{ody_rc_format}
 \title{Format RedCap variables}
 \usage{
-ody_rc_format(rc_df)
+ody_rc_format(rc_df, keep_user_na = FALSE)
 }
 \arguments{
 \item{rc_df}{Dataframe derived from a RedCap import with ody_rc_select}
+
+\item{keep_user_na}{Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.}
 }
 \value{
 A tibble

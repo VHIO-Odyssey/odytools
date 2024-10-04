@@ -1,5 +1,6 @@
 # odytools 0.8.1.9000
 
+- Added the argument `keep_user_na` to `ody_rc_format`. If TRUE, the user-defined missing values are kept as a character. If FALSE (the default), they are transformed into regular NA values.
 - Added `ody_rc_get_metadata` to get the metadata of any REDCap project.
 - Added `ody_add_tbl_violindotbox`. It adds a descriptive table below a plot created by `ody_plot_violindotplot`.
 - Added `ody_apply_on_pattern` to apply a function to the columns of a data frame that match a given pattern.

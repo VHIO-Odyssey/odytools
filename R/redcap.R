@@ -1116,6 +1116,7 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #' variable metadata.
 #'
 #' @param rc_df Dataframe derived from a RedCap import with ody_rc_select
+#' @param keep_user_na Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.
 #'
 #' @details
 #' Formating proceeds as follows:
@@ -1128,7 +1129,7 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #'
 #' @return A tibble
 #' @export
-ody_rc_format <- function(rc_df) {
+ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
 
   dplyr::mutate(
     rc_df,
@@ -1141,6 +1142,8 @@ ody_rc_format <- function(rc_df) {
         if (is.null(label)) {
           return(x)
         }
+
+        if (keep_user_na) labelled::na_values(x) <- NULL
 
         x_no_user_na <- labelled::user_na_to_na(x)
 

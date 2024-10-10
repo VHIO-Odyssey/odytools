@@ -289,6 +289,7 @@ label_rc_import <- function(rc_import) {
       # Only variables present in the import are processed. This is needed because
       # the current import can contain the full databae or just one form.
       .data[["field_name"]] %in% available_vars,
+      #Single choice not labelled checkbox variables are also excluded
       .data[["select_choices_or_calculations"]] != "1,"
     ) |>
     dplyr::pull("field_name")
@@ -343,13 +344,20 @@ label_rc_import <- function(rc_import) {
       stringr::str_trim() |>
       stringr::str_split(", ", n = 2) |>
       purrr::reduce(rbind)
+
+    # If the checkbox has only ono label raw_dic is a vector and needs to be
+    # matrix.
+    if (!is.matrix(raw_dic)) {
+      raw_dic <- matrix(raw_dic, ncol = 2)
+    }
+
     # Si uno de los valores de una variable de un checkbox tiene un "-", en las
     #  variables auxiliares aparece como un "_".
     #  Por ejemplo, si la variable ttm_qt_drug tiene el valor 5-fu, en la
     #  columna auxiliar correspondiente es ttm_qt_drug___5_fu.
     #  Se cambia en raw_dic para que coincida y al valor 5_fu se le encuentre
     #  la etiqueta correspondiente.
-    raw_dic[,1] <- stringr::str_replace_all(raw_dic[,1], "-", "_")
+    raw_dic[, 1] <- stringr::str_replace_all(raw_dic[,1], "-", "_")
     present_combinations_v0 <- pulled_selections_char |>
       na.omit() |>
       unique()

@@ -1167,7 +1167,9 @@ ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
           result <- lubridate::ymd(x_no_user_na)
         } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
           result <- stringr::str_c(x_no_user_na, ":00") |>
-            lubridate::ymd_hms()
+            lubridate::hms(x_no_user_na)
+        } else if (stringr::str_detect(label, ":time\\)$")) {
+          result <- lubridate::hm(x_no_user_na)
         } else if (stringr::str_detect(label, "truefalse\\)$")) {
           result <- unclass(x_no_user_na) |>
             as.numeric() |>

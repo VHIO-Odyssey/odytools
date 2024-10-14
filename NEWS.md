@@ -1,5 +1,6 @@
 # odytools 0.8.1.9000
 
+- Datasets created inside an odytools REDCap project now belong to the S3 class *odytools_dataset* with an associated print method that shows the dataset's description.
 - Added the argument `keep_user_na` to `ody_rc_format`. If TRUE, the user-defined missing values are kept as a character. If FALSE (the default), they are transformed into regular NA values.
 - Added `ody_rc_get_metadata` to get the metadata of any REDCap project.
 - Added `ody_add_tbl_violindotbox`. It adds a descriptive table below a plot created by `ody_plot_violindotplot`.
@@ -9,7 +10,7 @@
 
 -   Improved the general appearance of some in-console messages.
 -   Added `ody_rc_add_label`. It labels the variables of a data frame according to the metadata of a REDCap project.
--   The resulting object of `ody_rc_import` now has the S3 class *odytools_redcap*. 
+-   The resulting object of `ody_rc_import` now has the S3 class *odytools_redcap*. This class has an associated print method that shows the project's name and the import date. 
 -   Added `ody_plot_violindotplot` which plots a half violin, a jitter dot plot and boxplot in the same graph. It also performs comparisons between groups.
 
 # odytools 0.8.0

@@ -342,6 +342,7 @@ rc_back_up <- function() {
 #' @export
 ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
 
+  class(object) <- c("odytools_dataset", class(object))
   attr(object, "is_dataset") <- TRUE
   attr(object, "description") <- description
 

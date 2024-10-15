@@ -2,7 +2,7 @@
 % Please edit documentation in R/redcap_methods.R
 \name{print.odytools_dataset}
 \alias{print.odytools_dataset}
-\title{Print a RedCap daraset}
+\title{Print a RedCap dataset}
 \usage{
 \method{print}{odytools_dataset}(x, ...)
 }
@@ -12,5 +12,5 @@
 \item{...}{Additional arguments (added for compatibility with base::print).}
 }
 \description{
-Print a RedCap daraset
+Print a RedCap dataset
 }

@@ -20,8 +20,47 @@ print.odytools_redcap <- function(x, ...) {
 
 }
 
+#' Print a RedCap dataset list
+#'
+#' @param x RedCap dataset list created inside an Odytools REDCap project.
+#' @param ... Additional arguments (added for compatibility with base::print).
+#'
+#' @exportS3Method base::print
+print.odytools_datasets_list <- function(x, ...) {
 
-#' Print a RedCap daraset
+  descriptions_v0 <- purrr::map(x, ~ attr(., "description"))
+  descriptions_v1 <-
+    purrr::map(
+      descriptions_v0, ~ ifelse(is.null(.), "No description", .)
+    )
+  descriptions <-
+    purrr::map2(
+      names(x),
+      descriptions_v1,
+      ~ stringr::str_c(.x, ": ", .y)
+    )
+
+  description_vector <-
+    stringr::str_c(
+      "c(", stringr::str_c("'*' = '", descriptions, "'") |>
+        stringr::str_c(collapse = ", "), ")"
+    ) |>
+    str2lang()
+
+  import_date <- attr(x, "import_date") |>
+    stringr::str_extract("....-..-.. ..:..")
+
+  project_name <- attr(x, "project_title")
+
+  cli::cli_alert_info("{project_name} datasets from data imported on {import_date}")
+  cli::cli_alert_info("{length(x)} elements:")
+  cli::cli_bullets(eval(description_vector))
+
+
+}
+
+
+#' Print a RedCap dataset
 #'
 #' @param x RedCap dataset created inside an Odytools REDCap project.
 #' @param ... Additional arguments (added for compatibility with base::print).

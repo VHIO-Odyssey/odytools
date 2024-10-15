@@ -1,6 +1,6 @@
 # odytools 0.8.1.9000
 
-- Datasets created inside an odytools REDCap project now belong to the S3 class *odytools_dataset* with an associated print method that shows the dataset's description.
+- Datasets created inside an odytools REDCap project now belong to the S3 class *odytools_dataset* with an associated print method that shows the dataset's description. The datasets list itself also has an associated S3 class with a print method that lists all the datasets' and their descriptions.
 - Added the argument `keep_user_na` to `ody_rc_format`. If TRUE, the user-defined missing values are kept as a character. If FALSE (the default), they are transformed into regular NA values.
 - Added `ody_rc_get_metadata` to get the metadata of any REDCap project.
 - Added `ody_add_tbl_violindotbox`. It adds a descriptive table below a plot created by `ody_plot_violindotplot`.

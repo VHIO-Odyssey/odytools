@@ -164,6 +164,8 @@ rc_make_datasets <- function(redcap_data) {
 
   }
 
+  class(datasets) <- c("odytools_datasets_list", class(datasets))
+
   datasets
 
 }

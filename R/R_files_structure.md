@@ -100,8 +100,6 @@ Methods exported to external generic functions
 
 -   print
 
--   select
-
 ## redcap_project
 
 Functions to create and update RedCap projects in RStudio:

@@ -1151,7 +1151,10 @@ ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
           return(x)
         }
 
-        if (keep_user_na) labelled::na_values(x) <- NULL
+        if (keep_user_na) {
+          labelled::na_values(x) <- NULL
+          if (is.null(labels)) return(as.character(x))
+        }
 
         x_no_user_na <- labelled::user_na_to_na(x)
 

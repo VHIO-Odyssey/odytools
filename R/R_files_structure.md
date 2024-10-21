@@ -82,6 +82,8 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_translate_meddra
 
+-   ody_rc_translate_atc
+
 -   ody_rc_view [restore_attributes, ody_rc_completeness, ody_rc_format, ody_summarise_df]
 
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]

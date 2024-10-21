@@ -135,6 +135,32 @@ import_rc <- function(
       dplyr::arrange("code")
   }
 
+  # ATC fields (if present) and their codes
+  atc_fields <- metadata |>
+    dplyr::filter(
+      .data[["select_choices_or_calculations"]] == "BIOPORTAL:ATC"
+    ) |>
+    dplyr::pull("field_name")
+
+  if (length(atc_fields) > 0) {
+    atc_codes <- purrr::map_dfr(
+      atc_fields,
+      function(x) {
+        tbl <- tibble::tibble(
+          code = get_single_field(token, x, "raw", url) |> as.character(),
+          label = get_single_field(token, x, "label", url)
+        )
+        if (nrow(tbl) == 0) {
+          return(NULL)
+        } else {
+          return(tbl)
+        }
+      }
+    ) |>
+      unique() |>
+      dplyr::arrange("code")
+  }
+
   # Add to metadata complete_info variables to include them when nesting
   complete_vars <- stringr::str_c(forms$instrument_name, "_complete")
   avail_complete_vars <- names(redcap_data)[names(redcap_data) %in% complete_vars]
@@ -185,6 +211,10 @@ import_rc <- function(
   if (length(meddra_fields) > 0) {
     attr(redcap_data, "meddra_fields") <- meddra_fields
     attr(redcap_data, "meddra_codes") <- meddra_codes
+  }
+  if (length(atc_fields) > 0) {
+    attr(redcap_data, "atc_fields") <- atc_fields
+    attr(redcap_data, "atc_codes") <- atc_codes
   }
   attr(redcap_data, "import_date") <- import_date
 
@@ -675,6 +705,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
     "subjects","subjects_dag", "dag",
     "meddra_fields", "meddra_codes",
+    "atc_fields", "atc_codes",
     "import_date"
   )
 
@@ -968,12 +999,20 @@ ody_rc_select <- function(
 
   }
 
-  # If the selected vars are meddra variables, dctionary is passed to the final
+  # If the selected vars are meddra variables, dictionary is passed to the final
   # result
   if (any(sel_vars %in% attr(rc_data, "meddra_fields"))) {
     all_meddra <- attr(rc_data, "meddra_fields")
     attr(selection, "meddra_fields") <- sel_vars[sel_vars %in% all_meddra]
     attr(selection, "meddra_codes") <- attr(rc_data, "meddra_codes")
+  }
+
+  # If the selected vars are ATC variables, dictionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "atc_fields"))) {
+    all_atc <- attr(rc_data, "atc_fields")
+    attr(selection, "atc_fields") <- sel_vars[sel_vars %in% all_atc]
+    attr(selection, "atc_codes") <- attr(rc_data, "atc_codes")
   }
 
   selection
@@ -1211,6 +1250,38 @@ ody_rc_translate_meddra <- function(rc_df) {
             code = x
           ) |>
             dplyr::left_join(attr(rc_df, "meddra_codes"), by = "code") |>
+            dplyr::pull("label")
+        }
+      )
+    )
+}
+
+
+
+#' Translate ATC Codes
+#'
+#' Replace ATC codes in the dataframe with their corresponding descriptions.
+#'
+#' @param rc_df A dataframe obtained from a RedCap import using the function `ody_rc_select`.
+#'
+#' @return A dataframe with ATC codes substituted by their corresponding labels.
+#'
+#' @export
+ody_rc_translate_atc <- function(rc_df) {
+
+  atc_fields <- attr(rc_df, "atc_fields")
+
+  if (is.null(atc_fields)) return(rc_df)
+
+  rc_df |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(atc_fields),
+        function(x) {
+          tibble::tibble(
+            code = x
+          ) |>
+            dplyr::left_join(attr(rc_df, "atc_codes"), by = "code") |>
             dplyr::pull("label")
         }
       )

@@ -345,6 +345,10 @@ rc_back_up <- function() {
 ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
 
   class(object) <- c("odytools_dataset", class(object))
+  # If the object is derived from an object already added to datasets, it will
+  # inherit the "odytools_dataset" class so this unique() ensures the class is
+  # not duplicated.
+  class(object) <- unique(class(object))
   attr(object, "is_dataset") <- TRUE
   attr(object, "description") <- description
 

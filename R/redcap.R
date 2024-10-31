@@ -135,6 +135,32 @@ import_rc <- function(
       dplyr::arrange("code")
   }
 
+  # ATC fields (if present) and their codes
+  atc_fields <- metadata |>
+    dplyr::filter(
+      .data[["select_choices_or_calculations"]] == "BIOPORTAL:ATC"
+    ) |>
+    dplyr::pull("field_name")
+
+  if (length(atc_fields) > 0) {
+    atc_codes <- purrr::map_dfr(
+      atc_fields,
+      function(x) {
+        tbl <- tibble::tibble(
+          code = get_single_field(token, x, "raw", url) |> as.character(),
+          label = get_single_field(token, x, "label", url)
+        )
+        if (nrow(tbl) == 0) {
+          return(NULL)
+        } else {
+          return(tbl)
+        }
+      }
+    ) |>
+      unique() |>
+      dplyr::arrange("code")
+  }
+
   # Add to metadata complete_info variables to include them when nesting
   complete_vars <- stringr::str_c(forms$instrument_name, "_complete")
   avail_complete_vars <- names(redcap_data)[names(redcap_data) %in% complete_vars]
@@ -186,6 +212,10 @@ import_rc <- function(
     attr(redcap_data, "meddra_fields") <- meddra_fields
     attr(redcap_data, "meddra_codes") <- meddra_codes
   }
+  if (length(atc_fields) > 0) {
+    attr(redcap_data, "atc_fields") <- atc_fields
+    attr(redcap_data, "atc_codes") <- atc_codes
+  }
   attr(redcap_data, "import_date") <- import_date
 
   # Delete unnecessary attributes
@@ -226,6 +256,30 @@ get_single_field <- function(
 
 }
 
+# Helper function that transform a redcap dictionary into a named vector.
+process_raw_dic <- function(raw_dic) {
+  codes <- stringr::str_replace_all(
+    # trick to allow "|" inside the labels.
+    raw_dic, "\\|([^,]+,)", "[||] \\1"
+  ) |>
+    stringr::str_split("\\[\\|\\|\\]") |>
+    unlist() |>
+    #Clave, lo que separa el valor de la etiqueta es la primera coma.
+    stringr::str_split(",", n = 2) |>
+    purrr::map(
+      function(x) {
+        x <- stringr::str_trim(x)
+        c(
+          stringr::str_c("`", x[2], "`"),
+          stringr::str_c("'", x[1], "'")
+        )
+      }
+    ) |>
+    purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
+    stringr::str_c(collapse = ", ")
+  stringr::str_c("c(", codes, ")") |> str2lang()
+}
+
 
 # Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
@@ -241,33 +295,13 @@ label_rc_import <- function(rc_import) {
     dplyr::select("field_name", "select_choices_or_calculations") |>
     dplyr::filter(
       stringr::str_detect(
-        .data[["select_choices_or_calculations"]], "\\d+,.+\\|"
+        .data[["select_choices_or_calculations"]], "^[^,]+,[^\\|]+\\|"
       )
     ) |>
     dplyr::mutate(
       dictionary = purrr::map(
         .data[["select_choices_or_calculations"]],
-        function(raw_dic) {
-          codes <- stringr::str_replace_all(
-            # trick to allow "|" inside the labels.
-            raw_dic, "\\| *(\\d+ *,)", "[||] \\1"
-          ) |>
-            stringr::str_split("\\[\\|\\|\\]") |>
-            unlist() |>
-            stringr::str_split(",", n = 2) |>
-            purrr::map(
-              function(x) {
-                x <- stringr::str_trim(x)
-                c(
-                  stringr::str_c("`", x[2], "`"),
-                  stringr::str_c("'", x[1], "'")
-                )
-              }
-            ) |>
-            purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
-            stringr::str_c(collapse = ", ")
-          stringr::str_c("c(", codes, ")") |> str2lang()
-        }
+        process_raw_dic
       )
     ) |>
     dplyr::select(-"select_choices_or_calculations")
@@ -284,12 +318,14 @@ label_rc_import <- function(rc_import) {
       .data[["field_type"]] == "checkbox",
       # Only variables present in the import are processed. This is needed because
       # the current import can contain the full databae or just one form.
-      .data[[ "field_name"]] %in% available_vars
+      .data[["field_name"]] %in% available_vars,
+      #Single choice not labelled checkbox variables are also excluded
+      .data[["select_choices_or_calculations"]] != "1,"
     ) |>
     dplyr::pull("field_name")
 
   for (checkbox_field in checkbox_fields) {
-    #cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
+    # cat(stringr::str_c("Processing checkbox variable ", checkbox_field, "\n"))
     # Columns involved in the definition of the selections
     field_cols <- colnames(rc_import) |>
       stringr::str_subset(
@@ -330,10 +366,6 @@ label_rc_import <- function(rc_import) {
       )
 
     # Checkbox dictionaries update
-    ini_dic <- field_dictionaries |>
-      dplyr::filter(.data[["field_name"]] == checkbox_field) |>
-      dplyr::pull("dictionary") |>
-      as.character()
     raw_dic <- metadata |>
       dplyr::filter(.data[["field_name"]] == checkbox_field) |>
       dplyr::pull("select_choices_or_calculations") |>
@@ -342,6 +374,20 @@ label_rc_import <- function(rc_import) {
       stringr::str_trim() |>
       stringr::str_split(", ", n = 2) |>
       purrr::reduce(rbind)
+
+    # If the checkbox has only ono label raw_dic is a vector and needs to be
+    # matrix.
+    if (!is.matrix(raw_dic)) {
+      raw_dic <- matrix(raw_dic, ncol = 2)
+    }
+
+    # Si uno de los valores de una variable de un checkbox tiene un "-", en las
+    #  variables auxiliares aparece como un "_".
+    #  Por ejemplo, si la variable ttm_qt_drug tiene el valor 5-fu, en la
+    #  columna auxiliar correspondiente es ttm_qt_drug___5_fu.
+    #  Se cambia en raw_dic para que coincida y al valor 5_fu se le encuentre
+    #  la etiqueta correspondiente.
+    raw_dic[, 1] <- stringr::str_replace_all(raw_dic[,1], "-", "_")
     present_combinations_v0 <- pulled_selections_char |>
       na.omit() |>
       unique()
@@ -369,9 +415,11 @@ label_rc_import <- function(rc_import) {
         stringr::str_c(")")
 
       new_dic <- list(stringr::str_c(
-        stringr::str_remove(ini_dic, "\\)$"),
-        ", ",
-        added_dic
+        "c(",
+        stringr::str_c(
+          "`", raw_dic[, 2], "` = '", raw_dic[, 1], "'", collapse = ", "
+        ),
+        ",", added_dic
       ) |> str2lang())
       field_dictionaries[
         field_dictionaries$field_name == checkbox_field, 2
@@ -657,6 +705,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
     "subjects","subjects_dag", "dag",
     "meddra_fields", "meddra_codes",
+    "atc_fields", "atc_codes",
     "import_date"
   )
 
@@ -950,12 +999,20 @@ ody_rc_select <- function(
 
   }
 
-  # If the selected vars are meddra variables, dctionary is passed to the final
+  # If the selected vars are meddra variables, dictionary is passed to the final
   # result
   if (any(sel_vars %in% attr(rc_data, "meddra_fields"))) {
     all_meddra <- attr(rc_data, "meddra_fields")
     attr(selection, "meddra_fields") <- sel_vars[sel_vars %in% all_meddra]
     attr(selection, "meddra_codes") <- attr(rc_data, "meddra_codes")
+  }
+
+  # If the selected vars are ATC variables, dictionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "atc_fields"))) {
+    all_atc <- attr(rc_data, "atc_fields")
+    attr(selection, "atc_fields") <- sel_vars[sel_vars %in% all_atc]
+    attr(selection, "atc_codes") <- attr(rc_data, "atc_codes")
   }
 
   selection
@@ -1106,6 +1163,7 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #' variable metadata.
 #'
 #' @param rc_df Dataframe derived from a RedCap import with ody_rc_select
+#' @param keep_user_na Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.
 #'
 #' @details
 #' Formating proceeds as follows:
@@ -1118,7 +1176,7 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #'
 #' @return A tibble
 #' @export
-ody_rc_format <- function(rc_df) {
+ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
 
   dplyr::mutate(
     rc_df,
@@ -1130,6 +1188,11 @@ ody_rc_format <- function(rc_df) {
 
         if (is.null(label)) {
           return(x)
+        }
+
+        if (keep_user_na) {
+          labelled::na_values(x) <- NULL
+          if (is.null(labels)) return(as.character(x))
         }
 
         x_no_user_na <- labelled::user_na_to_na(x)
@@ -1146,7 +1209,9 @@ ody_rc_format <- function(rc_df) {
           result <- lubridate::ymd(x_no_user_na)
         } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
           result <- stringr::str_c(x_no_user_na, ":00") |>
-            lubridate::ymd_hms()
+            lubridate::hms(x_no_user_na)
+        } else if (stringr::str_detect(label, ":time\\)$")) {
+          result <- lubridate::hm(x_no_user_na)
         } else if (stringr::str_detect(label, "truefalse\\)$")) {
           result <- unclass(x_no_user_na) |>
             as.numeric() |>
@@ -1185,6 +1250,38 @@ ody_rc_translate_meddra <- function(rc_df) {
             code = x
           ) |>
             dplyr::left_join(attr(rc_df, "meddra_codes"), by = "code") |>
+            dplyr::pull("label")
+        }
+      )
+    )
+}
+
+
+
+#' Translate ATC Codes
+#'
+#' Replace ATC codes in the dataframe with their corresponding descriptions.
+#'
+#' @param rc_df A dataframe obtained from a RedCap import using the function `ody_rc_select`.
+#'
+#' @return A dataframe with ATC codes substituted by their corresponding labels.
+#'
+#' @export
+ody_rc_translate_atc <- function(rc_df) {
+
+  atc_fields <- attr(rc_df, "atc_fields")
+
+  if (is.null(atc_fields)) return(rc_df)
+
+  rc_df |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::all_of(atc_fields),
+        function(x) {
+          tibble::tibble(
+            code = x
+          ) |>
+            dplyr::left_join(attr(rc_df, "atc_codes"), by = "code") |>
             dplyr::pull("label")
         }
       )
@@ -1561,46 +1658,118 @@ ody_rc_add_site <- function(tbl,
 #' Adds labels to a data frame using REDCap metadata.
 #'
 #' This function takes a data frame and applies variable labels derived from
-#' the REDCAp metadata column `field_label`. If no `redcap_data` from
-#' which to extract the metadata is provided, it will look for an object named
-#' `redcap_data` in the global environment.
+#' the REDCap metadata column `field_label`.
 #'
 #' @param df A data frame to which the labels will be added.
-#' @param redcap_data Optional. A REDCap data frame containing the metadata as
-#' attribute. If not supplied, the function will use `redcap_data` from the
-#' global environment.
+#' @param metadata Either the metadata of a REDCap project or a `redcap_data` object imported by `ody_rc_import`. In the latter case, the metadata will be extracted from the `metadata` attribute. If NULL, the function will look for a `redcap_data` object in the global environment.
+#' @param modify_names Logical. If TRUE, the function will modify the names of
+#' the data frame instead of adding labels.
 #'
 #' @return A data frame with variable labels applied from the REDCap metadata.
 #' @export
-ody_rc_add_label <- function(df, redcap_data = NULL) {
+ody_rc_add_label <- function(
+    df,
+    metadata = NULL,
+    modify_names = FALSE
+  ) {
 
-  if (is.null(redcap_data)) {
+  if (is.null(metadata)) {
     if (!exists("redcap_data", envir = .GlobalEnv)) {
       stop("No redcap_data object found.")
     }
-    redcap_data <- get("redcap_data", envir = .GlobalEnv)
+    metadata <- attr(
+      get("redcap_data", envir = .GlobalEnv),
+      "metadata"
+    )
+  } else if (!is.null(attr(metadata, "metadata"))) {
+    metadata <- attr(metadata, "metadata")
   }
 
   var_names <- names(df)
   labels <-
-    attr(redcap_data, "metadata") |>
+    metadata |>
     dplyr::filter(
       .data[["field_name"]] %in% var_names,
       !is.na(.data[["field_label"]])
     ) |>
     dplyr::select("field_name", "field_label")
 
-  lab_lang <- stringr::str_c(
-    "list(",
-    stringr::str_c(
-      labels$field_name, " = '", labels$field_label, "'", collapse = ", "
-    ),
-    ")") |>
-    str2lang()
+  # ¿Hay columnas auxiliares de checkbox?
+  #Si es así, estas se etiquetan con el valor del checkbox que representan
+  aux_cols_index <- stringr::str_detect(names(df), "___\\d+")
 
-  labelled::var_label(df) <- eval(lab_lang)
+  if (any(aux_cols_index)) {
+
+  checkbox_var_names <- names(df)[aux_cols_index] |>
+    stringr::str_remove("___.+$") |>
+    unique()
+
+  checkbox_metadata <-
+    metadata  |>
+    dplyr::filter(.data[["field_name"]] %in% checkbox_var_names) |>
+    dplyr::select(
+      .data[["field_name"]],
+      raw_dic = .data[["select_choices_or_calculations"]]
+    )
+
+  aux_labels <-
+    purrr::pmap_df(
+      checkbox_metadata,
+      function(field_name, raw_dic) {
+        dic <- process_raw_dic(raw_dic) |> eval()
+        tibble::tibble(
+          field_name =  stringr::str_c(field_name, "___", dic),
+          field_label = names(dic)
+        )
+      }
+    ) |>
+    dplyr::filter(.data[["field_name"]] %in% names(df))
+
+  labels <- dplyr::bind_rows(labels, aux_labels)
+
+  }
+
+  if (modify_names) {
+
+    names(df)[names(df) %in% labels$field_name] <- labels$field_label
+
+  } else {
+
+    lab_lang <- stringr::str_c(
+      "list(",
+      stringr::str_c(
+        labels$field_name, " = '", labels$field_label, "'", collapse = ", "
+      ),
+      ")") |>
+      str2lang()
+
+    labelled::var_label(df) <- eval(lab_lang)
+
+  }
 
   df
 
 }
 
+#' Get REDCap Metadata
+#'
+#' This function retrieves metadata from a RedCap project.
+#'
+#' @param token A REDCap API token. If NULL, the user will be prompted to enter it.
+#' @param url The API URL for the REDCap instance. Defaults to \code{"https://redcap.vhio.net/redcap/api/"}.
+#'
+#' @return The metadata of the RedCap project.
+#' @export
+ody_rc_get_metadata <- function(
+    token,
+    url = "https://redcap.vhio.net/redcap/api/") {
+
+  if (is.null(token)) {
+    token <- rstudioapi::askForPassword(
+      prompt = "Please enter a RedCap token:"
+    )
+  }
+
+  extract_data("metadata", token, url)
+
+}

@@ -60,7 +60,9 @@ Functions to export and work on redcap projects.
 
 -   get_single_field
 
--   label_rc_import
+-   process_raw_dic
+
+-   label_rc_import [process_raw_dic]
 
 -   nest_rc
 
@@ -80,6 +82,8 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_translate_meddra
 
+-   ody_rc_translate_atc
+
 -   ody_rc_view [restore_attributes, ody_rc_completeness, ody_rc_format, ody_summarise_df]
 
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]
@@ -90,13 +94,13 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_add_label
 
+-   ody_rc_get_metadata
+
 ## redcap_methods
 
 Methods exported to external generic functions
 
 -   print
-
--   select
 
 ## redcap_project
 
@@ -148,6 +152,7 @@ Miscelaneous utilities.
 -   ody_compare_1_vs_others [compare_1_vs_others]
 -   check_renvlock
 -   ody_gt2image
+-   ody_apply_on_pattern
 
 ## **aes**
 
@@ -188,3 +193,4 @@ Tools to extract data from some pdf reports.
 Functions to plot graphics commonly used in the reports
 
 -   ody_plot_violindotbox
+-   ody_add_tbl_violindotbox

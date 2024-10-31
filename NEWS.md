@@ -1,9 +1,9 @@
-# odytools 0.8.1.9000
+# odytools 0.9.0
 
 -   `ody_rc_import` now includes the attributes:
     -   *atc_fields*: Vector of the field names coded with ATC.
     -   *atc_codes*: A tibble with the ATC codes used by all *atc_fields*.
--   `ody_rc_select` now adds the attributes *medra_fields* and *atc_codes* to the output in case any of the selected variables are coded with ATC.
+-   `ody_rc_select` now adds the attributes *atc_fields* and *atc_codes* to the output in case any of the selected variables are coded with ATC.
 -   Added `ody_rc_translate_atc` to translate ATC codes to their descriptions.
 -   Datasets created inside an odytools REDCap project now belong to the S3 class *odytools_dataset* with an associated print method that shows the dataset's description. The datasets list itself also has an associated S3 class with a print method that lists all the datasets' and their descriptions.
 -   Added the argument `keep_user_na` to `ody_rc_format`. If TRUE, the user-defined missing values are kept as a character. If FALSE (the default), they are transformed into regular NA values.

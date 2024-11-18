@@ -288,6 +288,36 @@ server <- function(input, output, session) {
       formatted_form
     }
 
+    current_atc_fields <- names(formatted_form)[
+      names(formatted_form) %in% attr(data_app, "atc_fields")
+    ]
+
+    if (input$data_type != "Raw" && length(current_atc_fields) > 0) {
+
+      formatted_form |>
+        mutate(
+          across(
+            all_of(current_atc_fields),
+            function(x) {
+              code_tbl <- tibble(code = x)
+              if (input$data_type == "Raw [Label]") {
+                label_tbl <- attr(data_app, "atc_codes") |>
+                  mutate(
+                    label = str_c(code, " [", label, "]")
+                  )
+              } else {
+                label_tbl <- attr(data_app, "atc_codes")
+              }
+              left_join(code_tbl, label_tbl, by = "code") |>
+                pull("label")
+            }
+          )
+        )
+
+    } else {
+      formatted_form
+    }
+
   })
 
   output$table <- renderDT({

@@ -1,6 +1,7 @@
 # odytols 0.9.0.9000
 
--  The REDCap viewer now recognizes ATC codes and displays the descriptions when no raw data is shown.
+- Added `ody_style` to set a default style of tables, plots and other objects (by the moment it only works with table summaries created by gtsummary. 
+- The REDCap viewer now recognizes ATC codes and displays the descriptions when no raw data is shown.
 
 # odytools 0.9.0
 

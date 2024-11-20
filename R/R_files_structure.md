@@ -153,6 +153,7 @@ Miscelaneous utilities.
 -   check_renvlock
 -   ody_gt2image
 -   ody_apply_on_pattern
+-   ody_style
 
 ## **aes**
 

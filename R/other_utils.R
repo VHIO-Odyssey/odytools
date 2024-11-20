@@ -499,3 +499,43 @@ ody_apply_on_pattern <-  function(
     )
 
 }
+
+
+#' Apply "Odytools" styling to an object
+#'
+#' @description Adds the default style of "Odytools" to some objects (only tbl_summary for now).
+#'
+#' @param object An object.
+#'
+#' @returns The same object with the "Odytools" style applied. If the object is not supported, the object is returned as is.
+#'
+#' @export
+ody_style <- function(object) {
+
+  object_class <- class(object)[1]
+
+  if (object_class == "tbl_summary") {
+
+    rlang::check_installed("gtsummary")
+
+    gtsummary::as_gt(object) |>
+      gt::tab_style(
+        style = list(
+          gt::cell_borders(
+            sides = c("top", "bottom"),
+            weight = gt::px(2),
+            color = "#C7C7C7"
+          ),
+          gt::cell_fill(color = "#F7F7F7")
+        ),
+        locations = gt::cells_body(rows = .data$row_type == "label")
+      )
+
+  } else {
+
+    object
+
+  }
+
+}
+

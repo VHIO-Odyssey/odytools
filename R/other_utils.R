@@ -512,13 +512,16 @@ ody_apply_on_pattern <-  function(
 #' @export
 ody_style <- function(object) {
 
-  object_class <- class(object)[1]
+  object_class <- class(object)
 
-  if (object_class == "tbl_summary") {
+  if (any(object_class == "gtsummary")) {
 
     rlang::check_installed("gtsummary")
 
-    gtsummary::as_gt(object) |>
+    object |>
+      gtsummary::bold_labels() |>
+      gtsummary::italicize_levels() |>
+      gtsummary::as_gt() |>
       gt::tab_style(
         style = list(
           gt::cell_borders(

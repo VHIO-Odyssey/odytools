@@ -63,5 +63,6 @@ Suggests:
     ggpubr,
     gghalves,
     testthat (>= 3.0.0),
-    patchwork
+    patchwork,
+    gtreg
 Config/testthat/edition: 3

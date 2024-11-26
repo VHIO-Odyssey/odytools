@@ -1,6 +1,6 @@
 # odytols 0.9.0.9000
 
-- Added `ody_style` to set a default style of tables, plots and other objects (by the moment it only works with table summaries created by gtsummary. 
+- Added the generic `ody_style` to set a default style of different classes of tables, plots and other objects. Current supported classes are `gtsummary` and `tbl_aes_focus`.
 - The REDCap viewer now recognizes ATC codes and displays the descriptions when no raw data is shown.
 
 # odytools 0.9.0

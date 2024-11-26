@@ -4,14 +4,27 @@
 \alias{ody_style}
 \title{Apply "Odytools" styling to an object}
 \usage{
-ody_style(x)
+ody_style(x, style = 1)
 }
 \arguments{
 \item{x}{An object usually a graphic or table.}
+
+\item{style}{An integer indicating the style to apply. Default is 1.}
 }
 \value{
 The same object with the "Odytools" style applied. If the object is not supported, the object is returned as is.
 }
 \description{
 Adds the default style of "Odytools" to some objects.
+}
+\details{
+Suported classes are:
+\itemize{
+\item "gtsummary", 1 style.
+\item "tbl_ae_focus", 2 styles:
+\itemize{
+\item 1: Adds "Any AE" row.
+\item 2: Just applies the default "gtsummary" style.
+}
+}
 }

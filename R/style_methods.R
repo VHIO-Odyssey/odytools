@@ -1,8 +1,8 @@
 #' Apply "Odytools" styling to an object
 #'
-#' @description Adds the default style of "Odytools" to some objects.
+#' @description Modifies the style of tables and graphics.
 #'
-#' @param x An object usually a graphic or table.
+#' @param x An object, usually a graphic or table.
 #' @param style An integer indicating the style to apply. Default is 1.
 #'
 #' @details Suported classes are:
@@ -21,9 +21,9 @@ ody_style <- function(x, style = 1) {
 }
 
 #' @export
-ody_style.default <- function(x) {
+ody_style.default <- function(x, style = 1) {
 
-  message("No style method for object of class ", class(x))
+  warning("No style method for object of class ", class(x))
   x
 
 }
@@ -52,7 +52,7 @@ ody_style.gtsummary <- function(x, style = 1) {
 
   } else {
 
-    message("style ", style, " not implemented for gtsummary")
+    warning("style ", style, " not implemented for gtsummary")
     x
 
   }
@@ -103,7 +103,77 @@ ody_style.tbl_ae_focus <- function(x, style = 1) {
 
   } else {
 
-    message("style ", style, " not implemented for tbl_ae_focus")
+    warning("style ", style, " not implemented for tbl_ae_focus")
+    x
+
+  }
+
+}
+
+#' @export
+ody_style.ggsurvfit <- function(x, style = 1) {
+
+  rlang::check_installed("ggsurvfit")
+
+  if (style == 1) {
+
+    x +
+      ggsurvfit::add_censor_mark() +
+      ggsurvfit::add_risktable(
+        risktable_stats = c("n.risk", "cum.event", "cum.censor")
+      ) +
+      ggsurvfit::add_quantile(
+        y_value = 0.5, color = "gray50", linewidth = 0.75) +
+      ggsurvfit::scale_ggsurvfit() +
+      ggplot2::theme(
+        legend.position = "top",
+        panel.border = ggplot2::element_blank(),
+        panel.grid.major.x = ggplot2::element_blank(),
+        panel.grid.minor.x = ggplot2::element_blank()
+
+      )
+
+  } else if (style == 2) {
+
+    x +
+      ggsurvfit::add_censor_mark() +
+      ggsurvfit::add_risktable(
+        risktable_stats = c(
+          "n.risk",
+          "{cum.event} ({cum.censor})",
+          "{round(estimate*100)}% ({round(conf.low*100)}, {round(conf.high*100)})"
+        ),
+        stats_label = c("At Risk", "Events (Cens.)", "Estimate (95% CI)")
+      ) +
+      ggsurvfit::add_quantile(
+        y_value = 0.5, color = "gray50", linewidth = 0.75) +
+      ggsurvfit::scale_ggsurvfit(x_scales = list(expand = c(0.04, 0))) +
+      ggplot2::theme(
+        legend.position = "top",
+        panel.border = ggplot2::element_blank(),
+        panel.grid.major.x = ggplot2::element_blank(),
+        panel.grid.minor.x = ggplot2::element_blank()
+
+      )
+
+
+    # x +
+    #   ggsurvfit::add_censor_mark() +
+    #   ggsurvfit::add_risktable(
+    #     risktable_stats =
+    #       c("{round(estimate*100)}%", "{n.risk} ({cum.event})"),
+    #     stats_label = c("Estimate %", "At Risk (Censored)"),
+    #     risktable_group = "risktable_stats"
+    #   ) +
+    #   ggsurvfit::add_risktable_strata_symbol(symbol = "\U25CF") +
+    #   ggsurvfit::add_quantile(
+    #     y_value = 0.5, color = "gray50", linewidth = 0.75) +
+    #   ggsurvfit::scale_ggsurvfit() +
+    #   ggplot2::theme(legend.position = "top")
+
+  } else {
+
+    warning("style ", style, " not implemented for ggsurvfit")
     x
 
   }

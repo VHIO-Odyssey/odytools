@@ -7,7 +7,7 @@
 ody_style(x, style = 1)
 }
 \arguments{
-\item{x}{An object usually a graphic or table.}
+\item{x}{An object, usually a graphic or table.}
 
 \item{style}{An integer indicating the style to apply. Default is 1.}
 }
@@ -15,7 +15,7 @@ ody_style(x, style = 1)
 The same object with the "Odytools" style applied. If the object is not supported, the object is returned as is.
 }
 \description{
-Adds the default style of "Odytools" to some objects.
+Modifies the style of tables and graphics.
 }
 \details{
 Suported classes are:

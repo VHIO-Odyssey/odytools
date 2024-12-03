@@ -64,5 +64,6 @@ Suggests:
     gghalves,
     testthat (>= 3.0.0),
     patchwork,
-    gtreg
+    gtreg,
+    ggsurvfit
 Config/testthat/edition: 3

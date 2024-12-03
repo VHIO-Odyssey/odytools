@@ -508,12 +508,12 @@ label_rc_import <- function(rc_import) {
 
     failed_labels <-
       metadata |>
-      dplyr::filter(field_name %in% failed_vars) |>
+      dplyr::filter(.data[["field_name"]] %in% failed_vars) |>
       dplyr::select(
-        field_name,
-        form_name,
-        field_type,
-        select_choices_or_calculations
+        "field_name",
+        "form_name",
+        "field_type",
+        "select_choices_or_calculations"
       )
 
     attr(rc_import, "failed_labels") <- failed_labels

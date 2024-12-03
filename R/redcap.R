@@ -277,9 +277,8 @@ process_raw_dic <- function(raw_dic) {
     ) |>
     purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
     stringr::str_c(collapse = ", ")
-  stringr::str_c("c(", codes, ")") |> str2lang() |> try()
+  stringr::str_c("c(", codes, ")") |> str2lang() |> try(silent = TRUE)
 }
-
 
 # Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
@@ -291,7 +290,7 @@ label_rc_import <- function(rc_import) {
   cli::cli_alert_info("Labelling variables...")
 
   # Dictionaries of all labeled variables
-  field_dictionaries <- metadata |>
+  field_dictionaries_v0 <- metadata |>
     dplyr::select("field_name", "select_choices_or_calculations") |>
     dplyr::filter(
       stringr::str_detect(
@@ -305,14 +304,16 @@ label_rc_import <- function(rc_import) {
       )
     ) |>
     dplyr::select(-"select_choices_or_calculations") |>
-    # process_raw_dic puede fallar y devolver un try-error. Los casos fallidos
-    # se eliminan.
     dplyr::mutate(
       is_call = purrr::map_lgl(.data[["dictionary"]], ~class(.)[1] == "call")
-    ) |>
+    )
+
+  # process_raw_dic puede fallar y devolver un try-error. Los casos fallidos
+  # se eliminan.
+  field_dictionaries <-
+    field_dictionaries_v0 |>
     dplyr::filter(.data[["is_call"]]) |>
     dplyr::select(-"is_call")
-
 
   # checkbox variables formating
   # All existing variables in the import
@@ -494,6 +495,29 @@ label_rc_import <- function(rc_import) {
       ]
       labelled::na_values(rc_import[[field]]) <- present_missing_codes
     }
+  }
+
+  # Si hay variables cuyo labeling ha fallado se almacena en el atributo
+  # failed_labels
+  if (nrow(field_dictionaries_v0) > nrow(field_dictionaries)) {
+
+    failed_vars <- field_dictionaries_v0 |>
+      dplyr::filter(!.data[["is_call"]]) |>
+      dplyr::select("field_name") |>
+      dplyr::pull()
+
+    failed_labels <-
+      metadata |>
+      dplyr::filter(field_name %in% failed_vars) |>
+      dplyr::select(
+        field_name,
+        form_name,
+        field_type,
+        select_choices_or_calculations
+      )
+
+    attr(rc_import, "failed_labels") <- failed_labels
+
   }
 
   rc_import
@@ -716,6 +740,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "subjects","subjects_dag", "dag",
     "meddra_fields", "meddra_codes",
     "atc_fields", "atc_codes",
+    "failed_labels",
     "import_date"
   )
 
@@ -819,7 +844,7 @@ ody_rc_import <- function(
 
   if (nest) {
     rc_import <- nest_rc(rc_import) |>
-      restore_attributes(rc_raw_import)
+      restore_attributes(rc_import)
   }
 
   class(rc_import) <- c("odytools_redcap", class(rc_import))

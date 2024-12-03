@@ -277,7 +277,7 @@ process_raw_dic <- function(raw_dic) {
     ) |>
     purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
     stringr::str_c(collapse = ", ")
-  stringr::str_c("c(", codes, ")") |> str2lang()
+  stringr::str_c("c(", codes, ")") |> str2lang() |> try()
 }
 
 
@@ -304,7 +304,14 @@ label_rc_import <- function(rc_import) {
         process_raw_dic
       )
     ) |>
-    dplyr::select(-"select_choices_or_calculations")
+    dplyr::select(-"select_choices_or_calculations") |>
+    # process_raw_dic puede fallar y devolver un try-error. Los casos fallidos
+    # se eliminan.
+    dplyr::mutate(
+      is_call = purrr::map_lgl(.data[["dictionary"]], ~class(.)[1] == "call")
+    ) |>
+    dplyr::filter(.data[["is_call"]]) |>
+    dplyr::select(-"is_call")
 
 
   # checkbox variables formating
@@ -388,6 +395,9 @@ label_rc_import <- function(rc_import) {
     #  Se cambia en raw_dic para que coincida y al valor 5_fu se le encuentre
     #  la etiqueta correspondiente.
     raw_dic[, 1] <- stringr::str_replace_all(raw_dic[,1], "-", "_")
+    # Si las etiquetas tienen mayúsculas pasa a minúscula en las auxiliares.
+    # se pasa a minúscula para asegurar
+    raw_dic[, 1] <- stringr::str_to_lower(raw_dic[, 1])
     present_combinations_v0 <- pulled_selections_char |>
       na.omit() |>
       unique()
@@ -437,7 +447,7 @@ label_rc_import <- function(rc_import) {
   # Labeling
   for (field in metadata$field_name) {
     if (is.null(rc_import[[field]]) | field == id_var) next
-    #cat(stringr::str_c("Labelling ", field, "\n"))
+    # cat(stringr::str_c("Labelling ", field, "\n"))
     # Variable label
     form <- metadata |>
       dplyr::filter(.data[["field_name"]] == field) |>

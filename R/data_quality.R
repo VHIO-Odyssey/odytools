@@ -127,7 +127,7 @@ ody_verify_completeness <- function(
     }
   )
 
-  # Data with the unexpected values of the filtered variables
+  # Data with the no_expected values of the filtered variables
   data_antifiltered <- purrr::pmap(
     data_map,
     function(data_list, rel_index, name_var) {
@@ -163,12 +163,12 @@ ody_verify_completeness <- function(
           ifelse(. == "", NA, .)
         }
     ),
-    n_unexpected = purrr::map2_dbl(
+    n_no_expected = purrr::map2_dbl(
       data_map$data_list, data_filtered, ~ nrow(.x) - nrow(.y)
     )
   )
 
-  data_unexpected <- data_antifiltered[
+  data_no_expected <- data_antifiltered[
     names(data_antifiltered) %in% names(conditions_list)
   ] |>
     purrr::map(
@@ -177,11 +177,11 @@ ody_verify_completeness <- function(
         dplyr::select(1)
     )
 
-  unexpected_result <- tibble::tibble(
-    variable = names(data_unexpected),
-    n_antimissing = purrr::map_dbl(data_unexpected, nrow),
+  no_expected_result <- tibble::tibble(
+    variable = names(data_no_expected),
+    n_antimissing = purrr::map_dbl(data_no_expected, nrow),
     ids_antimissing = purrr::map_chr(
-      data_unexpected,
+      data_no_expected,
       ~ as.character(dplyr::pull(., 1)) |>
         na.omit() |> # For the rare cases id is missing
         # (will never miss if id_var = row_number)
@@ -198,7 +198,7 @@ ody_verify_completeness <- function(
   )
 
   if (nrow(cond_frame) != 0) {
-    complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
+    complet_data <- dplyr::left_join(missing_result, no_expected_result, by = "variable") |>
       dplyr::left_join(cond_frame, by = "variable") |>
       dplyr::select(
         .data$variable, .data$condition,
@@ -208,7 +208,7 @@ ody_verify_completeness <- function(
     attr(complet_data, "id_var") <- id_var
     return(complet_data)
   } else {
-    complet_data <- dplyr::left_join(missing_result, unexpected_result, by = "variable") |>
+    complet_data <- dplyr::left_join(missing_result, no_expected_result, by = "variable") |>
       dplyr::mutate(
         condition = NA, .after = .data$variable
       )
@@ -341,13 +341,13 @@ report_completeness <- function(
     dplyr::mutate(
       completeness = round((.data$n_expected - .data$n_missing) / .data$n_expected, 2),
       uncompleteness = ifelse(
-        .data$n_unexpected == 0, NA,
-        round((.data$n_unexpected - .data$n_antimissing) / .data$n_unexpected, 2)
+        .data$n_no_expected == 0, NA,
+        round((.data$n_no_expected - .data$n_antimissing) / .data$n_no_expected, 2)
       ),
       overall = ifelse(
         is.na(.data$n_antimissing),
-        round((.data$n_expected + .data$n_unexpected - .data$n_missing) / (.data$n_expected + .data$n_unexpected), 2),
-        round((.data$n_expected + .data$n_unexpected - .data$n_missing - .data$n_antimissing) / (.data$n_expected + .data$n_unexpected), 2)
+        round((.data$n_expected + .data$n_no_expected - .data$n_missing) / (.data$n_expected + .data$n_no_expected), 2),
+        round((.data$n_expected + .data$n_no_expected - .data$n_missing - .data$n_antimissing) / (.data$n_expected + .data$n_no_expected), 2)
       ),
       condition = ifelse(
         is.na(.data$condition), "allways", .data$condition
@@ -356,7 +356,7 @@ report_completeness <- function(
     dplyr::select(
       .data$variable, .data$condition, .data$overall,
       .data$n_expected, .data$n_missing, .data$completeness,
-      .data$n_unexpected, .data$n_antimissing, .data$uncompleteness
+      .data$n_no_expected, .data$n_antimissing, .data$uncompleteness
     ) |>
     dplyr::mutate(
       overall_color = dplyr::case_when(
@@ -453,7 +453,7 @@ report_completeness <- function(
             minWidth = min_col_width
           ),
           completeness_color = reactable::colDef(show = FALSE),
-          n_unexpected = reactable::colDef(
+          n_no_expected = reactable::colDef(
             cell = reactablefmtr::data_bars(
               report_table,
               text_position = text_pos
@@ -463,7 +463,7 @@ report_completeness <- function(
           n_antimissing = reactable::colDef(
             cell = reactablefmtr::data_bars(
               report_table,
-              max_value = max(report_table$n_unexpected),
+              max_value = max(report_table$n_no_expected),
               fill_color = wrong_bar_color, text_position = text_pos
             ),
             minWidth = min_col_width
@@ -546,7 +546,7 @@ report_completeness <- function(
             minWidth = min_col_width
           ),
           completeness_color = reactable::colDef(show = FALSE),
-          n_unexpected = reactable::colDef(show = FALSE),
+          n_no_expected = reactable::colDef(show = FALSE),
           n_antimissing = reactable::colDef(show = FALSE),
           uncompleteness = reactable::colDef(show = FALSE),
           uncompleteness_color = reactable::colDef(show = FALSE)

@@ -65,5 +65,8 @@ Suggests:
     testthat (>= 3.0.0),
     patchwork,
     gtreg,
-    ggsurvfit
+    ggsurvfit,
+    openxlsx2,
+    shinyalert,
+    shinytitle
 Config/testthat/edition: 3

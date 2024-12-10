@@ -1344,37 +1344,31 @@ ody_rc_view <- function(data_app = NULL) {
     "bslib",
     "shinycssloaders",
     "reactablefmtr",
-    "htmltools"
+    "htmltools",
+    "openxlsx2",
+    "shinyalert",
+    "shinytitle"
   ))
 
-  if (is.null(data_app)) {
-    if (exists("redcap_data")) {
-      data_app <- get("redcap_data")
-    } else {
-      data_app <- ody_rc_import()
-    }
-  }
-
-  # If the project has no events, data_app is restructured to fit
-  if (names(data_app)[1] == "redcap_form_name") {
-    data_app <- tibble::tibble(
-      redcap_event_name = "No events",
-      redcap_repeating_event = FALSE,
-      redcap_event_data = list(data_app)
-    ) |>
-      restore_attributes(data_app)
-  }
-
-  viewer_location <- system.file("redcap_data_viewer", package = "odytools")
-  save(
-    data_app, file = stringr::str_c(viewer_location, "/data_app.RData")
+  viewer_location <- system.file(
+    "redcap_data_viewer", package = "odytools"
   )
+
+  if (is.null(data_app) && exists("redcap_data")) {
+
+    data_app <- get("redcap_data")
+
+    save(
+      data_app, file = stringr::str_c(viewer_location, "/data_app.RData")
+    )
+
+  }
 
   rstudioapi::jobRunScript(
     stringr::str_c(viewer_location, "/data_viewer_runner.R")
   )
 
-  rstudioapi::viewer("http://127.0.0.1:5921")
+  # rstudioapi::viewer("http://127.0.0.1:5921")
 
 }
 

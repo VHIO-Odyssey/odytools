@@ -1392,11 +1392,11 @@ get_conditions_from_metadata <- function(data_frame,
       dplyr::filter(
         stringr::str_detect(
           .data$branching_logic,
-          "\\[.+\\]\\[.+\\]|event-name|current-instance"
+          "\\[.+\\]\\[.+\\]|event-name|current-instance|user-role-name"
         )
       ) |> dplyr::pull("field_name")
 
-    if(length(external_branching) > 0) {
+    if (length(external_branching) > 0) {
       warning(
         "External branching detected for variables\n",
         stringr::str_c(external_branching, collapse = "\n"),

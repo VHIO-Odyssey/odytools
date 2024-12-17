@@ -187,13 +187,13 @@ ody_style.ggsurvfit <- function(x, style = 1) {
       ggsurvfit::add_quantile(
         y_value = 0.5, color = "gray50", linewidth = 0.75) +
       ggsurvfit::scale_ggsurvfit(x_scales = list(expand = c(0.04, 0))) +
-      add_risktable_strata_symbol(symbol = "\U25CF", size = 10)
-    ggplot2::theme(
-      legend.position = "top",
-      panel.border = ggplot2::element_blank(),
-      panel.grid.major.x = ggplot2::element_blank(),
-      panel.grid.minor.x = ggplot2::element_blank()
-    )
+      ggsurvfit::add_risktable_strata_symbol(symbol = "\U25CF", size = 10) +
+      ggplot2::theme(
+        legend.position = "top",
+        panel.border = ggplot2::element_blank(),
+        panel.grid.major.x = ggplot2::element_blank(),
+        panel.grid.minor.x = ggplot2::element_blank()
+      )
 
   } else {
 

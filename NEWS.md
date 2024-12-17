@@ -1,7 +1,8 @@
-# odytols 0.9.1
+# odytools 0.9.1.9000
+
+# odytools 0.9.1
 
 - `ody_rc_view` now calls an exact copy of the REDCap Data Viewer.
-  
 - Now, `ody_rc_import` does not stops if it fails labelling any variable. In that case, the variable will remain unlabelled and the attribute __failed_labels__ will be added to the output. 
 - Added the generic `ody_style` to set a default style of different classes of tables, plots and other objects. Current supported classes are `gtsummary` and `tbl_aes_focus`.
 - The REDCap viewer now recognizes ATC codes and displays the descriptions when no raw data is shown.

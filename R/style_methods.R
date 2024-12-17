@@ -11,6 +11,11 @@
 #'     - 1: Adds "Any AE" row.
 #'     - 2: Just applies the default "gtsummary" style.
 #'
+#'   - "ggsurvfit", 2 styles:
+#'     - 1: Standard style. With number at risk, censored and events
+#'     - 2: Enriched style with estimates
+#'     - 3: Compact style.
+#'
 #' @returns The same object with the "Odytools" style applied. If the object is not supported, the object is returned as is.
 #'
 #' @export
@@ -153,9 +158,7 @@ ody_style.ggsurvfit <- function(x, style = 1) {
         panel.border = ggplot2::element_blank(),
         panel.grid.major.x = ggplot2::element_blank(),
         panel.grid.minor.x = ggplot2::element_blank()
-
       )
-
 
     # x +
     #   ggsurvfit::add_censor_mark() +
@@ -170,6 +173,27 @@ ody_style.ggsurvfit <- function(x, style = 1) {
     #     y_value = 0.5, color = "gray50", linewidth = 0.75) +
     #   ggsurvfit::scale_ggsurvfit() +
     #   ggplot2::theme(legend.position = "top")
+
+  } else if (style == 3) {
+
+    x +
+      ggsurvfit::add_censor_mark() +
+      ggsurvfit::add_risktable(
+        risktable_stats = c(
+          "{n.risk} ({cum.censor})"
+        ),
+        stats_label = "At Risk (Censored)"
+      ) +
+      ggsurvfit::add_quantile(
+        y_value = 0.5, color = "gray50", linewidth = 0.75) +
+      ggsurvfit::scale_ggsurvfit(x_scales = list(expand = c(0.04, 0))) +
+      add_risktable_strata_symbol(symbol = "\U25CF", size = 10)
+    ggplot2::theme(
+      legend.position = "top",
+      panel.border = ggplot2::element_blank(),
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor.x = ggplot2::element_blank()
+    )
 
   } else {
 

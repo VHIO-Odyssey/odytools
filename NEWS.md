@@ -1,5 +1,7 @@
 # odytools 0.9.1.9000
 
+- Added ggsurvfit styles to `ody_style`.
+
 # odytools 0.9.1
 
 - `ody_rc_view` now calls an exact copy of the REDCap Data Viewer.

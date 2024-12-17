@@ -179,15 +179,13 @@ ody_style.ggsurvfit <- function(x, style = 1) {
     x +
       ggsurvfit::add_censor_mark() +
       ggsurvfit::add_risktable(
-        risktable_stats = c(
-          "{n.risk} ({cum.censor})"
-        ),
-        stats_label = "At Risk (Censored)"
+        risktable_stats = "{n.risk}"
       ) +
       ggsurvfit::add_quantile(
         y_value = 0.5, color = "gray50", linewidth = 0.75) +
       ggsurvfit::scale_ggsurvfit(x_scales = list(expand = c(0.04, 0))) +
       ggsurvfit::add_risktable_strata_symbol(symbol = "\U25CF", size = 10) +
+      ggsurvfit::add_pvalue() +
       ggplot2::theme(
         legend.position = "top",
         panel.border = ggplot2::element_blank(),

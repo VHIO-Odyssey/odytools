@@ -1,6 +1,6 @@
 Package: odytools
 Title: Oncology Data Science Group (ODysSey) tools
-Version: 0.9.0
+Version: 0.9.1
 Authors@R: 
     person("Eduardo", "García-Galea", , "eduardogarcia@vhio.net", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4699-0786"))
@@ -63,5 +63,10 @@ Suggests:
     ggpubr,
     gghalves,
     testthat (>= 3.0.0),
-    patchwork
+    patchwork,
+    gtreg,
+    ggsurvfit,
+    openxlsx2,
+    shinyalert,
+    shinytitle
 Config/testthat/edition: 3

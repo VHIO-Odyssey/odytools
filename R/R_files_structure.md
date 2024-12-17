@@ -184,13 +184,22 @@ Calcutation of scores commonly used in clinical trials.
 
 -   ody_qlq_c30
 
-## pdf_extraction
+## **pdf_extraction**
 
 Tools to extract data from some pdf reports.
 
-## graphics
+## **graphics**
 
 Functions to plot graphics commonly used in the reports
 
 -   ody_plot_violindotbox
 -   ody_add_tbl_violindotbox
+
+## **style_methods**
+
+Methods for the generic ody_style wich are styling methods for different classes.
+
+-   ody_style (generic)
+-   ody_style.default
+-   ody_style.tbl_ae_focus
+-   ody_style.gtsummary

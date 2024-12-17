@@ -277,9 +277,8 @@ process_raw_dic <- function(raw_dic) {
     ) |>
     purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
     stringr::str_c(collapse = ", ")
-  stringr::str_c("c(", codes, ")") |> str2lang()
+  stringr::str_c("c(", codes, ")") |> str2lang() |> try(silent = TRUE)
 }
-
 
 # Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
@@ -291,7 +290,7 @@ label_rc_import <- function(rc_import) {
   cli::cli_alert_info("Labelling variables...")
 
   # Dictionaries of all labeled variables
-  field_dictionaries <- metadata |>
+  field_dictionaries_v0 <- metadata |>
     dplyr::select("field_name", "select_choices_or_calculations") |>
     dplyr::filter(
       stringr::str_detect(
@@ -304,8 +303,17 @@ label_rc_import <- function(rc_import) {
         process_raw_dic
       )
     ) |>
-    dplyr::select(-"select_choices_or_calculations")
+    dplyr::select(-"select_choices_or_calculations") |>
+    dplyr::mutate(
+      is_call = purrr::map_lgl(.data[["dictionary"]], ~class(.)[1] == "call")
+    )
 
+  # process_raw_dic puede fallar y devolver un try-error. Los casos fallidos
+  # se eliminan.
+  field_dictionaries <-
+    field_dictionaries_v0 |>
+    dplyr::filter(.data[["is_call"]]) |>
+    dplyr::select(-"is_call")
 
   # checkbox variables formating
   # All existing variables in the import
@@ -388,6 +396,9 @@ label_rc_import <- function(rc_import) {
     #  Se cambia en raw_dic para que coincida y al valor 5_fu se le encuentre
     #  la etiqueta correspondiente.
     raw_dic[, 1] <- stringr::str_replace_all(raw_dic[,1], "-", "_")
+    # Si las etiquetas tienen mayúsculas pasa a minúscula en las auxiliares.
+    # se pasa a minúscula para asegurar
+    raw_dic[, 1] <- stringr::str_to_lower(raw_dic[, 1])
     present_combinations_v0 <- pulled_selections_char |>
       na.omit() |>
       unique()
@@ -437,7 +448,7 @@ label_rc_import <- function(rc_import) {
   # Labeling
   for (field in metadata$field_name) {
     if (is.null(rc_import[[field]]) | field == id_var) next
-    #cat(stringr::str_c("Labelling ", field, "\n"))
+    # cat(stringr::str_c("Labelling ", field, "\n"))
     # Variable label
     form <- metadata |>
       dplyr::filter(.data[["field_name"]] == field) |>
@@ -484,6 +495,29 @@ label_rc_import <- function(rc_import) {
       ]
       labelled::na_values(rc_import[[field]]) <- present_missing_codes
     }
+  }
+
+  # Si hay variables cuyo labeling ha fallado se almacena en el atributo
+  # failed_labels
+  if (nrow(field_dictionaries_v0) > nrow(field_dictionaries)) {
+
+    failed_vars <- field_dictionaries_v0 |>
+      dplyr::filter(!.data[["is_call"]]) |>
+      dplyr::select("field_name") |>
+      dplyr::pull()
+
+    failed_labels <-
+      metadata |>
+      dplyr::filter(.data[["field_name"]] %in% failed_vars) |>
+      dplyr::select(
+        "field_name",
+        "form_name",
+        "field_type",
+        "select_choices_or_calculations"
+      )
+
+    attr(rc_import, "failed_labels") <- failed_labels
+
   }
 
   rc_import
@@ -706,6 +740,7 @@ restore_attributes <- function(rc_nested, rc_raw) {
     "subjects","subjects_dag", "dag",
     "meddra_fields", "meddra_codes",
     "atc_fields", "atc_codes",
+    "failed_labels",
     "import_date"
   )
 
@@ -809,7 +844,7 @@ ody_rc_import <- function(
 
   if (nest) {
     rc_import <- nest_rc(rc_import) |>
-      restore_attributes(rc_raw_import)
+      restore_attributes(rc_import)
   }
 
   class(rc_import) <- c("odytools_redcap", class(rc_import))
@@ -1309,37 +1344,31 @@ ody_rc_view <- function(data_app = NULL) {
     "bslib",
     "shinycssloaders",
     "reactablefmtr",
-    "htmltools"
+    "htmltools",
+    "openxlsx2",
+    "shinyalert",
+    "shinytitle"
   ))
 
-  if (is.null(data_app)) {
-    if (exists("redcap_data")) {
-      data_app <- get("redcap_data")
-    } else {
-      data_app <- ody_rc_import()
-    }
-  }
-
-  # If the project has no events, data_app is restructured to fit
-  if (names(data_app)[1] == "redcap_form_name") {
-    data_app <- tibble::tibble(
-      redcap_event_name = "No events",
-      redcap_repeating_event = FALSE,
-      redcap_event_data = list(data_app)
-    ) |>
-      restore_attributes(data_app)
-  }
-
-  viewer_location <- system.file("redcap_data_viewer", package = "odytools")
-  save(
-    data_app, file = stringr::str_c(viewer_location, "/data_app.RData")
+  viewer_location <- system.file(
+    "redcap_data_viewer", package = "odytools"
   )
+
+  if (is.null(data_app) && exists("redcap_data")) {
+
+    data_app <- get("redcap_data")
+
+    save(
+      data_app, file = stringr::str_c(viewer_location, "/data_app.RData")
+    )
+
+  }
 
   rstudioapi::jobRunScript(
     stringr::str_c(viewer_location, "/data_viewer_runner.R")
   )
 
-  rstudioapi::viewer("http://127.0.0.1:5921")
+  # rstudioapi::viewer("http://127.0.0.1:5921")
 
 }
 
@@ -1363,11 +1392,11 @@ get_conditions_from_metadata <- function(data_frame,
       dplyr::filter(
         stringr::str_detect(
           .data$branching_logic,
-          "\\[.+\\]\\[.+\\]|event-name|current-instance"
+          "\\[.+\\]\\[.+\\]|event-name|current-instance|user-role-name"
         )
       ) |> dplyr::pull("field_name")
 
-    if(length(external_branching) > 0) {
+    if (length(external_branching) > 0) {
       warning(
         "External branching detected for variables\n",
         stringr::str_c(external_branching, collapse = "\n"),

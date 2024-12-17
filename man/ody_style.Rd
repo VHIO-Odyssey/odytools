@@ -26,5 +26,11 @@ Suported classes are:
 \item 1: Adds "Any AE" row.
 \item 2: Just applies the default "gtsummary" style.
 }
+\item "ggsurvfit", 2 styles:
+\itemize{
+\item 1: Standard style. With number at risk, censored and events
+\item 2: Enriched style with estimates
+\item 3: Compact style.
+}
 }
 }

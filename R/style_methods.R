@@ -187,7 +187,8 @@ ody_style.ggsurvfit <- function(x, style = 1) {
         legend.position = "top",
         panel.border = ggplot2::element_blank(),
         panel.grid.major.x = ggplot2::element_blank(),
-        panel.grid.minor.x = ggplot2::element_blank()
+        panel.grid.minor.x = ggplot2::element_blank(),
+        axis.ticks = ggplot2::element_blank()
       )
 
   } else {

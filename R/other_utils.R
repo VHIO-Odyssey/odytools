@@ -13,10 +13,10 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
   today_num <- lubridate::today() |>
     stringr::str_remove_all("-")
   today_present <- list.files(path = path) |>
-    stringr::str_detect(stringr::str_c(file_name, "_", today_num)) |>
+    stringr::str_detect(stringr::str_c(file_name, "_", today_num, ".", extension)) |>
     any()
   today_present_mult <- list.files(path = path) |>
-    stringr::str_detect(stringr::str_c(file_name, "_", today_num, "_\\d")) |>
+    stringr::str_detect(stringr::str_c(file_name, "_", today_num, "_\\d", ".", extension)) |>
     any()
 
   if (today_present & !today_present_mult) {

@@ -1,3 +1,6 @@
+#' @importFrom utils head
+NULL
+
 #' Get a version date for a render.
 #'
 #' @param file_name File name.
@@ -41,6 +44,32 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
 
 }
 
+#' Generate a file path for saving output with versioning.
+#'
+#' This function constructs a save path using the provided components and appends a version (today's date) to the file name.
+#'
+#' @param ... Components of the path and file name.
+#'
+#' @return A character string representing the save path.
+#'
+#' @export
+ody_save_path <- function(...) {
+
+  path <- stringr::str_c(head(c(...), -1), collapse = "/")
+
+  file <- tail(c(...), 1) |>
+    stringr::str_split("\\.") |>
+    unlist()
+
+  here::here(
+    path,
+    ody_add_version(
+      file[1], file[2],
+      here::here(path)
+    )
+  )
+
+}
 
 
 #' Change column names

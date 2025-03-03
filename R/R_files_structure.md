@@ -143,6 +143,7 @@ Functions to create and update RedCap projects in RStudio:
 Miscelaneous utilities.
 
 -   ody_add_version
+-   ody_save_path
 -   ody_change_names
 -   ody_options
 -   ody_proj_init

@@ -1,6 +1,7 @@
 # odytools 0.9.1.9000
 
 - Added ggsurvfit styles to `ody_style`.
+- Added `ody_save_path`. 
 
 # odytools 0.9.1
 

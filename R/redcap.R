@@ -1722,7 +1722,7 @@ ody_rc_add_label <- function(
 
   # ¿Hay columnas auxiliares de checkbox?
   #Si es así, estas se etiquetan con el valor del checkbox que representan
-  aux_cols_index <- stringr::str_detect(names(df), "___\\d+")
+  aux_cols_index <- stringr::str_detect(names(df), "___.+$")
 
   if (any(aux_cols_index)) {
 

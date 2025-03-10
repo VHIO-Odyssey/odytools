@@ -673,3 +673,55 @@ ody_render_quality_report <- function(
     output_file = report_name
   )
 }
+
+
+#' Filter Fails
+#'
+#' Filters a tibble to only include cases that are not okay or have missing values
+#' in the `.ok` column. Removes the `.ok` column from the result.
+#'
+#' @param tbl A tibble that contains an `.ok` column for the filtering criteria.
+#'
+#' @details The main purpose of this function is to filter cases that do not meet
+#' a given verification criterion in the quality check process of a REDCap project.
+#'
+#' @return A filtered tibble without the `.ok` column.
+#' @export
+ody_filter_fails <- function(tbl) {
+
+  filtered_tbl <-
+    tbl |>
+    dplyr::filter(!.data$.ok | is.na(.data$.ok)) |>
+    dplyr::select(-".ok")
+
+  class(filtered_tbl) <- class(filtered_tbl)[class(filtered_tbl) != "odytools_dataset"]
+  attr(filtered_tbl, "description") <- NULL
+  attr(filtered_tbl, "is_dataset") <- NULL
+  attr(filtered_tbl, "export") <- NULL
+
+  filtered_tbl
+
+}
+
+#' Report Fails
+#'
+#' Generates a gt table of the cases that have failed verification.
+#'
+#' @param tbl A tibble containing verification results with a failing criterion.
+#'
+#' @return A tibble with a message if no fails are detected, or a report table of the failing cases.
+#'
+#' @details The main purpose of this function is to report the output table of `ody_filter_fails`.
+#'
+#' @export
+ody_report_fails <- function(tbl) {
+
+  if (nrow(tbl) == 0) {
+    tibble::tibble(" " = "No fails detected for this verification") |> gt::gt()
+  } else {
+    gt::gt(tbl) |>
+      gt::sub_missing(missing_text = "")
+  }
+
+}
+

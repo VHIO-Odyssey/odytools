@@ -14,6 +14,10 @@ Data quality reports.
 
 -   ody_render_quality_report [ody_verify_completeness, ody_verify_conformance, report_completeness, report_conformance]
 
+-   ody_filter_fails
+
+-   ody_report_fails
+
 ## **data_summary**
 
 Functions to summarise dataframes.

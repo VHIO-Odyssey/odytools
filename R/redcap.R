@@ -1660,8 +1660,22 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #' @return The same tbl with the site column added.
 #' @export
 ody_rc_add_site <- function(tbl,
-                              redcap_data = redcap_data,
-                              position = 1) {
+                            redcap_data = NULL,
+                            position = 1) {
+
+  if (is.null(redcap_data)) {
+
+    if (exists("redcap_data", envir = .GlobalEnv)) {
+
+      redcap_data <- get("redcap_data", envir = .GlobalEnv)
+
+    } else {
+
+      stop("No redcap_data object found.")
+
+    }
+
+  }
 
   id_var <- attr(redcap_data, "id_var")
   sites <- attr(redcap_data, "subjects_dag") |>

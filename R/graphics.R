@@ -62,18 +62,23 @@ ody_plot_violindotbox <- function(
       ) |>
       dplyr::filter(.data[["p.adj"]] <= p_max)
 
-    y_pos <- max(data |> dplyr::pull(.data[[y]]), na.rm = TRUE) * brackets_pos
+    # If p.adj is filtered we could end up with an empty stats data frame
+    if (nrow(stats) > 0) {
 
-    p <-
-      p +
-      ggpubr::geom_bracket(
-        data = stats,
-        ggplot2::aes(
-          xmin = .data[["group1"]], xmax = .data[["group2"]],
-          label = gtsummary::style_pvalue(.data[["p.adj"]])
-        ),
-        y.position = y_pos, ...
-      )
+      y_pos <- max(data |> dplyr::pull(.data[[y]]), na.rm = TRUE) * brackets_pos
+
+      p <-
+        p +
+        ggpubr::geom_bracket(
+          data = stats,
+          ggplot2::aes(
+            xmin = .data[["group1"]], xmax = .data[["group2"]],
+            label = gtsummary::style_pvalue(.data[["p.adj"]])
+          ),
+          y.position = y_pos, ...
+        )
+
+    }
 
   }
 

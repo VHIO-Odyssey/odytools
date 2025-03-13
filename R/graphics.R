@@ -11,7 +11,8 @@ NULL
 #' @param x A string representing the name of the x variable (categorical).
 #' @param y A string representing the name of the y variable (numeric).
 #' @param no_violin Logical indicating if the half violin plot should be removed.
-#' @param compare Logical indicating if a statistical comparison should be added.
+#' @param compare Logical indicating if a statistical two by two comparison should be added.
+#' @param p_max A numeric value indicating the maximum p-value to show in the comparisons.
 #' @param p_adj A string indicating the method to adjust the p-values. See \link[stats]{p.adjust}.
 #' @param brackets_pos A numeric value indicating the relative position of the brackets that represent the statistical comparison.
 #' @param ... Additional arguments to be passed to \link[ggpubr]{geom_bracket} (the function used to add the brackets).
@@ -22,6 +23,7 @@ ody_plot_violindotbox <- function(
     data, x, y,
     no_violin = FALSE,
     compare = FALSE,
+    p_max = 1,
     p_adj = "fdr",
     brackets_pos = 1.05,
     ...) {
@@ -57,7 +59,8 @@ ody_plot_violindotbox <- function(
       ggpubr::compare_means(
         formula(glue::glue("{y} ~ {x}")),
         data = data, p.adjust.method = p_adj
-      )
+      ) |>
+      dplyr::filter(.data[["p.adj"]] <= p_max)
 
     y_pos <- max(data |> dplyr::pull(.data[[y]]), na.rm = TRUE) * brackets_pos
 

@@ -1,5 +1,6 @@
 # odytools 0.9.1.9000
 
+- Added _p_max_ argumento to `ody_plot_violindotplot` to set the maximum p-value to be shown in the plot.
 - Added `ody_filter_fails` and `ody_report_fails` which are mainly used in the verification process of a REDCap project.
 - Added `ody_label_df` to label a data frame (both variables and values) according to a provided dictionary.
 - Added ggsurvfit styles to `ody_style`.

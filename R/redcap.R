@@ -1369,6 +1369,18 @@ ody_rc_view <- function(data_app = NULL) {
 
 }
 
+
+# Helper function to check inside get_conditions_from_metadata whether the
+# the data_frame can be actually filtered by the elements of the
+# conditions_list.
+filter_condition <- function(data_frame, condition) {
+
+  data_frame |>
+    dplyr::filter(eval(str2lang(condition)))
+
+}
+
+
 # Helper functions to create a conditions_list from redcap metadata.
 get_conditions_from_metadata <- function(data_frame,
                                          metadata,
@@ -1447,8 +1459,27 @@ get_conditions_from_metadata <- function(data_frame,
 
   }
 
+  # We need to check if the conditions are actually filterable since variables
+  # outside the data_frame can be used in the conditions. This is not suported
+  # by the current implementation because ody_verify_completeness (the function
+  # in charge of checking the conditions) only checks for the conditional presence
+  # of variables in the current data_frame.
 
-  conditions_list
+  secure_filter_conditions <- purrr::possibly(filter_condition)
+
+  ok_index <- purrr::map_lgl(
+    conditions_list,
+    ~ secure_filter_conditions(data_frame, .) |>
+      is.data.frame()
+  )
+
+  if (sum(ok_index) < length(conditions_list)) {
+    warning(
+      "Some conditions are not filterable because they use variables not present in the data frame. These conditions will be ignored."
+    )
+  }
+
+  conditions_list[ok_index]
 
 }
 

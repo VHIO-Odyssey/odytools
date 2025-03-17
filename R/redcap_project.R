@@ -285,7 +285,6 @@ rc_refresh_datasets <- function() {
   cli::cli_alert_info("Refreshing datasets...")
 
   load(list.files(here::here(), ".RData$"))
-  load(list.files(here::here("functions"), ".R$"))
 
   redcap_data <- get("redcap_data")
   datasets <- rc_make_datasets(redcap_data) |> suppressMessages()

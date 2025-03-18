@@ -699,4 +699,8 @@ rc_export_data_dependencies <- function() {
   file.copy(c(rdata_scripts, dependencies_script), here::here(folder_name))
   file.copy(functions_scripts, here::here(folder_name, "functions"))
 
+  cli::cli_alert_success(
+    stringr::str_c("The .RData file, along with the dependencies script and function scripts, has been copied to ", folder_name)
+  )
+
 }

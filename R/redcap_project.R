@@ -121,6 +121,15 @@ rc_make_datasets <- function(redcap_data) {
 
   import_date <- get_import_date(redcap_data)
 
+  # Functions scripts are sourced first just in case the datasets scripts need
+  # them.
+  functions_scripts <- list.files(here::here("functions"), ".R$")
+
+  purrr::walk(
+    here::here("functions", functions_scripts),
+    source, local = rlang::current_env()
+  )
+
   datasets_scripts <- list.files(here::here("data", "datasets"), ".R$")
 
   purrr::walk(

@@ -1344,7 +1344,10 @@ ody_rc_view <- function(data_app = NULL) {
     "htmltools",
     "openxlsx2",
     "shinyalert",
-    "shinytitle"
+    "shinytitle",
+    "shinyjs",
+    "waiter",
+    "ggridges"
   ))
 
   viewer_location <- system.file(

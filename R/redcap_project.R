@@ -679,3 +679,24 @@ hardcode_values <- function(redcap_data, hardcode_df) {
   redcap_data
 
 }
+
+# Helper function to export the data and the dependencies file.
+# Addin only
+rc_export_data_dependencies <- function() {
+
+  rdata_scripts <- here::here(list.files(here::here(), ".RData$"))
+  dependencies_script <- here::here(list.files(here::here(), "dependencies.R$"))
+  functions_scripts <- here::here("functions", list.files(here::here("functions"), ".R$"))
+
+  folder_name <- stringr::str_c(
+    get_project_name(), "_", get_import_date(get("redcap_data"))
+  )
+
+
+  dir.create(here::here(folder_name))
+  dir.create(here::here(folder_name, "functions"))
+
+  file.copy(c(rdata_scripts, dependencies_script), here::here(folder_name))
+  file.copy(functions_scripts, here::here(folder_name, "functions"))
+
+}

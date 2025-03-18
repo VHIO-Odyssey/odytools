@@ -18,6 +18,11 @@ Description: Save a copy of the current redcap_data and datasets objects in data
 Binding: rc_back_up
 Interactive: false
 
+Name: Export data and dependencies
+Description: Create a folder with a copy of the current REDCap data, datasets, functions, and dependency scripts to share with the world.
+Binding: rc_export_data_dependencies
+Interactive: false
+
 Name: REDCap viewer
 Description: Explore the data of a REDCap project.
 Binding: ody_rc_view

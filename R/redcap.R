@@ -1656,14 +1656,11 @@ ody_rc_spread <- function(rc_data = NULL) {
   }
 
   if (has_unique && has_repeating) {
-    dplyr::full_join(spread_unique, spread_repeating, by = id_var) |>
-      dplyr::select(tidyselect::starts_with(fields))
+    dplyr::full_join(spread_unique, spread_repeating, by = id_var)
   } else if (has_unique) {
-    spread_unique |>
-      dplyr::select(tidyselect::starts_with(fields))
+    spread_unique
   } else {
-    spread_repeating |>
-      dplyr::select(tidyselect::starts_with(fields))
+    spread_repeating
   }
 
 }

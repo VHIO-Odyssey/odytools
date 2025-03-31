@@ -179,6 +179,43 @@ rc_make_datasets <- function(redcap_data) {
 
 }
 
+# Helper function  to make a datasets list in non REDCap projects
+rc_make_datasets_no_redcap <- function() {
+
+  # Functions scripts are sourced first just in case the datasets scripts need
+  # them.
+  functions_scripts <- list.files(here::here("functions"), ".R$")
+
+  purrr::walk(
+    here::here("functions", functions_scripts),
+    source, local = rlang::current_env()
+  )
+
+  datasets_scripts <- list.files(here::here("data", "datasets"), ".R$")
+
+  purrr::walk(
+    here::here("data", "datasets", datasets_scripts),
+    source, local = rlang::current_env()
+  )
+
+  # Objects declared as datasets
+  current_objects <- ls()
+  dataset_index <- purrr::map_lgl(
+    current_objects, ~!is.null(attr(get(.), "is_dataset"))
+  )
+  to_datasets <- current_objects[dataset_index]
+  datasets <- purrr::map(
+    to_datasets,
+    ~get(.)
+  )
+  names(datasets) <- to_datasets
+
+  class(datasets) <- c("odytools_datasets_list", class(datasets))
+
+  datasets
+
+}
+
 # Start/Update a RedCap Project. Only Addin
 rc_init_update <- function() {
 
@@ -294,10 +331,14 @@ rc_refresh_datasets <- function() {
   cli::cli_alert_info("Refreshing datasets...")
 
   load(list.files(here::here(), ".RData$"))
+  project_name <- get_project_name()
+
+  # Datasets are refreshed in both REDCap and non-REDCap projects
+  if (exists("redcap_data")) {
 
   redcap_data <- get("redcap_data")
   datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
-  project_name <- get_project_name()
+
 
   save(
     redcap_data, datasets,
@@ -308,6 +349,22 @@ rc_refresh_datasets <- function() {
     here::here(stringr::str_c(project_name, ".RData")),
     envir = .GlobalEnv
   )
+
+  } else {
+
+    datasets <- rc_make_datasets_no_redcap() |> suppressMessages()
+
+    save(
+      datasets,
+      file = here::here(stringr::str_c(project_name, ".RData"))
+    )
+
+    load(
+      here::here(stringr::str_c(project_name, ".RData")),
+      envir = .GlobalEnv
+    )
+
+  }
 
   cli::cli_alert_success("Datasets successfully refreshed.\n")
 

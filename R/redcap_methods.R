@@ -47,6 +47,9 @@ print.odytools_datasets_list <- function(x, ...) {
     ) |>
     str2lang()
 
+
+  if (!is.null(attr("project_title"))) {
+
   import_date <- attr(x, "import_date") |>
     stringr::str_extract("....-..-.. ..:..")
 
@@ -56,6 +59,13 @@ print.odytools_datasets_list <- function(x, ...) {
   cli::cli_alert_info("{length(x)} elements:")
   cli::cli_bullets(eval(description_vector))
 
+  } else {
+
+    cli::cli_alert_info("{get_project_name()} datasets")
+    cli::cli_alert_info("{length(x)} elements:")
+    cli::cli_bullets(eval(description_vector))
+
+  }
 
 }
 

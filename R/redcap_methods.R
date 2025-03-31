@@ -48,7 +48,7 @@ print.odytools_datasets_list <- function(x, ...) {
     str2lang()
 
 
-  if (!is.null(attr("project_title"))) {
+  if (!is.null(attr(x, "project_title"))) {
 
   import_date <- attr(x, "import_date") |>
     stringr::str_extract("....-..-.. ..:..")

@@ -191,10 +191,10 @@ rc_make_datasets_no_redcap <- function() {
     source, local = rlang::current_env()
   )
 
-  datasets_scripts <- list.files(here::here("data", "datasets"), ".R$")
+  datasets_scripts <- list.files(here::here("data"), ".R$")
 
   purrr::walk(
-    here::here("data", "datasets", datasets_scripts),
+    here::here("data", datasets_scripts),
     source, local = rlang::current_env()
   )
 

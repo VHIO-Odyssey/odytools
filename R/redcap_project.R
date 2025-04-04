@@ -330,7 +330,9 @@ rc_refresh_datasets <- function() {
 
   cli::cli_alert_info("Refreshing datasets...")
 
-  load(list.files(here::here(), ".RData$"))
+  rdatas <- list.files(here::here(), ".RData$")
+  if (length(rdatas) != 0) load(rdatas)
+
   project_name <- get_project_name()
 
   # Datasets are refreshed in both REDCap and non-REDCap projects

@@ -631,7 +631,7 @@ ody_timetravel <- function(timepoint) {
 
   }
 
-  load(here::here("data", "imports", backup), envir = .GlobalEnv)
+  load(here::here("data", "backups", backup), envir = .GlobalEnv)
 
   cli::cli_alert_info("The datasets have been replaced by the ones in {backup}.\nPlease, check the data before continuing with your analysis.")
 

@@ -409,16 +409,25 @@ rc_back_up <- function() {
   } else {
 
     backup_date <- Sys.time()
-    backup_date_label <- stringr::str_extract(backup_date, "....-..-..") |>
-      stringr::str_remove_all("-")
+    backup_date_label <-
+      stringr::str_extract(backup_date, "....-..-.. ..:..") |>
+      stringr::str_remove_all("-|:") |>
+      stringr::str_replace(" ", "_")
     backup_name <- stringr::str_c(
       project_name, "_backup_", backup_date_label, ".RData"
     )
 
     attr(datasets, "backup_date") <- backup_date
 
+    datasets_name <- stringr::str_c(
+      "datasets_backup_", backup_date_label
+    )
+
+    assign(datasets_name, datasets)
+
+
     save(
-      datasets,
+      list = datasets_name,
       file = here::here("data", "backups", backup_name)
     )
 

@@ -377,29 +377,56 @@ rc_back_up <- function() {
 
   load(list.files(here::here(), ".RData$"))
 
+  project_name <- get_project_name()
+
   # this to avoid package check complains about undefined objects
-  redcap_data <- get("redcap_data")
   datasets <- get("datasets")
 
-  project_name <- get_project_name()
-  import_date <- get_import_date(redcap_data)
+  if (exists("redcap_data")) {
 
-  backup_name <- stringr::str_c(
-    project_name, "_import_", import_date, ".RData"
-  )
+    # this to avoid package check complains about undefined objects
+    redcap_data <- get("redcap_data")
 
-  backup_date <- Sys.time()
-  attr(redcap_data, "backup_date") <- backup_date
-  attr(datasets, "backup_date") <- backup_date
+    import_date <- get_import_date(redcap_data)
 
-  save(
-    redcap_data, datasets,
-    file = here::here("data", "imports", backup_name)
-  )
+    backup_name <- stringr::str_c(
+      project_name, "_import_", import_date, ".RData"
+    )
 
-  message(
-    "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
-  )
+    backup_date <- Sys.time()
+    attr(redcap_data, "backup_date") <- backup_date
+    attr(datasets, "backup_date") <- backup_date
+
+    save(
+      redcap_data, datasets,
+      file = here::here("data", "imports", backup_name)
+    )
+
+    message(
+      "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
+    )
+
+  } else {
+
+    backup_date <- Sys.time()
+    backup_date_label <- stringr::str_extract(backup_date, "....-..-..") |>
+      stringr::str_remove_all("-")
+    backup_name <- stringr::str_c(
+      project_name, "_backup_", backup_date_label, ".RData"
+    )
+
+    attr(datasets, "backup_date") <- backup_date
+
+    save(
+      datasets,
+      file = here::here("data", "backups", backup_name)
+    )
+
+    message(
+      "A backup copy of the datasets has been stored\nin data/backups with the name ", backup_name, "\n"
+    )
+
+  }
 
 }
 

@@ -157,6 +157,7 @@ ody_proj_init <- function() {
 
   # Directories
   dir.create(here::here("data"))
+  dir.create(here::here("data", "backups"))
   dir.create(here::here("docs"))
   dir.create(here::here("analysis"))
   dir.create(here::here("functions"))
@@ -601,5 +602,3 @@ ody_label_df <- function(raw_data, dictionary) {
     eval()
 
 }
-
-

@@ -13,8 +13,8 @@ Description: Refresh the datasets content.
 Binding: rc_refresh_datasets
 Interactive: false
 
-Name: Back-up redcap_data and datasets
-Description: Save a copy of the current redcap_data and datasets objects in data/imports.
+Name: Back-up project data
+Description: Save a copy of the current datasets and redcap_data (if present).
 Binding: rc_back_up
 Interactive: false
 

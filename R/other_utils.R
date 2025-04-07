@@ -602,3 +602,37 @@ ody_label_df <- function(raw_data, dictionary) {
     eval()
 
 }
+
+
+#' Paradox-Free Time Travelling
+#'
+#' Replace the current datasets list with the one from a previous backup stored in the data/backups folder.
+#'
+#' @param timepoint Timepoint pattern.
+#'
+#' @details The back-ups are named after the project and the back-up date. The timepoint pattern is a regular expression to match the name of the back-up file. The pattern must match one and only one back-up file.
+#'
+#' @export
+ody_timetravel <- function(timepoint) {
+
+  backup <- list.files(here::here("data", "backups"), ".RData$") |>
+    stringr::str_subset(timepoint)
+
+
+  if (length(backup) == 0) {
+
+    stop("No available timepoint")
+
+  }
+
+  if (length(backup) > 1) {
+
+    stop("Ambiguous timepoint")
+
+  }
+
+  load(here::here("data", "imports", backup), envir = .GlobalEnv)
+
+  cli::cli_alert_info("The datasets have been replaced by the ones in {backup}.\nPlease, check the data before continuing with your analysis.")
+
+}

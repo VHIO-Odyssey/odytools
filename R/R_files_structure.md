@@ -159,6 +159,7 @@ Miscelaneous utilities.
 -   ody_gt2image
 -   ody_apply_on_pattern
 -   ody_label_df
+-   ody_timetravel
 
 ## **aes**
 

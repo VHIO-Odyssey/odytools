@@ -419,17 +419,7 @@ rc_back_up <- function() {
 
     attr(datasets, "backup_date") <- backup_date
 
-    datasets_name <- stringr::str_c(
-      "datasets_backup_", backup_date_label
-    )
-
-    assign(datasets_name, datasets)
-
-
-    save(
-      list = datasets_name,
-      file = here::here("data", "backups", backup_name)
-    )
+    save(datasets, file = here::here("data", "backups", backup_name))
 
     message(
       "A backup copy of the datasets has been stored\nin data/backups with the name ", backup_name, "\n"

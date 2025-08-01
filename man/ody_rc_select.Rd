@@ -15,21 +15,24 @@ ody_rc_select(
 \arguments{
 \item{rc_data}{RedCap data imported with ody_rc_import.}
 
-\item{...}{Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.}
+\item{...}{Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.}
 
 \item{.is_vector}{Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.}
 
 \item{.if_different_forms}{What action take if the selected variables belong to different forms.
 \itemize{
-\item list: It returns a list with an element for each form so only variables belonging to the same form are joinned in the same data frame.
+\item list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
 \item join: Join all variables creating artifact NAs.
 }}
 
-\item{.include_aux}{When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE}
+\item{.include_aux}{When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE}
 }
 \value{
 A tibble with the selected variables.
 }
 \description{
 Select variables from a RedCap import
+}
+\details{
+For selecting complete forms, it is now recommended to use \code{ody_rc_select_form}.
 }

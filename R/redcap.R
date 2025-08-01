@@ -916,12 +916,14 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' Select variables from a RedCap import
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
-#' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
+#' @param ... Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.
 #' @param .is_vector Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.
 #' @param .if_different_forms What action take if the selected variables belong to different forms.
-#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joinned in the same data frame.
+#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
 #'    - join: Join all variables creating artifact NAs.
-#' @param .include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
+#' @param .include_aux When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE
+#'
+#' @details For selecting complete forms, it is now recommended to use `ody_rc_select_form`.
 #'
 #' @return A tibble with the selected variables.
 #' @export
@@ -1048,6 +1050,81 @@ ody_rc_select <- function(
   }
 
   selection
+
+}
+
+
+#' Select variables from a specific form in a RedCap import
+#'
+#' @param rc_data A RedCap data import (typically the output of `ody_rc_import`).
+#' @param form_name The name of the form from which to select variables.
+#'
+#' @return A tibble including data from the specified form.
+#' @export
+ody_rc_select_form <- function(rc_data, form_name) {
+
+  form_name <- as.character(substitute(form_name))
+
+  available_forms <- attr(rc_data, "forms")$instrument_name
+
+  if (!(form_name %in% available_forms)) {
+    stop(
+      stringr::str_c(
+        "The form '", form_name, "' does not exist in the RedCap import.\n ",
+        "Available forms are: ",
+        stringr::str_c(available_forms, collapse = "\n")
+      )
+    )
+  }
+
+  events_mapping <- attr(rc_data, "forms_events_mapping")
+
+  if (is.null(events_mapping)) {
+
+    selected_form <-
+      rc_data |>
+      dplyr::filter(.data$redcap_form_name == form_name) |>
+      dplyr::select(-"redcap_repeating_form") |>
+      tidyr::unnest("redcap_form_data") |>
+      dplyr::relocate("record_id", .before = 1)
+
+  } else {
+
+    events <-
+      attr(rc_data, "forms_events_mapping") |>
+      dplyr::filter(.data$form == form_name) |>
+      dplyr::pull("unique_event_name")
+
+    selected_form <-
+      rc_data |>
+      dplyr::filter(.data$redcap_event_name %in% events) |>
+      dplyr::select("redcap_event_name", "redcap_event_data") |>
+      tidyr::unnest("redcap_event_data") |>
+      dplyr::filter(.data$redcap_form_name == form_name) |>
+      dplyr::select(-"redcap_repeating_form") |>
+      tidyr::unnest("redcap_form_data") |>
+      dplyr::relocate("record_id", .before = 1)
+
+  }
+
+  sel_vars <- names(selected_form)
+  # If the selected vars are meddra variables, dictionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "meddra_fields"))) {
+    all_meddra <- attr(rc_data, "meddra_fields")
+    attr(selected_form, "meddra_fields") <- sel_vars[sel_vars %in% all_meddra]
+    attr(selected_form, "meddra_codes") <- attr(rc_data, "meddra_codes")
+  }
+
+  # If the selected vars are ATC variables, dictionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "atc_fields"))) {
+    all_atc <- attr(rc_data, "atc_fields")
+    attr(selected_form, "atc_fields") <- sel_vars[sel_vars %in% all_atc]
+    attr(selected_form, "atc_codes") <- attr(rc_data, "atc_codes")
+  }
+
+  selected_form
 
 }
 

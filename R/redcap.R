@@ -1057,13 +1057,21 @@ ody_rc_select <- function(
 #' Select variables from a specific form in a RedCap import
 #'
 #' @param rc_data A RedCap data import (typically the output of `ody_rc_import`).
-#' @param form_name The name of the form from which to select variables.
+#' @param form_name The name (as an expression or character) of the form from which to select variables.
+#' @param .form_name_is_character Logical. If TRUE, `form_name` is assumed to be a character name.
 #'
-#' @return A tibble including data from the specified form.
+#' @return A tibble containing data from the specified form.
 #' @export
-ody_rc_select_form <- function(rc_data, form_name) {
+ody_rc_select_form <- function(
+    rc_data,
+    form_name,
+    .form_name_is_character = FALSE) {
 
-  form_name <- as.character(substitute(form_name))
+  if (!.form_name_is_character) {
+
+  form_name <- rlang::as_name(rlang::enquo(form_name))
+
+  }
 
   available_forms <- attr(rc_data, "forms")$instrument_name
 
@@ -1127,6 +1135,7 @@ ody_rc_select_form <- function(rc_data, form_name) {
   selected_form
 
 }
+
 
 # Helper function used in viewer apps that directly assume variable is
 # a vector

@@ -1,5 +1,7 @@
 # odytools 0.9.1.9000
 
+
+- Added `ody_rc_select_form``. An improved function no extract full forms.
 - "Refresh datasets" addin now also works in generic projects.
 - Datasets created in a generic project can be backed up through the "Back-up project data" addin.
 - Timetraveling in generic projects is now possible with `ody_timetravel`

@@ -4,15 +4,17 @@
 \alias{ody_rc_select_form}
 \title{Select variables from a specific form in a RedCap import}
 \usage{
-ody_rc_select_form(rc_data, form_name)
+ody_rc_select_form(rc_data, form_name, .form_name_is_character = FALSE)
 }
 \arguments{
 \item{rc_data}{A RedCap data import (typically the output of \code{ody_rc_import}).}
 
-\item{form_name}{The name of the form from which to select variables.}
+\item{form_name}{The name (as an expression or character) of the form from which to select variables.}
+
+\item{.form_name_is_character}{Logical. If TRUE, \code{form_name} is assumed to be a character name.}
 }
 \value{
-A tibble including data from the specified form.
+A tibble containing data from the specified form.
 }
 \description{
 Select variables from a specific form in a RedCap import

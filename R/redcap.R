@@ -1067,6 +1067,8 @@ ody_rc_select_form <- function(
     form_name,
     .form_name_is_character = FALSE) {
 
+  subject_id <- attr(rc_data, "id_var")
+
   if (!.form_name_is_character) {
 
   form_name <- rlang::as_name(rlang::enquo(form_name))
@@ -1094,7 +1096,7 @@ ody_rc_select_form <- function(
       dplyr::filter(.data$redcap_form_name == form_name) |>
       dplyr::select(-"redcap_repeating_form") |>
       tidyr::unnest("redcap_form_data") |>
-      dplyr::relocate("record_id", .before = 1)
+      dplyr::relocate(tidyselect::any_of(subject_id), .before = 1)
 
   } else {
 
@@ -1111,7 +1113,7 @@ ody_rc_select_form <- function(
       dplyr::filter(.data$redcap_form_name == form_name) |>
       dplyr::select(-"redcap_repeating_form") |>
       tidyr::unnest("redcap_form_data") |>
-      dplyr::relocate("record_id", .before = 1)
+      dplyr::relocate(tidyselect::any_of(subject_id), .before = 1)
 
   }
 

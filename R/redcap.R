@@ -922,8 +922,7 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #'    - list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
 #'    - join: Join all variables creating artifact NAs.
 #' @param .include_aux When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE
-#'
-#' @details For selecting complete forms, it is now recommended to use `ody_rc_select_form`.
+#' @param .accept_form_name Logical. If TRUE (default), a form name can be provided in ... to select all variables of that form. Set to FALSE if a variable is named as a form and you need to select the variable instead of the form. For selecting complete forms, it is now recommended to use `ody_rc_select_form`.
 #'
 #' @return A tibble with the selected variables.
 #' @export
@@ -932,7 +931,8 @@ ody_rc_select <- function(
     ...,
     .is_vector = FALSE,
     .if_different_forms = c("list", "join"),
-    .include_aux = FALSE) {
+    .include_aux = FALSE,
+    .accept_form_name = TRUE) {
 
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 
@@ -958,7 +958,9 @@ ody_rc_select <- function(
   checkbox_aux <- attr(rc_data, "checkbox_aux")
 
   # If a form name is provided, all the variables of the form are extracted
-  if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
+  if (length(sel_vars) == 1 &&
+      sel_vars %in% unique(metadata$form_name) &&
+      .accept_form_name) {
     current_form <- metadata |>
       dplyr::filter(
         .data[["form_name"]] == sel_vars

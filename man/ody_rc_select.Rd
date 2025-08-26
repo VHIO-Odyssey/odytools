@@ -9,7 +9,8 @@ ody_rc_select(
   ...,
   .is_vector = FALSE,
   .if_different_forms = c("list", "join"),
-  .include_aux = FALSE
+  .include_aux = FALSE,
+  .accept_form_name = TRUE
 )
 }
 \arguments{
@@ -26,13 +27,12 @@ ody_rc_select(
 }}
 
 \item{.include_aux}{When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE}
+
+\item{.accept_form_name}{Logical. If TRUE (default), a form name can be provided in ... to select all variables of that form. Set to FALSE if a variable is named as a form and you need to select the variable instead of the form. For selecting complete forms, it is now recommended to use \code{ody_rc_select_form}.}
 }
 \value{
 A tibble with the selected variables.
 }
 \description{
 Select variables from a RedCap import
-}
-\details{
-For selecting complete forms, it is now recommended to use \code{ody_rc_select_form}.
 }

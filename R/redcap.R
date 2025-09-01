@@ -851,7 +851,12 @@ ody_rc_import <- function(
 
   attr(rc_import, "odytools_version") <- packageVersion("odytools")
 
-  rc_import
+
+  # Remove any events that are empty
+  no_empty_events_index <-
+    purrr::map_lgl(rc_import$redcap_event_data, ~ nrow(.) > 0)
+
+  rc_import[no_empty_events_index, ]
 
 }
 

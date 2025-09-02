@@ -853,10 +853,18 @@ ody_rc_import <- function(
 
 
   # Remove any events that are empty
-  no_empty_events_index <-
-    purrr::map_lgl(rc_import$redcap_event_data, ~ nrow(.) > 0)
 
-  rc_import[no_empty_events_index, ]
+  if (names(rc_import)[1] == "redcap_event_name") {
+
+    no_empty_events_index <-
+      purrr::map_lgl(rc_import$redcap_event_data, ~ nrow(.) > 0)
+    rc_import[no_empty_events_index, ]
+
+  } else {
+
+    rc_import
+
+  }
 
 }
 

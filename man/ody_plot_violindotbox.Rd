@@ -10,6 +10,7 @@ ody_plot_violindotbox(
   y,
   no_violin = FALSE,
   compare = FALSE,
+  p_max = 1,
   p_adj = "fdr",
   brackets_pos = 1.05,
   ...
@@ -24,7 +25,9 @@ ody_plot_violindotbox(
 
 \item{no_violin}{Logical indicating if the half violin plot should be removed.}
 
-\item{compare}{Logical indicating if a statistical comparison should be added.}
+\item{compare}{Logical indicating if a statistical two by two comparison should be added.}
+
+\item{p_max}{A numeric value indicating the maximum p-value to show in the comparisons.}
 
 \item{p_adj}{A string indicating the method to adjust the p-values. See \link[stats]{p.adjust}.}
 

@@ -121,6 +121,15 @@ rc_make_datasets <- function(redcap_data) {
 
   import_date <- get_import_date(redcap_data)
 
+  # Functions scripts are sourced first just in case the datasets scripts need
+  # them.
+  functions_scripts <- list.files(here::here("functions"), ".R$")
+
+  purrr::walk(
+    here::here("functions", functions_scripts),
+    source, local = rlang::current_env()
+  )
+
   datasets_scripts <- list.files(here::here("data", "datasets"), ".R$")
 
   purrr::walk(
@@ -163,6 +172,43 @@ rc_make_datasets <- function(redcap_data) {
     )
 
   }
+
+  class(datasets) <- c("odytools_datasets_list", class(datasets))
+
+  datasets
+
+}
+
+# Helper function  to make a datasets list in non REDCap projects
+rc_make_datasets_no_redcap <- function() {
+
+  # Functions scripts are sourced first just in case the datasets scripts need
+  # them.
+  functions_scripts <- list.files(here::here("functions"), ".R$")
+
+  purrr::walk(
+    here::here("functions", functions_scripts),
+    source, local = rlang::current_env()
+  )
+
+  datasets_scripts <- list.files(here::here("data"), ".R$")
+
+  purrr::walk(
+    here::here("data", datasets_scripts),
+    source, local = rlang::current_env()
+  )
+
+  # Objects declared as datasets
+  current_objects <- ls()
+  dataset_index <- purrr::map_lgl(
+    current_objects, ~!is.null(attr(get(.), "is_dataset"))
+  )
+  to_datasets <- current_objects[dataset_index]
+  datasets <- purrr::map(
+    to_datasets,
+    ~get(.)
+  )
+  names(datasets) <- to_datasets
 
   class(datasets) <- c("odytools_datasets_list", class(datasets))
 
@@ -284,11 +330,17 @@ rc_refresh_datasets <- function() {
 
   cli::cli_alert_info("Refreshing datasets...")
 
-  load(list.files(here::here(), ".RData$"))
+  rdatas <- list.files(here::here(), ".RData$")
+  if (length(rdatas) != 0) load(rdatas)
+
+  project_name <- get_project_name()
+
+  # Datasets are refreshed in both REDCap and non-REDCap projects
+  if (exists("redcap_data")) {
 
   redcap_data <- get("redcap_data")
   datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
-  project_name <- get_project_name()
+
 
   save(
     redcap_data, datasets,
@@ -300,6 +352,22 @@ rc_refresh_datasets <- function() {
     envir = .GlobalEnv
   )
 
+  } else {
+
+    datasets <- rc_make_datasets_no_redcap() |> suppressMessages()
+
+    save(
+      datasets,
+      file = here::here(stringr::str_c(project_name, ".RData"))
+    )
+
+    load(
+      here::here(stringr::str_c(project_name, ".RData")),
+      envir = .GlobalEnv
+    )
+
+  }
+
   cli::cli_alert_success("Datasets successfully refreshed.\n")
 
 }
@@ -309,29 +377,55 @@ rc_back_up <- function() {
 
   load(list.files(here::here(), ".RData$"))
 
+  project_name <- get_project_name()
+
   # this to avoid package check complains about undefined objects
-  redcap_data <- get("redcap_data")
   datasets <- get("datasets")
 
-  project_name <- get_project_name()
-  import_date <- get_import_date(redcap_data)
+  if (exists("redcap_data")) {
 
-  backup_name <- stringr::str_c(
-    project_name, "_import_", import_date, ".RData"
-  )
+    # this to avoid package check complains about undefined objects
+    redcap_data <- get("redcap_data")
 
-  backup_date <- Sys.time()
-  attr(redcap_data, "backup_date") <- backup_date
-  attr(datasets, "backup_date") <- backup_date
+    import_date <- get_import_date(redcap_data)
 
-  save(
-    redcap_data, datasets,
-    file = here::here("data", "imports", backup_name)
-  )
+    backup_name <- stringr::str_c(
+      project_name, "_import_", import_date, ".RData"
+    )
 
-  message(
-    "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
-  )
+    backup_date <- Sys.time()
+    attr(redcap_data, "backup_date") <- backup_date
+    attr(datasets, "backup_date") <- backup_date
+
+    save(
+      redcap_data, datasets,
+      file = here::here("data", "imports", backup_name)
+    )
+
+    message(
+      "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
+    )
+
+  } else {
+
+    backup_date <- Sys.time()
+    backup_date_label <-
+      stringr::str_extract(backup_date, "....-..-.. ..:..") |>
+      stringr::str_remove_all("-|:") |>
+      stringr::str_replace(" ", "_")
+    backup_name <- stringr::str_c(
+      project_name, "_backup_", backup_date_label, ".RData"
+    )
+
+    attr(datasets, "backup_date") <- backup_date
+
+    save(datasets, file = here::here("data", "backups", backup_name))
+
+    message(
+      "A backup copy of the datasets has been stored\nin data/backups with the name ", backup_name, "\n"
+    )
+
+  }
 
 }
 
@@ -668,5 +762,30 @@ hardcode_values <- function(redcap_data, hardcode_df) {
   attr(redcap_data, "hardcoded_values") <- corrections
 
   redcap_data
+
+}
+
+# Helper function to export the data and the dependencies file.
+# Addin only
+rc_export_data_dependencies <- function() {
+
+  rdata_scripts <- here::here(list.files(here::here(), ".RData$"))
+  dependencies_script <- here::here(list.files(here::here(), "dependencies.R$"))
+  functions_scripts <- here::here("functions", list.files(here::here("functions"), ".R$"))
+
+  folder_name <- stringr::str_c(
+    get_project_name(), "_", get_import_date(get("redcap_data"))
+  )
+
+
+  dir.create(here::here(folder_name))
+  dir.create(here::here(folder_name, "functions"))
+
+  file.copy(c(rdata_scripts, dependencies_script), here::here(folder_name))
+  file.copy(functions_scripts, here::here(folder_name, "functions"))
+
+  cli::cli_alert_success(
+    stringr::str_c("The .RData file, along with the dependencies script and function scripts, has been copied to ", folder_name)
+  )
 
 }

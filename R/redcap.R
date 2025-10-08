@@ -193,7 +193,7 @@ import_rc <- function(
   attr(redcap_data, "phantom_variables") <- metadata |>
     dplyr::mutate(
       present = .data[["field_name"]] %in%
-        stringr::str_remove(colnames(redcap_data), "___\\d+$")
+        stringr::str_remove(colnames(redcap_data), "___.+$")
     ) |>
     dplyr::filter(!.data[["present"]]) |>
     dplyr::select("field_name", "field_type", "form_name")
@@ -851,7 +851,20 @@ ody_rc_import <- function(
 
   attr(rc_import, "odytools_version") <- packageVersion("odytools")
 
-  rc_import
+
+  # Remove any events that are empty
+
+  if (names(rc_import)[1] == "redcap_event_name") {
+
+    no_empty_events_index <-
+      purrr::map_lgl(rc_import$redcap_event_data, ~ nrow(.) > 0)
+    rc_import[no_empty_events_index, ]
+
+  } else {
+
+    rc_import
+
+  }
 
 }
 
@@ -916,15 +929,13 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' Select variables from a RedCap import
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.
-#' @param ... Variable names to select. If the name of a form is provided, all the variables belonguing to that form will be selected.
+#' @param ... Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.
 #' @param .is_vector Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.
 #' @param .if_different_forms What action take if the selected variables belong to different forms.
-#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joinned in the same data frame.
+#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
 #'    - join: Join all variables creating artifact NAs.
-#' @param .include_aux When a form name is provided, all auxiliar checkbox variables will be added if .include_aux = TRUE
-#'
-#' @details An S3 method for class 'odytools_redcap' is also available for the generic \code{dplyr::select}
-#'
+#' @param .include_aux When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE
+#' @param .accept_form_name Logical. If TRUE (default), a form name can be provided in ... to select all variables of that form. Set to FALSE if a variable is named as a form and you need to select the variable instead of the form. For selecting complete forms, it is now recommended to use `ody_rc_select_form`.
 #'
 #' @return A tibble with the selected variables.
 #' @export
@@ -933,7 +944,8 @@ ody_rc_select <- function(
     ...,
     .is_vector = FALSE,
     .if_different_forms = c("list", "join"),
-    .include_aux = FALSE) {
+    .include_aux = FALSE,
+    .accept_form_name = TRUE) {
 
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 
@@ -959,7 +971,9 @@ ody_rc_select <- function(
   checkbox_aux <- attr(rc_data, "checkbox_aux")
 
   # If a form name is provided, all the variables of the form are extracted
-  if (length(sel_vars) == 1 && sel_vars %in% unique(metadata$form_name)) {
+  if (length(sel_vars) == 1 &&
+      sel_vars %in% unique(metadata$form_name) &&
+      .accept_form_name) {
     current_form <- metadata |>
       dplyr::filter(
         .data[["form_name"]] == sel_vars
@@ -1053,6 +1067,92 @@ ody_rc_select <- function(
   selection
 
 }
+
+
+#' Select variables from a specific form in a RedCap import
+#'
+#' @param rc_data A RedCap data import (typically the output of `ody_rc_import`).
+#' @param form_name The name (as an expression or character) of the form from which to select variables.
+#' @param .form_name_is_character Logical. If TRUE, `form_name` is assumed to be a character name.
+#'
+#' @return A tibble containing data from the specified form.
+#' @export
+ody_rc_select_form <- function(
+    rc_data,
+    form_name,
+    .form_name_is_character = FALSE) {
+
+  subject_id <- attr(rc_data, "id_var")
+
+  if (!.form_name_is_character) {
+
+  form_name <- rlang::as_name(rlang::enquo(form_name))
+
+  }
+
+  available_forms <- attr(rc_data, "forms")$instrument_name
+
+  if (!(form_name %in% available_forms)) {
+    stop(
+      stringr::str_c(
+        "The form '", form_name, "' does not exist in the RedCap import.\n ",
+        "Available forms are: ",
+        stringr::str_c(available_forms, collapse = "\n")
+      )
+    )
+  }
+
+  events_mapping <- attr(rc_data, "forms_events_mapping")
+
+  if (is.null(events_mapping)) {
+
+    selected_form <-
+      rc_data |>
+      dplyr::filter(.data$redcap_form_name == form_name) |>
+      dplyr::select(-"redcap_repeating_form") |>
+      tidyr::unnest("redcap_form_data") |>
+      dplyr::relocate(tidyselect::any_of(subject_id), .before = 1)
+
+  } else {
+
+    events <-
+      attr(rc_data, "forms_events_mapping") |>
+      dplyr::filter(.data$form == form_name) |>
+      dplyr::pull("unique_event_name")
+
+    selected_form <-
+      rc_data |>
+      dplyr::filter(.data$redcap_event_name %in% events) |>
+      dplyr::select("redcap_event_name", "redcap_event_data") |>
+      tidyr::unnest("redcap_event_data") |>
+      dplyr::filter(.data$redcap_form_name == form_name) |>
+      dplyr::select(-"redcap_repeating_form") |>
+      tidyr::unnest("redcap_form_data") |>
+      dplyr::relocate(tidyselect::any_of(subject_id), .before = 1)
+
+  }
+
+  sel_vars <- names(selected_form)
+  # If the selected vars are meddra variables, dictionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "meddra_fields"))) {
+    all_meddra <- attr(rc_data, "meddra_fields")
+    attr(selected_form, "meddra_fields") <- sel_vars[sel_vars %in% all_meddra]
+    attr(selected_form, "meddra_codes") <- attr(rc_data, "meddra_codes")
+  }
+
+  # If the selected vars are ATC variables, dictionary is passed to the final
+  # result
+  if (any(sel_vars %in% attr(rc_data, "atc_fields"))) {
+    all_atc <- attr(rc_data, "atc_fields")
+    attr(selected_form, "atc_fields") <- sel_vars[sel_vars %in% all_atc]
+    attr(selected_form, "atc_codes") <- attr(rc_data, "atc_codes")
+  }
+
+  selected_form
+
+}
+
 
 # Helper function used in viewer apps that directly assume variable is
 # a vector
@@ -1347,7 +1447,10 @@ ody_rc_view <- function(data_app = NULL) {
     "htmltools",
     "openxlsx2",
     "shinyalert",
-    "shinytitle"
+    "shinytitle",
+    "shinyjs",
+    "waiter",
+    "ggridges"
   ))
 
   viewer_location <- system.file(
@@ -1371,6 +1474,18 @@ ody_rc_view <- function(data_app = NULL) {
   # rstudioapi::viewer("http://127.0.0.1:5921")
 
 }
+
+
+# Helper function to check inside get_conditions_from_metadata whether the
+# the data_frame can be actually filtered by the elements of the
+# conditions_list.
+filter_condition <- function(data_frame, condition) {
+
+  data_frame |>
+    dplyr::filter(eval(str2lang(condition)))
+
+}
+
 
 # Helper functions to create a conditions_list from redcap metadata.
 get_conditions_from_metadata <- function(data_frame,
@@ -1450,8 +1565,27 @@ get_conditions_from_metadata <- function(data_frame,
 
   }
 
+  # We need to check if the conditions are actually filterable since variables
+  # outside the data_frame can be used in the conditions. This is not suported
+  # by the current implementation because ody_verify_completeness (the function
+  # in charge of checking the conditions) only checks for the conditional presence
+  # of variables in the current data_frame.
 
-  conditions_list
+  secure_filter_conditions <- purrr::possibly(filter_condition)
+
+  ok_index <- purrr::map_lgl(
+    conditions_list,
+    ~ secure_filter_conditions(data_frame, .) |>
+      is.data.frame()
+  )
+
+  if (sum(ok_index) < length(conditions_list)) {
+    warning(
+      "Some conditions are not filterable because they use variables not present in the data frame. These conditions will be ignored."
+    )
+  }
+
+  conditions_list[ok_index]
 
 }
 
@@ -1625,14 +1759,11 @@ ody_rc_spread <- function(rc_data = NULL) {
   }
 
   if (has_unique && has_repeating) {
-    dplyr::full_join(spread_unique, spread_repeating, by = id_var) |>
-      dplyr::select(tidyselect::starts_with(fields))
+    dplyr::full_join(spread_unique, spread_repeating, by = id_var)
   } else if (has_unique) {
-    spread_unique |>
-      dplyr::select(tidyselect::starts_with(fields))
+    spread_unique
   } else {
-    spread_repeating |>
-      dplyr::select(tidyselect::starts_with(fields))
+    spread_repeating
   }
 
 }
@@ -1663,8 +1794,22 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #' @return The same tbl with the site column added.
 #' @export
 ody_rc_add_site <- function(tbl,
-                              redcap_data = redcap_data,
-                              position = 1) {
+                            redcap_data = NULL,
+                            position = 1) {
+
+  if (is.null(redcap_data)) {
+
+    if (exists("redcap_data", envir = .GlobalEnv)) {
+
+      redcap_data <- get("redcap_data", envir = .GlobalEnv)
+
+    } else {
+
+      stop("No redcap_data object found.")
+
+    }
+
+  }
 
   id_var <- attr(redcap_data, "id_var")
   sites <- attr(redcap_data, "subjects_dag") |>
@@ -1725,7 +1870,7 @@ ody_rc_add_label <- function(
 
   # ¿Hay columnas auxiliares de checkbox?
   #Si es así, estas se etiquetan con el valor del checkbox que representan
-  aux_cols_index <- stringr::str_detect(names(df), "___\\d+")
+  aux_cols_index <- stringr::str_detect(names(df), "___.+$")
 
   if (any(aux_cols_index)) {
 

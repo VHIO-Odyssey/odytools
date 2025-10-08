@@ -4,7 +4,7 @@
 \alias{ody_rc_add_site}
 \title{Add the sites to a RedCap table}
 \usage{
-ody_rc_add_site(tbl, redcap_data = redcap_data, position = 1)
+ody_rc_add_site(tbl, redcap_data = NULL, position = 1)
 }
 \arguments{
 \item{tbl}{The table to add the site to.}

@@ -1,8 +1,5 @@
 source("renv/activate.R")
 
-options(
-  .pal_fn = "chat_openai",
-  .pal_args = list(model = "gpt-4o-mini")
-)
+options(.gander_chat = ellmer::chat_openai(model = "gpt-4o-mini"))
 
 suppressMessages(require(devtools))

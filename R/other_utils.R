@@ -1,3 +1,6 @@
+#' @importFrom utils head
+NULL
+
 #' Get a version date for a render.
 #'
 #' @param file_name File name.
@@ -13,10 +16,10 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
   today_num <- lubridate::today() |>
     stringr::str_remove_all("-")
   today_present <- list.files(path = path) |>
-    stringr::str_detect(stringr::str_c(file_name, "_", today_num)) |>
+    stringr::str_detect(stringr::str_c(file_name, "_", today_num, ".", extension)) |>
     any()
   today_present_mult <- list.files(path = path) |>
-    stringr::str_detect(stringr::str_c(file_name, "_", today_num, "_\\d")) |>
+    stringr::str_detect(stringr::str_c(file_name, "_", today_num, "_\\d", ".", extension)) |>
     any()
 
   if (today_present & !today_present_mult) {
@@ -41,6 +44,32 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
 
 }
 
+#' Generate a file path for saving output with versioning.
+#'
+#' This function constructs a save path using the provided components and appends a version (today's date) to the file name.
+#'
+#' @param ... Components of the path and file name.
+#'
+#' @return A character string representing the save path.
+#'
+#' @export
+ody_save_path <- function(...) {
+
+  path <- stringr::str_c(head(c(...), -1), collapse = "/")
+
+  file <- tail(c(...), 1) |>
+    stringr::str_split("\\.") |>
+    unlist()
+
+  here::here(
+    path,
+    ody_add_version(
+      file[1], file[2],
+      here::here(path)
+    )
+  )
+
+}
 
 
 #' Change column names
@@ -128,6 +157,7 @@ ody_proj_init <- function() {
 
   # Directories
   dir.create(here::here("data"))
+  dir.create(here::here("data", "backups"))
   dir.create(here::here("docs"))
   dir.create(here::here("analysis"))
   dir.create(here::here("functions"))
@@ -497,5 +527,112 @@ ody_apply_on_pattern <-  function(
         }
       )
     )
+
+}
+
+#' Label Data Frame
+#'
+#' This function labels a data frame according to a provided dictionary. It sets variable labels and value labels for specified variables within the data frame.
+#'
+#' @param raw_data A data frame containing the raw data to be labeled.
+#' @param dictionary A dictionary data frame with the following columns:
+#' - `variable`: The name of the variable to be labeled.
+#' - `variable_label` (optional): The label to assign to the variable.
+#' - `value`: The value to be labeled.
+#' - `value_label`: The label to assign to the value.
+#' Note that columns `variable` and `variable_label` will contain as many repeated values as the number of values in the `value` column.
+#'
+#' @return A data frame with labeled variables and corresponding values according to the provided dictionary.
+#' @export
+ody_label_df <- function(raw_data, dictionary) {
+
+  # Nested dictionary with vector dictionary of each variable
+  nested_dic <- dictionary |>
+    dplyr::select(.data$variable, .data$value_label, .data$value) |>
+    tidyr::nest(dic = c("value_label", "value")) |>
+    dplyr::mutate(
+      vec_dic = purrr::map_chr(
+        .data$dic,
+        ~stringr::str_c(
+          "c(",
+          stringr::str_c("`", .$value_label, "` = '", .$value, "'") |>
+            stringr::str_c(collapse = ", "),
+          ")"
+        )
+      )
+    ) |>
+    dplyr::filter(!is.na(.data$vec_dic))
+
+  # Value labels of each variable in
+  val_labels_text <- stringr::str_c("`", nested_dic$variable, "` = ", nested_dic$vec_dic) |>
+    na.omit() |>
+    stringr::str_c(collapse = ", ")
+
+  # Las variables a etiquetar han de ser caracter
+  raw_data_chr <- raw_data |>
+    dplyr::mutate(
+      dplyr::across(tidyselect::all_of(nested_dic$variable), as.character)
+    )
+
+  if (any(names(dictionary) == "variable_label")) {
+
+    var_labels_text <- dictionary |>
+      dplyr::select(.data$variable_label, .data$variable) |>
+      na.omit() |>
+      unique() |>
+      purrr::pmap(~stringr::str_c("`", .y, "`",  " = '", .x, "'")) |>
+      stringr::str_c(collapse = ", ")
+
+    labelled_vars_data <- stringr::str_c(
+      "labelled::set_variable_labels(raw_data_chr,", var_labels_text, ")"
+    ) |>
+      str2lang() |>
+      eval()
+
+  } else {
+
+    labelled_vars_data <- raw_data_chr
+
+  }
+
+  stringr::str_c(
+    "labelled::set_value_labels(labelled_vars_data,", val_labels_text, ")"
+  ) |>
+    str2lang() |>
+    eval()
+
+}
+
+
+#' Paradox-Free Time Travelling
+#'
+#' Replace the current datasets list with the one from a previous backup stored in the data/backups folder.
+#'
+#' @param timepoint Timepoint pattern.
+#'
+#' @details The back-ups are named after the project and the back-up date. The timepoint pattern is a regular expression to match the name of the back-up file. The pattern must match one and only one back-up file.
+#'
+#' @export
+ody_timetravel <- function(timepoint) {
+
+  backup <- list.files(here::here("data", "backups"), ".RData$") |>
+    stringr::str_subset(timepoint)
+
+
+  if (length(backup) == 0) {
+
+    stop("No available timepoint")
+
+  }
+
+  if (length(backup) > 1) {
+
+    stop("Ambiguous timepoint")
+
+  }
+
+  load(here::here("data", "backups", backup), envir = .GlobalEnv)
+
+  cli::cli_alert_info("The datasets have been replaced by the ones in {backup}.\nPlease, check the data before continuing with your analysis.")
 
 }

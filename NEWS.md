@@ -1,11 +1,11 @@
-# odytools 0.9.1.9000
+# odytools 0.9.2
 
-
-- Added `ody_rc_select_form``. An improved function no extract full forms.
+- Improved the output of `ody_rc_spread`. Now, in repeated instruments the variables are grouped by instance.
+- Added `ody_rc_select_form`. An improved function no extract full forms.
 - "Refresh datasets" addin now also works in generic projects.
 - Datasets created in a generic project can be backed up through the "Back-up project data" addin.
 - Timetraveling in generic projects is now possible with `ody_timetravel`
-- Added _p_max_ argumento to `ody_plot_violindotplot` to set the maximum p-value to be shown in the plot.
+- Added _p_max_ argument to `ody_plot_violindotplot` to set the maximum p-value to be shown in the plot.
 - Added `ody_filter_fails` and `ody_report_fails` which are mainly used in the verification process of a REDCap project.
 - Added `ody_label_df` to label a data frame (both variables and values) according to a provided dictionary.
 - Added ggsurvfit styles to `ody_style`.

@@ -677,7 +677,8 @@ nest_rc <- function(rc_raw) {
               empty_index = purrr::map(
                 .data[["form_data"]],
                 function(vars) {
-                  vars |>
+                  to_check_vars <-
+                    vars |>
                     dplyr::select(
                       -dplyr::any_of(
                         c(
@@ -688,8 +689,19 @@ nest_rc <- function(rc_raw) {
                         )
                       ),
                       -tidyselect::where(is.logical)
-                    ) |>
-                    apply(1, function(x) all(labelled::is_regular_na(x)))
+                    )
+                  # If there are no variables to check we check the presence of the
+                  # complete var.
+                  # This happens in the BoB id_generation form.
+                  if (ncol(to_check_vars) == 0) {
+                    dplyr::pull(vars, dplyr::any_of(complete_vars)) |>
+                      labelled::is_regular_na()
+                  } else {
+                    apply(
+                      to_check_vars, 1,
+                      function(x) all(labelled::is_regular_na(x))
+                    )
+                  }
                 }
               ),
               variables_clean = purrr::map2(

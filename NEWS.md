@@ -1,3 +1,7 @@
+# odytools 0.9.3
+
+- Minor hotfix correction to handle properly id_generation BoB forms.
+
 # odytools 0.9.2
 
 - Improved the output of `ody_rc_spread`. Now, in repeated instruments the variables are grouped by instance.

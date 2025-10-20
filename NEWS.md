@@ -1,4 +1,6 @@
-# odytools 0.9.2.9000
+# odytools 0.9.3
+
+- Minor hotfix correction to handle properly id_generation BoB forms.
 
 # odytools 0.9.2
 

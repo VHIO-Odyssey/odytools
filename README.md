@@ -6,7 +6,7 @@
 
 A miscellany of data science tools developed by the Oncology Data Science Group (ODysSey) of the Vall d'Hebron Institute of Oncology (VHIO).
 
-![](man/figures/odytools.png)
+![](images/odytools.png)
 
 ## Installation
 

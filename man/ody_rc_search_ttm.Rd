@@ -6,27 +6,24 @@
 \usage{
 ody_rc_search_ttm(
   rc_data,
-  ttm_line,
-  ttm_pattern,
-  variables_of_interest = c("ttm_startdate", "ttm_enddate", "ttm_pddate",
-    "ttm_bestresponse"),
+  filter_expression,
+  variables_of_interest = c("ttm_met_line_num", "ttm_name", "ttm_startdate",
+    "ttm_enddate", "ttm_pddate", "ttm_bestresponse"),
   join_rc_spread = TRUE
 )
 }
 \arguments{
-\item{rc_data}{A RedCap data object imported via \code{ody_rc_import}.}
+\item{rc_data}{A REDCap data object imported via \code{ody_rc_import}.}
 
-\item{ttm_line}{A vector specifying the treatment line numbers to filter.}
-
-\item{ttm_pattern}{A pattern used to search treatment names.}
+\item{filter_expression}{An expression to filter treatments. It is applyed to the \code{antineoplasic_therapy} form.}
 
 \item{variables_of_interest}{A character vector of additional variables to include in the output. Default variables are  "ttm_startdate", "ttm_enddate", "ttm_pddate" and "ttm_bestresponse".}
 
-\item{join_rc_spread}{Logical. If TRUE, joins the filtered cases with the wider RedCap data spread. Defaults to TRUE.}
+\item{join_rc_spread}{Logical. If TRUE, joins the filtered cases with the wider REDCap data spread. Defaults to TRUE.}
 }
 \value{
-A tibble with the filtered TTM cases, optionally combined with the wider RedCap data.
+A tibble with the filtered cases, optionally combined with the wider REDCap data.
 }
 \description{
-Filters RedCap data to identify patients who have received a specific treatment in designated lines, suited for Master-like RedCap projects.
+Filters RedCap data to identify patients who have received a specific treatment, suited for Master-like REDCap projects.
 }

@@ -102,6 +102,8 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_get_metadata
 
+-   ody_rc_search_ttm [ody_rc_select, ody_rc_format, ody_rc_filter_subject, ody_rc_spread]
+
 ## redcap_methods
 
 Methods exported to external generic functions

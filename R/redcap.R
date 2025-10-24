@@ -16,7 +16,7 @@ extract_data <- function(content, token, url) {
 }
 
 
-# Helper function to import a RedCap project
+# Helper function to import a REDCap project
 import_rc <- function(
     token = NULL,  form = NULL, url = "https://redcap.vhio.net/redcap/api/"
   ) {
@@ -1957,5 +1957,68 @@ ody_rc_get_metadata <- function(
   }
 
   extract_data("metadata", token, url)
+
+}
+
+
+#' Search Patients with Specific Treatment
+#'
+#' Filters RedCap data to identify patients who have received a specific treatment in designated lines, suited for Master-like REDCap projects.
+#'
+#' @param rc_data A REDCap data object imported via `ody_rc_import`.
+#' @param ttm_line A vector specifying the treatment line numbers to filter.
+#' @param ttm_pattern A pattern used to search treatment names.
+#' @param variables_of_interest A character vector of additional variables to include in the output. Default variables are  "ttm_startdate", "ttm_enddate", "ttm_pddate" and "ttm_bestresponse".
+#' @param join_rc_spread Logical. If TRUE, joins the filtered cases with the wider REDCap data spread. Defaults to TRUE.
+#'
+#' @return A tibble with the filtered cases, optionally combined with the wider REDCap data.
+#' @export
+ody_rc_search_ttm <- function(
+    rc_data,
+    ttm_line,
+    ttm_pattern,
+    variables_of_interest = c(
+      "ttm_startdate", "ttm_enddate", "ttm_pddate", "ttm_bestresponse"
+    ),
+    join_rc_spread = TRUE) {
+
+  filtered_cases <-
+    ody_rc_select_form(rc_data, "antineoplasic_therapy") |>
+    ody_rc_format() |>
+    dplyr::filter(
+      .data$ttm_met_line_num %in% ttm_line,
+      stringr::str_detect(
+        stringr::str_to_lower(.data$ttm_name),
+        stringr::str_to_lower(ttm_pattern)
+      )
+    ) |>
+    dplyr::select(
+      "dem_sap",
+      "ttm_met_line_num",
+      "ttm_name",
+      tidyselect::all_of(variables_of_interest)
+    ) |>
+    unique()
+
+  if (join_rc_spread) {
+
+    ody_rc_filter_subject(rc_data, filtered_cases$dem_sap) |>
+      ody_rc_spread() |>
+      dplyr::right_join(filtered_cases, by = "dem_sap") |>
+      dplyr::relocate(
+        "ttm_met_line_num",
+        "ttm_name",
+        "ttm_startdate",
+        "ttm_enddate",
+        "ttm_pddate",
+        "ttm_bestresponse",
+        .after = "dem_sap"
+      )
+
+  } else {
+
+    filtered_cases
+
+  }
 
 }

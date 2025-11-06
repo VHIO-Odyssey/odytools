@@ -1470,13 +1470,11 @@ ody_rc_view <- function(data_app = NULL) {
   )
 
   if (is.null(data_app) && exists("redcap_data")) {
-
     data_app <- get("redcap_data")
+  }
 
-    save(
-      data_app, file = stringr::str_c(viewer_location, "/data_app.RData")
-    )
-
+  if (!is.null(data_app)) {
+    save(data_app, file = stringr::str_c(viewer_location, "/data_app.RData"))
   }
 
   rstudioapi::jobRunScript(

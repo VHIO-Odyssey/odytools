@@ -1719,12 +1719,25 @@ ody_rc_spread <- function(rc_data = NULL) {
     }
   }
 
-  if (names(rc_data)[2] != "redcap_repeating_form") {
-    stop("This function only supports classic projects with no events.")
+  if (!any(class(rc_data) == "odytools_redcap")) {
+    stop("rc_data must be a redcap_data object imported with ody_rc_import.")
   }
 
-  fields <- attr(rc_data, "metadata")$field_name
   id_var <- attr(rc_data, "id_var")
+
+  if (names(rc_data)[1] == "redcap_event_name") {
+    purrr::map(
+      rc_data$redcap_event_data,spreader, id_var,
+      .progress = "Spreading"
+    ) |>
+      purrr::set_names(rc_data$redcap_event_name)
+  } else {
+    spreader(rc_data, id_var)
+  }
+
+}
+
+spreader <- function(rc_data, id_var) {
 
   has_repeating <- any(rc_data$redcap_repeating_form)
   has_unique <- any(!rc_data$redcap_repeating_form)
@@ -1777,6 +1790,7 @@ ody_rc_spread <- function(rc_data = NULL) {
   }
 
 }
+
 
 #' Add the redcap_data import date to a file name
 #'

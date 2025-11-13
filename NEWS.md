@@ -1,26 +1,32 @@
+# odytools 0.9.4
+
+-   Updated `ody_rc_spread` to work with event-based projects.
+-   Added `ody_rc_search_ttm` to filters RedCap data to identify patients who have received a specific treatment, only suited for Master-like REDCap projects.
+-   Add extra tables and UI enhancements to REDCap viewer
+
 # odytools 0.9.3
 
-- Minor hotfix correction to handle properly id_generation BoB forms.
+-   Minor hotfix correction to handle properly id_generation BoB forms.
 
 # odytools 0.9.2
 
-- Improved the output of `ody_rc_spread`. Now, in repeated instruments the variables are grouped by instance.
-- Added `ody_rc_select_form`. An improved function no extract full forms.
-- "Refresh datasets" addin now also works in generic projects.
-- Datasets created in a generic project can be backed up through the "Back-up project data" addin.
-- Timetraveling in generic projects is now possible with `ody_timetravel`
-- Added _p_max_ argument to `ody_plot_violindotplot` to set the maximum p-value to be shown in the plot.
-- Added `ody_filter_fails` and `ody_report_fails` which are mainly used in the verification process of a REDCap project.
-- Added `ody_label_df` to label a data frame (both variables and values) according to a provided dictionary.
-- Added ggsurvfit styles to `ody_style`.
-- Added `ody_save_path`. 
+-   Improved the output of `ody_rc_spread`. Now, in repeated instruments the variables are grouped by instance.
+-   Added `ody_rc_select_form`. An improved function no extract full forms.
+-   "Refresh datasets" addin now also works in generic projects.
+-   Datasets created in a generic project can be backed up through the "Back-up project data" addin.
+-   Timetraveling in generic projects is now possible with `ody_timetravel`
+-   Added *p_max* argument to `ody_plot_violindotplot` to set the maximum p-value to be shown in the plot.
+-   Added `ody_filter_fails` and `ody_report_fails` which are mainly used in the verification process of a REDCap project.
+-   Added `ody_label_df` to label a data frame (both variables and values) according to a provided dictionary.
+-   Added ggsurvfit styles to `ody_style`.
+-   Added `ody_save_path`.
 
 # odytools 0.9.1
 
-- `ody_rc_view` now calls an exact copy of the REDCap Data Viewer.
-- Now, `ody_rc_import` does not stops if it fails labelling any variable. In that case, the variable will remain unlabelled and the attribute __failed_labels__ will be added to the output. 
-- Added the generic `ody_style` to set a default style of different classes of tables, plots and other objects. Current supported classes are `gtsummary` and `tbl_aes_focus`.
-- The REDCap viewer now recognizes ATC codes and displays the descriptions when no raw data is shown.
+-   `ody_rc_view` now calls an exact copy of the REDCap Data Viewer.
+-   Now, `ody_rc_import` does not stops if it fails labelling any variable. In that case, the variable will remain unlabelled and the attribute **failed_labels** will be added to the output.
+-   Added the generic `ody_style` to set a default style of different classes of tables, plots and other objects. Current supported classes are `gtsummary` and `tbl_aes_focus`.
+-   The REDCap viewer now recognizes ATC codes and displays the descriptions when no raw data is shown.
 
 # odytools 0.9.0
 

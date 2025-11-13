@@ -3,3 +3,4 @@
 *.html
 sandbox/
 data_app.RData
+.vscode

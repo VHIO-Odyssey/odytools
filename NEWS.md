@@ -1,4 +1,4 @@
-# odytools 0.9.3.9000
+# odytools 0.9.4
 
 -   Updated `ody_rc_spread` to work with event-based projects.
 -   Added `ody_rc_search_ttm` to filters RedCap data to identify patients who have received a specific treatment, only suited for Master-like REDCap projects.

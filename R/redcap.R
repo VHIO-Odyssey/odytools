@@ -1725,6 +1725,7 @@ ody_rc_completeness <- function(
 #' The function ody_rc_spread takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
 #'
 #' @param rc_data The object to spread.
+#' @param join_events Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.
 #'
 #' @details If no data provided, the function checks whether there is a redcap_data object in the environment.
 #'

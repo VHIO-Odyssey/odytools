@@ -94,6 +94,10 @@ Functions to export and work on redcap projects.
 
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata]
 
+-   ody_rc_spread [spreader]
+
+-   spreader
+
 -   ody_rc_add_import_date
 
 -   ody_rc_add_site

@@ -4,10 +4,12 @@
 \alias{ody_rc_spread}
 \title{Spread a Classic REDCap project into a 2D table}
 \usage{
-ody_rc_spread(rc_data = NULL)
+ody_rc_spread(rc_data = NULL, join_events = FALSE)
 }
 \arguments{
 \item{rc_data}{The object to spread.}
+
+\item{join_events}{Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.}
 }
 \value{
 A tibble

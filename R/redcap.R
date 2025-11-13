@@ -12,66 +12,65 @@ extract_data <- function(content, token, url) {
   ) |>
     httr::content(show_col_types = FALSE) |>
     suppressWarnings()
-
 }
 
 
 # Helper function to import a REDCap project
 import_rc <- function(
-    token = NULL,  form = NULL, url = "https://redcap.vhio.net/redcap/api/"
-  ) {
-
+  token = NULL,
+  form = NULL,
+  url = "https://redcap.vhio.net/redcap/api/"
+) {
   # Data import
   import_date <- Sys.time()
 
   metadata <- extract_data("metadata", token, url)
 
   if (is.null(form)) {
-
     formData <- list(
       "token" = token,
-      content = 'record',
-      action = 'export',
-      format = 'csv',
-      type = 'flat',
-      csvDelimiter = '',
-      rawOrLabel = 'raw',
-      rawOrLabelHeaders = 'raw',
-      exportCheckboxLabel = 'false',
-      exportSurveyFields = 'false',
-      exportDataAccessGroups = 'true',
-      returnFormat = 'json'
+      content = "record",
+      action = "export",
+      format = "csv",
+      type = "flat",
+      csvDelimiter = "",
+      rawOrLabel = "raw",
+      rawOrLabelHeaders = "raw",
+      exportCheckboxLabel = "false",
+      exportSurveyFields = "false",
+      exportDataAccessGroups = "true",
+      returnFormat = "json"
     )
-
   } else {
-
     id_var <- metadata[[1]][1]
 
     formData <- list(
       "token" = token,
-      content = 'record',
-      action = 'export',
-      format = 'csv',
-      type = 'flat',
-      csvDelimiter = '',
-      rawOrLabel = 'raw',
-      rawOrLabelHeaders = 'raw',
-      'fields[0]' = id_var,
-      'forms[0]' = form,
-      exportCheckboxLabel = 'false',
-      exportSurveyFields = 'false',
-      exportDataAccessGroups = 'true',
-      returnFormat = 'json'
+      content = "record",
+      action = "export",
+      format = "csv",
+      type = "flat",
+      csvDelimiter = "",
+      rawOrLabel = "raw",
+      rawOrLabelHeaders = "raw",
+      "fields[0]" = id_var,
+      "forms[0]" = form,
+      exportCheckboxLabel = "false",
+      exportSurveyFields = "false",
+      exportDataAccessGroups = "true",
+      returnFormat = "json"
     )
-
   }
 
   redcap_data <- httr::POST(url, body = formData, encode = "form") |>
     httr::content(
-      na = "", col_types = readr::cols(.default = readr::col_character())
+      na = "",
+      col_types = readr::cols(.default = readr::col_character())
     )
 
-  if (!is.data.frame(redcap_data)) stop(redcap_data)
+  if (!is.data.frame(redcap_data)) {
+    stop(redcap_data)
+  }
 
   # Metadata imports
   project_info <- extract_data("project", token, url)
@@ -100,12 +99,13 @@ import_rc <- function(
     stringr::str_split_fixed(",", n = 2)
 
   missing_codes <- tibble::tibble(
-        raw_value = missing_codes_v0[, 1],
-        label = stringr::str_trim(missing_codes_v0[, 2])
-      ) |>
+    raw_value = missing_codes_v0[, 1],
+    label = stringr::str_trim(missing_codes_v0[, 2])
+  ) |>
     dplyr::mutate(
       raw_value = tidyr::replace_na(
-        .data[["raw_value"]], "No missing codes in this project."
+        .data[["raw_value"]],
+        "No missing codes in this project."
       )
     )
 
@@ -163,7 +163,9 @@ import_rc <- function(
 
   # Add to metadata complete_info variables to include them when nesting
   complete_vars <- stringr::str_c(forms$instrument_name, "_complete")
-  avail_complete_vars <- names(redcap_data)[names(redcap_data) %in% complete_vars]
+  avail_complete_vars <- names(redcap_data)[
+    names(redcap_data) %in% complete_vars
+  ]
   complete_metadata <- tibble::tibble(
     field_name = avail_complete_vars,
     form_name = stringr::str_remove(avail_complete_vars, "_complete"),
@@ -179,8 +181,12 @@ import_rc <- function(
   if (stringr::str_detect(colnames(events)[1], "ERROR", negate = TRUE)) {
     attr(redcap_data, "events") <- events
   }
-  if (stringr::str_detect(
-    colnames(forms_event_mapping)[1], "ERROR", negate = TRUE)
+  if (
+    stringr::str_detect(
+      colnames(forms_event_mapping)[1],
+      "ERROR",
+      negate = TRUE
+    )
   ) {
     attr(redcap_data, "forms_events_mapping") <- forms_event_mapping
   }
@@ -223,16 +229,15 @@ import_rc <- function(
   attr(redcap_data, "problems") <- NULL
 
   redcap_data
-
 }
 
 # Helper function to get a single field from a RedCap project in a vector
 get_single_field <- function(
-    token,
-    field,
-    raw_label,
-    url) {
-
+  token,
+  field,
+  raw_label,
+  url
+) {
   formData <- list(
     "token" = token,
     content = "record",
@@ -240,7 +245,7 @@ get_single_field <- function(
     format = "csv",
     type = "flat",
     csvDelimiter = "",
-    'fields[0]' = field,
+    "fields[0]" = field,
     rawOrLabel = raw_label,
     rawOrLabelHeaders = "raw",
     exportCheckboxLabel = "false",
@@ -253,18 +258,19 @@ get_single_field <- function(
     suppressMessages()
 
   result[[1]]
-
 }
 
 # Helper function that transform a redcap dictionary into a named vector.
 process_raw_dic <- function(raw_dic) {
   codes <- stringr::str_replace_all(
     # trick to allow "|" inside the labels.
-    raw_dic, "\\|([^,]+,)", "[||] \\1"
+    raw_dic,
+    "\\|([^,]+,)",
+    "[||] \\1"
   ) |>
     stringr::str_split("\\[\\|\\|\\]") |>
     unlist() |>
-    #Clave, lo que separa el valor de la etiqueta es la primera coma.
+    # Clave, lo que separa el valor de la etiqueta es la primera coma.
     stringr::str_split(",", n = 2) |>
     purrr::map(
       function(x) {
@@ -277,12 +283,13 @@ process_raw_dic <- function(raw_dic) {
     ) |>
     purrr::map(function(x) stringr::str_c(x, collapse = " = ")) |>
     stringr::str_c(collapse = ", ")
-  stringr::str_c("c(", codes, ")") |> str2lang() |> try(silent = TRUE)
+  stringr::str_c("c(", codes, ")") |>
+    str2lang() |>
+    try(silent = TRUE)
 }
 
 # Helper function to label the imported dataframe from import_rc
 label_rc_import <- function(rc_import) {
-
   metadata <- attr(rc_import, "metadata")
   missing_codes <- attr(rc_import, "missing_codes")
   id_var <- attr(rc_import, "id_var")
@@ -294,7 +301,8 @@ label_rc_import <- function(rc_import) {
     dplyr::select("field_name", "select_choices_or_calculations") |>
     dplyr::filter(
       stringr::str_detect(
-        .data[["select_choices_or_calculations"]], "^[^,]+,[^\\|]+\\|"
+        .data[["select_choices_or_calculations"]],
+        "^[^,]+,[^\\|]+\\|"
       )
     ) |>
     dplyr::mutate(
@@ -305,7 +313,7 @@ label_rc_import <- function(rc_import) {
     ) |>
     dplyr::select(-"select_choices_or_calculations") |>
     dplyr::mutate(
-      is_call = purrr::map_lgl(.data[["dictionary"]], ~class(.)[1] == "call")
+      is_call = purrr::map_lgl(.data[["dictionary"]], ~ class(.)[1] == "call")
     )
 
   # process_raw_dic puede fallar y devolver un try-error. Los casos fallidos
@@ -327,7 +335,7 @@ label_rc_import <- function(rc_import) {
       # Only variables present in the import are processed. This is needed because
       # the current import can contain the full databae or just one form.
       .data[["field_name"]] %in% available_vars,
-      #Single choice not labelled checkbox variables are also excluded
+      # Single choice not labelled checkbox variables are also excluded
       .data[["select_choices_or_calculations"]] != "1,"
     ) |>
     dplyr::pull("field_name")
@@ -364,7 +372,8 @@ label_rc_import <- function(rc_import) {
           }
           missing_selected <- stringr::str_to_lower(
             missing_codes$raw_value
-          ) %in% x
+          ) %in%
+            x
           if (any(missing_selected)) {
             return(missing_codes$raw_value[missing_selected])
           }
@@ -395,7 +404,7 @@ label_rc_import <- function(rc_import) {
     #  columna auxiliar correspondiente es ttm_qt_drug___5_fu.
     #  Se cambia en raw_dic para que coincida y al valor 5_fu se le encuentre
     #  la etiqueta correspondiente.
-    raw_dic[, 1] <- stringr::str_replace_all(raw_dic[,1], "-", "_")
+    raw_dic[, 1] <- stringr::str_replace_all(raw_dic[, 1], "-", "_")
     # Si las etiquetas tienen mayúsculas pasa a minúscula en las auxiliares.
     # se pasa a minúscula para asegurar
     raw_dic[, 1] <- stringr::str_to_lower(raw_dic[, 1])
@@ -420,20 +429,34 @@ label_rc_import <- function(rc_import) {
         }
       )
       added_dic <- stringr::str_c(
-        "`", present_combinations_label, "` = '", present_combinations, "'"
+        "`",
+        present_combinations_label,
+        "` = '",
+        present_combinations,
+        "'"
       ) |>
         stringr::str_c(collapse = ", ") |>
         stringr::str_c(")")
 
-      new_dic <- list(stringr::str_c(
-        "c(",
+      new_dic <- list(
         stringr::str_c(
-          "`", raw_dic[, 2], "` = '", raw_dic[, 1], "'", collapse = ", "
-        ),
-        ",", added_dic
-      ) |> str2lang())
+          "c(",
+          stringr::str_c(
+            "`",
+            raw_dic[, 2],
+            "` = '",
+            raw_dic[, 1],
+            "'",
+            collapse = ", "
+          ),
+          ",",
+          added_dic
+        ) |>
+          str2lang()
+      )
       field_dictionaries[
-        field_dictionaries$field_name == checkbox_field, 2
+        field_dictionaries$field_name == checkbox_field,
+        2
       ][[1]] <- new_dic
     }
     # New variable is added.
@@ -447,7 +470,9 @@ label_rc_import <- function(rc_import) {
 
   # Labeling
   for (field in metadata$field_name) {
-    if (is.null(rc_import[[field]]) | field == id_var) next
+    if (is.null(rc_import[[field]]) | field == id_var) {
+      next
+    }
     # cat(stringr::str_c("Labelling ", field, "\n"))
     # Variable label
     form <- metadata |>
@@ -481,7 +506,8 @@ label_rc_import <- function(rc_import) {
     ## YesNo variables
     is_yes_no <- metadata |>
       dplyr::filter(.data[["field_name"]] == field) |>
-      dplyr::pull("field_type") == "yesno"
+      dplyr::pull("field_type") ==
+      "yesno"
     if (is_yes_no) {
       labelled::val_labels(rc_import[[field]]) <- c(No = "0", Yes = "1")
     }
@@ -500,7 +526,6 @@ label_rc_import <- function(rc_import) {
   # Si hay variables cuyo labeling ha fallado se almacena en el atributo
   # failed_labels
   if (nrow(field_dictionaries_v0) > nrow(field_dictionaries)) {
-
     failed_vars <- field_dictionaries_v0 |>
       dplyr::filter(!.data[["is_call"]]) |>
       dplyr::select("field_name") |>
@@ -517,7 +542,6 @@ label_rc_import <- function(rc_import) {
       )
 
     attr(rc_import, "failed_labels") <- failed_labels
-
   }
 
   rc_import
@@ -526,7 +550,6 @@ label_rc_import <- function(rc_import) {
 
 # Helper function to nest the imported project
 nest_rc <- function(rc_raw) {
-
   id_var <- attr(rc_raw, "id_var")
   metadata <- attr(rc_raw, "metadata")
   repeating <- attr(rc_raw, "repeating")
@@ -554,13 +577,14 @@ nest_rc <- function(rc_raw) {
   if (names(rc_raw)[2] != "redcap_event_name") {
     rc_raw <- rc_raw |>
       dplyr::mutate(
-        redcap_event_name = "classic_project", .after = 1
+        redcap_event_name = "classic_project",
+        .after = 1
       )
     repeating <- repeating |>
       dplyr::mutate(
-        event_name = "classic_project", .before = 1
+        event_name = "classic_project",
+        .before = 1
       )
-
   }
 
   rc_raw <- rc_raw |>
@@ -576,16 +600,16 @@ nest_rc <- function(rc_raw) {
   redcap_data <- rc_raw |>
     tidyr::nest(data_raw = -"redcap_event_name") |>
     dplyr::mutate(
-      repeating_event = .data[["redcap_event_name"]] %in% (
-        repeating |>
+      repeating_event = .data[["redcap_event_name"]] %in%
+        (repeating |>
           dplyr::filter(is.na(.data[["form_name"]])) |>
-          dplyr::pull("event_name")
-      ),
+          dplyr::pull("event_name")),
       .before = "data_raw"
     ) |>
     dplyr::mutate(
       event_data = purrr::map2(
-        .data[["data_raw"]], .data[["redcap_event_name"]],
+        .data[["data_raw"]],
+        .data[["redcap_event_name"]],
         function(event_data, redcap_event_name) {
           purrr::map_dfr(
             unique(metadata$form_name),
@@ -594,7 +618,8 @@ nest_rc <- function(rc_raw) {
                 dplyr::filter(.data[["form_name"]] == form) |>
                 dplyr::pull("field_name")
               # Variables selection
-              if (event_data |>
+              if (
+                event_data |>
                   dplyr::select(dplyr::any_of(form_fields)) |>
                   # id_var is extracted
                   dplyr::select(-dplyr::any_of(id_var)) |>
@@ -614,7 +639,8 @@ nest_rc <- function(rc_raw) {
                   # These variables are always selected.
                   dplyr::all_of(id_var),
                   "redcap_repeat_instrument",
-                  "redcap_instance_type", "redcap_instance_number",
+                  "redcap_instance_type",
+                  "redcap_instance_number",
                   # list of variables from the current form.
                   dplyr::any_of(form_fields),
                   # Possible checkbox original variables
@@ -631,13 +657,12 @@ nest_rc <- function(rc_raw) {
                   )
                 )
               # Rows selection
-              is_repeating <- form %in% (
-                repeating |>
+              is_repeating <- form %in%
+                (repeating |>
                   dplyr::filter(
                     .data[["event_name"]] == redcap_event_name
                   ) |>
-                  dplyr::pull("form_name")
-              )
+                  dplyr::pull("form_name"))
               if (is_repeating) {
                 filtered_result <- raw_result |>
                   dplyr::filter(.data[["redcap_repeat_instrument"]] == form) |>
@@ -698,14 +723,16 @@ nest_rc <- function(rc_raw) {
                       labelled::is_regular_na()
                   } else {
                     apply(
-                      to_check_vars, 1,
+                      to_check_vars,
+                      1,
                       function(x) all(labelled::is_regular_na(x))
                     )
                   }
                 }
               ),
               variables_clean = purrr::map2(
-                .data[["form_data"]], .data[["empty_index"]],
+                .data[["form_data"]],
+                .data[["empty_index"]],
                 function(x, y) dplyr::filter(x, !y)
               )
             ) |>
@@ -724,7 +751,8 @@ nest_rc <- function(rc_raw) {
   names(redcap_data) <- stringr::str_c("redcap_", names(redcap_data))
   for (i in 1:nrow(redcap_data)) {
     names(redcap_data$redcap_event_data[[i]]) <- stringr::str_c(
-      "redcap_", names(redcap_data$redcap_event_data[[i]])
+      "redcap_",
+      names(redcap_data$redcap_event_data[[i]])
     )
   }
 
@@ -742,21 +770,32 @@ nest_rc <- function(rc_raw) {
 # Helper function to pass the original import attibutes to the nested final
 # data base. Also used in ody_rc_view to restore attributes to clasic projects.
 restore_attributes <- function(rc_nested, rc_raw) {
-
   present_attributes <- names(attributes(rc_raw))
 
   possible_attributes <- c(
-    "project_info", "metadata", "forms", "events",
-    "forms_events_mapping", "repeating", "arms",
-    "phantom_variables", "checkbox_aux", "missing_codes", "id_var",
-    "subjects","subjects_dag", "dag",
-    "meddra_fields", "meddra_codes",
-    "atc_fields", "atc_codes",
+    "project_info",
+    "metadata",
+    "forms",
+    "events",
+    "forms_events_mapping",
+    "repeating",
+    "arms",
+    "phantom_variables",
+    "checkbox_aux",
+    "missing_codes",
+    "id_var",
+    "subjects",
+    "subjects_dag",
+    "dag",
+    "meddra_fields",
+    "meddra_codes",
+    "atc_fields",
+    "atc_codes",
     "failed_labels",
     "import_date"
   )
 
-  needed_attributes <-  possible_attributes[
+  needed_attributes <- possible_attributes[
     possible_attributes %in% present_attributes
   ]
 
@@ -770,7 +809,6 @@ restore_attributes <- function(rc_nested, rc_raw) {
 
 # Helper funcion to clean the form directly from the import
 rc_clean_single_form <- function(rc_import, form) {
-
   fields <- attr(rc_import, "metadata") |>
     dplyr::filter(.data[["form_name"]] == form) |>
     dplyr::pull("field_name")
@@ -782,25 +820,25 @@ rc_clean_single_form <- function(rc_import, form) {
     apply(1, function(x) !all(is.na(x)))
 
   if (any(names(rc_import) == "redcap_repeat_instance")) {
-
-  rc_import[rows_with_data, ] |>
-    dplyr::mutate(
-      redcap_form_name = form,
-      redcap_instance_type = dplyr::case_when(
-        is.na(.data[["redcap_repeat_instance"]]) ~ "unique",
-        is.na(.data[["redcap_repeat_instrument"]]) ~ "event",
-        TRUE ~ "form"
-      ),
-      redcap_instance_number = .data[["redcap_repeat_instance"]]
-    ) |>
-    dplyr::select(
-      tidyselect::all_of(id_var),
-      tidyselect::any_of("redcap_event_name"), "redcap_form_name",
-      "redcap_instance_type", "redcap_instance_number",
-      tidyselect::all_of(fields)
-    )
+    rc_import[rows_with_data, ] |>
+      dplyr::mutate(
+        redcap_form_name = form,
+        redcap_instance_type = dplyr::case_when(
+          is.na(.data[["redcap_repeat_instance"]]) ~ "unique",
+          is.na(.data[["redcap_repeat_instrument"]]) ~ "event",
+          TRUE ~ "form"
+        ),
+        redcap_instance_number = .data[["redcap_repeat_instance"]]
+      ) |>
+      dplyr::select(
+        tidyselect::all_of(id_var),
+        tidyselect::any_of("redcap_event_name"),
+        "redcap_form_name",
+        "redcap_instance_type",
+        "redcap_instance_number",
+        tidyselect::all_of(fields)
+      )
   } else {
-
     rc_import[rows_with_data, ] |>
       dplyr::mutate(
         redcap_form_name = form,
@@ -810,12 +848,11 @@ rc_clean_single_form <- function(rc_import, form) {
       dplyr::select(
         tidyselect::all_of(id_var),
         "redcap_form_name",
-        "redcap_instance_type", "redcap_instance_number",
+        "redcap_instance_type",
+        "redcap_instance_number",
         tidyselect::all_of(fields)
       )
-
   }
-
 }
 
 
@@ -830,10 +867,12 @@ rc_clean_single_form <- function(rc_import, form) {
 #' @return A Tibble wiht metadata attributes (nested if nest = TRUE)
 #' @export
 ody_rc_import <- function(
-    token = NULL, form = NULL, url = "https://redcap.vhio.net/redcap/api/",
-    label = TRUE, nest = TRUE
-  ) {
-
+  token = NULL,
+  form = NULL,
+  url = "https://redcap.vhio.net/redcap/api/",
+  label = TRUE,
+  nest = TRUE
+) {
   if (is.null(token)) {
     token <- rstudioapi::askForPassword(
       prompt = "Please enter a RedCap token:"
@@ -844,7 +883,9 @@ ody_rc_import <- function(
   cli::cli_alert_info("Downloading data from REDCap...")
   rc_raw_import <- import_rc(token, form, url)
 
-  if (!label && !nest && is.null(form)) return(rc_raw_import)
+  if (!label && !nest && is.null(form)) {
+    return(rc_raw_import)
+  }
 
   if (label) {
     rc_import <- label_rc_import(rc_raw_import)
@@ -852,7 +893,9 @@ ody_rc_import <- function(
     rc_import <- rc_raw_import
   }
 
-  if (!is.null(form)) return(rc_clean_single_form(rc_import, form))
+  if (!is.null(form)) {
+    return(rc_clean_single_form(rc_import, form))
+  }
 
   if (nest) {
     rc_import <- nest_rc(rc_import) |>
@@ -863,31 +906,24 @@ ody_rc_import <- function(
 
   attr(rc_import, "odytools_version") <- packageVersion("odytools")
 
-
   # Remove any events that are empty
 
   if (names(rc_import)[1] == "redcap_event_name") {
-
     no_empty_events_index <-
       purrr::map_lgl(rc_import$redcap_event_data, ~ nrow(.) > 0)
     rc_import[no_empty_events_index, ]
-
   } else {
-
     rc_import
-
   }
-
 }
 
 
 # Helper function of ody_rc_select to select variables in a longitudinal
 # project.
 select_rc_long <- function(rc_data, var_name, metadata, checkbox_aux) {
-
   if (
     sum(metadata$field_name == var_name) == 0 &&
-    sum(checkbox_aux == var_name) == 0
+      sum(checkbox_aux == var_name) == 0
   ) {
     stop(var_name, " does not exist.")
   }
@@ -896,7 +932,8 @@ select_rc_long <- function(rc_data, var_name, metadata, checkbox_aux) {
 
   form_name <- metadata |>
     dplyr::filter(
-      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")) |>
+      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")
+    ) |>
     dplyr::pull("form_name")
 
   rc_data |>
@@ -905,17 +942,20 @@ select_rc_long <- function(rc_data, var_name, metadata, checkbox_aux) {
     dplyr::filter(.data[["redcap_form_name"]] == form_name) |>
     tidyr::unnest(cols = "redcap_form_data") |>
     dplyr::select(
-      dplyr::all_of(id_var), "redcap_event_name", "redcap_form_name",
-      "redcap_instance_type", "redcap_instance_number", dplyr::all_of(var_name)
+      dplyr::all_of(id_var),
+      "redcap_event_name",
+      "redcap_form_name",
+      "redcap_instance_type",
+      "redcap_instance_number",
+      dplyr::all_of(var_name)
     )
 }
 # Helper function of ody_rc_select to select variables in a classic project
 # with no events
 select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
-
   if (
     sum(metadata$field_name == var_name) == 0 &&
-    sum(checkbox_aux == var_name) == 0
+      sum(checkbox_aux == var_name) == 0
   ) {
     stop(var_name, " does not exist.")
   }
@@ -924,17 +964,20 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 
   form_name <- metadata |>
     dplyr::filter(
-      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")) |>
+      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")
+    ) |>
     dplyr::pull("form_name")
 
   rc_data |>
     dplyr::filter(.data[["redcap_form_name"]] == form_name) |>
     tidyr::unnest(cols = "redcap_form_data") |>
     dplyr::select(
-      dplyr::all_of(id_var),"redcap_form_name",
-      "redcap_instance_type", "redcap_instance_number", dplyr::all_of(var_name)
+      dplyr::all_of(id_var),
+      "redcap_form_name",
+      "redcap_instance_type",
+      "redcap_instance_number",
+      dplyr::all_of(var_name)
     )
-
 }
 
 
@@ -952,25 +995,26 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @return A tibble with the selected variables.
 #' @export
 ody_rc_select <- function(
-    rc_data,
-    ...,
-    .is_vector = FALSE,
-    .if_different_forms = c("list", "join"),
-    .include_aux = FALSE,
-    .accept_form_name = TRUE) {
-
+  rc_data,
+  ...,
+  .is_vector = FALSE,
+  .if_different_forms = c("list", "join"),
+  .include_aux = FALSE,
+  .accept_form_name = TRUE
+) {
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 
   sel_vars <- purrr::map(
     rlang::enquos(...),
     rlang::quo_get_expr
-  ) |> purrr::map(as.character) |>
+  ) |>
+    purrr::map(as.character) |>
     purrr::reduce(c) |>
     unique()
 
   # trick to permit character vectors
   if (.is_vector) {
-      sel_vars <- get(sel_vars[1])
+    sel_vars <- get(sel_vars[1])
   }
 
   if (names(rc_data)[1] == "redcap_event_name") {
@@ -983,9 +1027,11 @@ ody_rc_select <- function(
   checkbox_aux <- attr(rc_data, "checkbox_aux")
 
   # If a form name is provided, all the variables of the form are extracted
-  if (length(sel_vars) == 1 &&
+  if (
+    length(sel_vars) == 1 &&
       sel_vars %in% unique(metadata$form_name) &&
-      .accept_form_name) {
+      .accept_form_name
+  ) {
     current_form <- metadata |>
       dplyr::filter(
         .data[["form_name"]] == sel_vars
@@ -1017,38 +1063,34 @@ ody_rc_select <- function(
       needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars)
 
       sel_vars <- c(sel_vars, needed_aux)
-
     }
-
   }
 
   if (.if_different_forms == "join") {
-
     selection <- purrr::map(
       sel_vars,
       function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
     ) |>
       purrr::reduce(dplyr::full_join) |>
       suppressMessages()
-
   } else {
-
     extracted_vars <- tibble::tibble(
       variables = purrr::map(
         sel_vars,
         function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
       ),
       form = purrr::map(
-        .data$variables, ~.$redcap_form_name |> unique()
+        .data$variables,
+        ~ .$redcap_form_name |> unique()
       )
     ) |>
       tidyr::nest(data = .data$variables)
 
     extracted_list <- purrr::map(
       extracted_vars[[2]],
-      ~purrr::reduce(.[[1]], dplyr::full_join)
-    ) |> suppressMessages()
-
+      ~ purrr::reduce(.[[1]], dplyr::full_join)
+    ) |>
+      suppressMessages()
 
     names(extracted_list) <- extracted_vars$form
 
@@ -1057,7 +1099,6 @@ ody_rc_select <- function(
     } else {
       selection <- extracted_list
     }
-
   }
 
   # If the selected vars are meddra variables, dictionary is passed to the final
@@ -1077,7 +1118,6 @@ ody_rc_select <- function(
   }
 
   selection
-
 }
 
 
@@ -1090,16 +1130,14 @@ ody_rc_select <- function(
 #' @return A tibble containing data from the specified form.
 #' @export
 ody_rc_select_form <- function(
-    rc_data,
-    form_name,
-    .form_name_is_character = FALSE) {
-
+  rc_data,
+  form_name,
+  .form_name_is_character = FALSE
+) {
   subject_id <- attr(rc_data, "id_var")
 
   if (!.form_name_is_character) {
-
-  form_name <- rlang::as_name(rlang::enquo(form_name))
-
+    form_name <- rlang::as_name(rlang::enquo(form_name))
   }
 
   available_forms <- attr(rc_data, "forms")$instrument_name
@@ -1107,7 +1145,9 @@ ody_rc_select_form <- function(
   if (!(form_name %in% available_forms)) {
     stop(
       stringr::str_c(
-        "The form '", form_name, "' does not exist in the RedCap import.\n ",
+        "The form '",
+        form_name,
+        "' does not exist in the RedCap import.\n ",
         "Available forms are: ",
         stringr::str_c(available_forms, collapse = "\n")
       )
@@ -1117,16 +1157,13 @@ ody_rc_select_form <- function(
   events_mapping <- attr(rc_data, "forms_events_mapping")
 
   if (is.null(events_mapping)) {
-
     selected_form <-
       rc_data |>
       dplyr::filter(.data$redcap_form_name == form_name) |>
       dplyr::select(-"redcap_repeating_form") |>
       tidyr::unnest("redcap_form_data") |>
       dplyr::relocate(tidyselect::any_of(subject_id), .before = 1)
-
   } else {
-
     events <-
       attr(rc_data, "forms_events_mapping") |>
       dplyr::filter(.data$form == form_name) |>
@@ -1141,7 +1178,6 @@ ody_rc_select_form <- function(
       dplyr::select(-"redcap_repeating_form") |>
       tidyr::unnest("redcap_form_data") |>
       dplyr::relocate(tidyselect::any_of(subject_id), .before = 1)
-
   }
 
   sel_vars <- names(selected_form)
@@ -1162,17 +1198,17 @@ ody_rc_select_form <- function(
   }
 
   selected_form
-
 }
 
 
 # Helper function used in viewer apps that directly assume variable is
 # a vector
-rc_select_viewer <- function(rc_data,
-                             sel_vars,
-                             .if_different_forms = c("list", "join"),
-                             .include_aux = FALSE) {
-
+rc_select_viewer <- function(
+  rc_data,
+  sel_vars,
+  .if_different_forms = c("list", "join"),
+  .include_aux = FALSE
+) {
   .if_different_forms <- rlang::arg_match(.if_different_forms)
 
   if (names(rc_data)[1] == "redcap_event_name") {
@@ -1217,38 +1253,34 @@ rc_select_viewer <- function(rc_data,
       needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars)
 
       sel_vars <- c(sel_vars, needed_aux)
-
     }
-
   }
 
   if (.if_different_forms == "join") {
-
     purrr::map(
       sel_vars,
       function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
     ) |>
       purrr::reduce(dplyr::full_join) |>
       suppressMessages()
-
   } else {
-
     extracted_vars <- tibble::tibble(
       variables = purrr::map(
         sel_vars,
         function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
       ),
       form = purrr::map(
-        .data$variables, ~.$redcap_form_name |> unique()
+        .data$variables,
+        ~ .$redcap_form_name |> unique()
       )
     ) |>
       tidyr::nest(data = .data$variables)
 
     extracted_list <- purrr::map(
       extracted_vars[[2]],
-      ~purrr::reduce(.[[1]], dplyr::full_join)
-    ) |> suppressMessages()
-
+      ~ purrr::reduce(.[[1]], dplyr::full_join)
+    ) |>
+      suppressMessages()
 
     names(extracted_list) <- extracted_vars$form
 
@@ -1257,9 +1289,7 @@ rc_select_viewer <- function(rc_data,
     } else {
       extracted_list
     }
-
   }
-
 }
 
 #' Filter a RedCap import by subject id
@@ -1270,37 +1300,31 @@ rc_select_viewer <- function(rc_data,
 #' @return A filtered RedCap import.
 #' @export
 ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
-
   id_var <- attr(redcap_data, "id_var")
 
   if (names(redcap_data)[1] == "redcap_event_name") {
-
     result <- tidyr::unnest(redcap_data, cols = "redcap_event_data") |>
       dplyr::mutate(
         redcap_form_data = purrr::map(
           .data$redcap_form_data,
-          ~dplyr::filter(., .data[[id_var]] %in% subjects_vector)
+          ~ dplyr::filter(., .data[[id_var]] %in% subjects_vector)
         )
       ) |>
       tidyr::nest(redcap_event_data = "redcap_form_name":"redcap_form_data")
-
   } else {
-
     result <- redcap_data |>
       dplyr::mutate(
         redcap_form_data = purrr::map(
           .data$redcap_form_data,
-          ~dplyr::filter(., .data[[id_var]] %in% subjects_vector)
+          ~ dplyr::filter(., .data[[id_var]] %in% subjects_vector)
         )
       )
-
   }
 
   attributes(result) <- attributes(redcap_data)
   attr(result, "subjects") <- subjects_vector
 
   result
-
 }
 
 
@@ -1324,7 +1348,6 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #' @return A tibble
 #' @export
 ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
-
   dplyr::mutate(
     rc_df,
     dplyr::across(
@@ -1339,7 +1362,9 @@ ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
 
         if (keep_user_na) {
           labelled::na_values(x) <- NULL
-          if (is.null(labels)) return(as.character(x))
+          if (is.null(labels)) {
+            return(as.character(x))
+          }
         }
 
         x_no_user_na <- labelled::user_na_to_na(x)
@@ -1383,10 +1408,11 @@ ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
 #'
 #' @export
 ody_rc_translate_meddra <- function(rc_df) {
-
   meddra_fields <- attr(rc_df, "meddra_fields")
 
-  if (is.null(meddra_fields)) return(rc_df)
+  if (is.null(meddra_fields)) {
+    return(rc_df)
+  }
 
   rc_df |>
     dplyr::mutate(
@@ -1404,7 +1430,6 @@ ody_rc_translate_meddra <- function(rc_df) {
 }
 
 
-
 #' Translate ATC Codes
 #'
 #' Replace ATC codes in the dataframe with their corresponding descriptions.
@@ -1415,10 +1440,11 @@ ody_rc_translate_meddra <- function(rc_df) {
 #'
 #' @export
 ody_rc_translate_atc <- function(rc_df) {
-
   atc_fields <- attr(rc_df, "atc_fields")
 
-  if (is.null(atc_fields)) return(rc_df)
+  if (is.null(atc_fields)) {
+    return(rc_df)
+  }
 
   rc_df |>
     dplyr::mutate(
@@ -1448,7 +1474,6 @@ ody_rc_translate_atc <- function(rc_df) {
 #'
 #' @export
 ody_rc_view <- function(data_app = NULL) {
-
   rlang::check_installed(c(
     "DT",
     "bsicons",
@@ -1466,7 +1491,8 @@ ody_rc_view <- function(data_app = NULL) {
   ))
 
   viewer_location <- system.file(
-    "redcap_data_viewer", package = "odytools"
+    "redcap_data_viewer",
+    package = "odytools"
   )
 
   if (is.null(data_app) && exists("redcap_data")) {
@@ -1482,7 +1508,6 @@ ody_rc_view <- function(data_app = NULL) {
   )
 
   # rstudioapi::viewer("http://127.0.0.1:5921")
-
 }
 
 
@@ -1490,18 +1515,13 @@ ody_rc_view <- function(data_app = NULL) {
 # the data_frame can be actually filtered by the elements of the
 # conditions_list.
 filter_condition <- function(data_frame, condition) {
-
   data_frame |>
     dplyr::filter(eval(str2lang(condition)))
-
 }
 
 
 # Helper functions to create a conditions_list from redcap metadata.
-get_conditions_from_metadata <- function(data_frame,
-                                         metadata,
-                                         missing_codes) {
-
+get_conditions_from_metadata <- function(data_frame, metadata, missing_codes) {
   needed_meta <- metadata |>
     dplyr::filter(
       .data$field_name %in% names(data_frame),
@@ -1509,17 +1529,19 @@ get_conditions_from_metadata <- function(data_frame,
     )
 
   missing_value <- stringr::str_c(
-    missing_codes$raw_value, collapse = "|")
+    missing_codes$raw_value,
+    collapse = "|"
+  )
 
   if (nrow(needed_meta) > 0) {
-
     external_branching <- needed_meta |>
       dplyr::filter(
         stringr::str_detect(
           .data$branching_logic,
           "\\[.+\\]\\[.+\\]|event-name|current-instance|user-role-name"
         )
-      ) |> dplyr::pull("field_name")
+      ) |>
+      dplyr::pull("field_name")
 
     if (length(external_branching) > 0) {
       warning(
@@ -1535,10 +1557,12 @@ get_conditions_from_metadata <- function(data_frame,
       dplyr::mutate(
         # RedCap logic is translated into R languaje
         r_branch = stringr::str_replace_all(
-          .data$branching_logic,  missing_value, "user_na"
+          .data$branching_logic,
+          missing_value,
+          "user_na"
         ) |>
           # Checkbox variables to especific check box column
-          stringr::str_replace_all( "\\((\\d+)\\)", "___\\1") |>
+          stringr::str_replace_all("\\((\\d+)\\)", "___\\1") |>
           stringr::str_replace_all(
             # RedCap empty to regular R na
             "\\[([^\\[]+)\\] *<> *['\"]{2}",
@@ -1549,7 +1573,7 @@ get_conditions_from_metadata <- function(data_frame,
             "\\[([^\\[]+)\\] *<> *['\"]user_na['\"]",
             "!labelled::is_user_na\\(\\1\\)"
           ) |>
-          #Some easy symbol translations
+          # Some easy symbol translations
           stringr::str_remove_all("\\[|\\]") |>
           stringr::str_replace_all("=", "==") |>
           stringr::str_replace_all("<>", "!=") |>
@@ -1558,7 +1582,11 @@ get_conditions_from_metadata <- function(data_frame,
           # Delete possible duplicates of is_user_na
           stringr::str_replace_all("(.*labelled::is_user_na.+)\\1+", "\\1"),
         cond = stringr::str_c(
-          .data$field_name, " = ", "\"", .data$r_branch, "\""
+          .data$field_name,
+          " = ",
+          "\"",
+          .data$r_branch,
+          "\""
         )
       ) |>
       dplyr::pull("cond")
@@ -1567,12 +1595,11 @@ get_conditions_from_metadata <- function(data_frame,
       "list(",
       stringr::str_c(pre_list, collapse = ", "),
       ")"
-    ) |> str2lang() |> eval()
-
+    ) |>
+      str2lang() |>
+      eval()
   } else {
-
     conditions_list <- NULL
-
   }
 
   # We need to check if the conditions are actually filterable since variables
@@ -1596,7 +1623,6 @@ get_conditions_from_metadata <- function(data_frame,
   }
 
   conditions_list[ok_index]
-
 }
 
 
@@ -1614,16 +1640,15 @@ get_conditions_from_metadata <- function(data_frame,
 #' @return An html report or a tibble
 #' @export
 ody_rc_completeness <- function(
-    data_frame,
-    id_var = attr(get("redcap_data"), "id_var"), # Use get to avois check warnings.
-    count_user_na = FALSE,
-    conditions_list = "from_metadata",
-    metadata = attr(get("redcap_data"), "metadata"),
-    missing_codes = attr(get("redcap_data"), "missing"),
-    report = TRUE,
-    opt_reactable = ody_options()
+  data_frame,
+  id_var = attr(get("redcap_data"), "id_var"), # Use get to avois check warnings.
+  count_user_na = FALSE,
+  conditions_list = "from_metadata",
+  metadata = attr(get("redcap_data"), "metadata"),
+  missing_codes = attr(get("redcap_data"), "missing"),
+  report = TRUE,
+  opt_reactable = ody_options()
 ) {
-
   rlang::check_installed(c(
     "htmltools",
     "reactablefmtr"
@@ -1648,11 +1673,11 @@ ody_rc_completeness <- function(
   }
 
   if (!is.null(conditions_list) && conditions_list == "from_metadata") {
-
-    conditions_list <-  get_conditions_from_metadata(
-      data_frame, metadata, missing_codes
+    conditions_list <- get_conditions_from_metadata(
+      data_frame,
+      metadata,
+      missing_codes
     )
-
   }
 
   completeness <- ody_verify_completeness(
@@ -1675,7 +1700,6 @@ ody_rc_completeness <- function(
       !is.na(.data$branching_logic)
     )
   if (nrow(needed_meta) > 0) {
-
     completeness <- completeness |>
       dplyr::left_join(
         needed_meta |>
@@ -1686,7 +1710,6 @@ ody_rc_completeness <- function(
         condition = .data$branching_logic
       ) |>
       dplyr::select(-"branching_logic")
-
   }
 
   if (report) {
@@ -1694,9 +1717,7 @@ ody_rc_completeness <- function(
   } else {
     completeness
   }
-
 }
-
 
 
 #' Spread a Classic REDCap project into a 2D table
@@ -1709,8 +1730,7 @@ ody_rc_completeness <- function(
 #'
 #' @return A tibble
 #' @export
-ody_rc_spread <- function(rc_data = NULL) {
-
+ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
   if (is.null(rc_data)) {
     if (exists("redcap_data")) {
       rc_data <- get("redcap_data")
@@ -1726,19 +1746,36 @@ ody_rc_spread <- function(rc_data = NULL) {
   id_var <- attr(rc_data, "id_var")
 
   if (names(rc_data)[1] == "redcap_event_name") {
-    purrr::map(
-      rc_data$redcap_event_data,spreader, id_var,
+    spread_list <- purrr::map(
+      rc_data$redcap_event_data,
+      spreader,
+      id_var,
       .progress = "Spreading"
     ) |>
       purrr::set_names(rc_data$redcap_event_name)
+
+    if (join_events) {
+      purrr::map2(
+        spread_list,
+        names(spread_list),
+        \(df_data, df_name) {
+          dplyr::rename_with(
+            df_data,
+            ~ stringr::str_c(df_name, ., sep = "__"),
+            !tidyselect::all_of(id_var)
+          )
+        }
+      ) |>
+        purrr::reduce(dplyr::full_join, by = id_var)
+    } else {
+      spread_list
+    }
   } else {
     spreader(rc_data, id_var)
   }
-
 }
 
 spreader <- function(rc_data, id_var) {
-
   has_repeating <- any(rc_data$redcap_repeating_form)
   has_unique <- any(!rc_data$redcap_repeating_form)
 
@@ -1747,7 +1784,7 @@ spreader <- function(rc_data, id_var) {
       dplyr::filter(!.data$redcap_repeating_form) |>
       dplyr::pull(.data$redcap_form_data) |>
       purrr::map(
-        ~. |>
+        ~ . |>
           dplyr::select(
             -redcap_instance_type,
             -redcap_instance_number,
@@ -1756,7 +1793,6 @@ spreader <- function(rc_data, id_var) {
           ody_rc_format()
       ) |>
       purrr::reduce(dplyr::full_join, by = id_var)
-
   }
 
   if (has_repeating) {
@@ -1764,7 +1800,7 @@ spreader <- function(rc_data, id_var) {
       dplyr::filter(.data$redcap_repeating_form) |>
       dplyr::pull(.data$redcap_form_data) |>
       purrr::map(
-        ~.|>
+        ~ . |>
           ody_rc_format() |>
           dplyr::select(
             -redcap_instance_type,
@@ -1773,7 +1809,8 @@ spreader <- function(rc_data, id_var) {
           tidyr::pivot_wider(
             names_from = redcap_instance_number,
             values_from = c(
-              -tidyselect::all_of(id_var), -redcap_instance_number
+              -tidyselect::all_of(id_var),
+              -redcap_instance_number
             ),
             names_vary = "slowest"
           )
@@ -1788,7 +1825,6 @@ spreader <- function(rc_data, id_var) {
   } else {
     spread_repeating
   }
-
 }
 
 
@@ -1800,13 +1836,11 @@ spreader <- function(rc_data, id_var) {
 #' @return A string with the new file name.
 #' @export
 ody_rc_add_import_date <- function(file_name, extension = "csv") {
-
   loaded_date <- ody_rc_current(as_list = TRUE)$loaded |>
     stringr::str_remove_all("-|:") |>
     stringr::str_replace_all(" ", "_")
 
   stringr::str_c(file_name, "_", loaded_date, ".", extension)
-
 }
 
 #' Add the sites to a RedCap table
@@ -1817,29 +1851,20 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #'
 #' @return The same tbl with the site column added.
 #' @export
-ody_rc_add_site <- function(tbl,
-                            redcap_data = NULL,
-                            position = 1) {
-
+ody_rc_add_site <- function(tbl, redcap_data = NULL, position = 1) {
   if (is.null(redcap_data)) {
-
     if (exists("redcap_data", envir = .GlobalEnv)) {
-
       redcap_data <- get("redcap_data", envir = .GlobalEnv)
-
     } else {
-
       stop("No redcap_data object found.")
-
     }
-
   }
 
   id_var <- attr(redcap_data, "id_var")
   sites <- attr(redcap_data, "subjects_dag") |>
     dplyr::left_join(
       attr(redcap_data, "dag"),
-      by = c(redcap_data_access_group =  "unique_group_name")
+      by = c(redcap_data_access_group = "unique_group_name")
     ) |>
     dplyr::select(
       tidyselect::all_of(id_var),
@@ -1849,7 +1874,6 @@ ody_rc_add_site <- function(tbl,
   tbl |>
     dplyr::left_join(sites) |>
     dplyr::relocate("site", .before = position)
-
 }
 
 
@@ -1866,11 +1890,10 @@ ody_rc_add_site <- function(tbl,
 #' @return A data frame with variable labels applied from the REDCap metadata.
 #' @export
 ody_rc_add_label <- function(
-    df,
-    metadata = NULL,
-    modify_names = FALSE
-  ) {
-
+  df,
+  metadata = NULL,
+  modify_names = FALSE
+) {
   if (is.null(metadata)) {
     if (!exists("redcap_data", envir = .GlobalEnv)) {
       stop("No redcap_data object found.")
@@ -1893,60 +1916,58 @@ ody_rc_add_label <- function(
     dplyr::select("field_name", "field_label")
 
   # ¿Hay columnas auxiliares de checkbox?
-  #Si es así, estas se etiquetan con el valor del checkbox que representan
+  # Si es así, estas se etiquetan con el valor del checkbox que representan
   aux_cols_index <- stringr::str_detect(names(df), "___.+$")
 
   if (any(aux_cols_index)) {
+    checkbox_var_names <- names(df)[aux_cols_index] |>
+      stringr::str_remove("___.+$") |>
+      unique()
 
-  checkbox_var_names <- names(df)[aux_cols_index] |>
-    stringr::str_remove("___.+$") |>
-    unique()
+    checkbox_metadata <-
+      metadata |>
+      dplyr::filter(.data[["field_name"]] %in% checkbox_var_names) |>
+      dplyr::select(
+        .data[["field_name"]],
+        raw_dic = .data[["select_choices_or_calculations"]]
+      )
 
-  checkbox_metadata <-
-    metadata  |>
-    dplyr::filter(.data[["field_name"]] %in% checkbox_var_names) |>
-    dplyr::select(
-      .data[["field_name"]],
-      raw_dic = .data[["select_choices_or_calculations"]]
-    )
+    aux_labels <-
+      purrr::pmap_df(
+        checkbox_metadata,
+        function(field_name, raw_dic) {
+          dic <- process_raw_dic(raw_dic) |> eval()
+          tibble::tibble(
+            field_name = stringr::str_c(field_name, "___", dic),
+            field_label = names(dic)
+          )
+        }
+      ) |>
+      dplyr::filter(.data[["field_name"]] %in% names(df))
 
-  aux_labels <-
-    purrr::pmap_df(
-      checkbox_metadata,
-      function(field_name, raw_dic) {
-        dic <- process_raw_dic(raw_dic) |> eval()
-        tibble::tibble(
-          field_name =  stringr::str_c(field_name, "___", dic),
-          field_label = names(dic)
-        )
-      }
-    ) |>
-    dplyr::filter(.data[["field_name"]] %in% names(df))
-
-  labels <- dplyr::bind_rows(labels, aux_labels)
-
+    labels <- dplyr::bind_rows(labels, aux_labels)
   }
 
   if (modify_names) {
-
     names(df)[names(df) %in% labels$field_name] <- labels$field_label
-
   } else {
-
     lab_lang <- stringr::str_c(
       "list(",
       stringr::str_c(
-        labels$field_name, " = '", labels$field_label, "'", collapse = ", "
+        labels$field_name,
+        " = '",
+        labels$field_label,
+        "'",
+        collapse = ", "
       ),
-      ")") |>
+      ")"
+    ) |>
       str2lang()
 
     labelled::var_label(df) <- eval(lab_lang)
-
   }
 
   df
-
 }
 
 #' Get REDCap Metadata
@@ -1959,9 +1980,9 @@ ody_rc_add_label <- function(
 #' @return The metadata of the RedCap project.
 #' @export
 ody_rc_get_metadata <- function(
-    token,
-    url = "https://redcap.vhio.net/redcap/api/") {
-
+  token,
+  url = "https://redcap.vhio.net/redcap/api/"
+) {
   if (is.null(token)) {
     token <- rstudioapi::askForPassword(
       prompt = "Please enter a RedCap token:"
@@ -1969,7 +1990,6 @@ ody_rc_get_metadata <- function(
   }
 
   extract_data("metadata", token, url)
-
 }
 
 
@@ -1985,24 +2005,28 @@ ody_rc_get_metadata <- function(
 #' @return A tibble with the filtered cases, optionally combined with the wider REDCap data.
 #' @export
 ody_rc_search_ttm <- function(
-    rc_data,
-    filter_expression,
-    variables_of_interest = c(
-      "ttm_met_line_num", "ttm_name", "ttm_startdate", "ttm_enddate", "ttm_pddate", "ttm_bestresponse"
-    ),
-    join_rc_spread = TRUE) {
-
+  rc_data,
+  filter_expression,
+  variables_of_interest = c(
+    "ttm_met_line_num",
+    "ttm_name",
+    "ttm_startdate",
+    "ttm_enddate",
+    "ttm_pddate",
+    "ttm_bestresponse"
+  ),
+  join_rc_spread = TRUE
+) {
   filter_expression <- rlang::enquo(filter_expression)
 
   filtered_cases <-
     ody_rc_select_form(rc_data, "antineoplasic_therapy") |>
     dplyr::filter(!!filter_expression) |>
     ody_rc_format() |>
-    dplyr::select("dem_sap",tidyselect::all_of(variables_of_interest)) |>
+    dplyr::select("dem_sap", tidyselect::all_of(variables_of_interest)) |>
     unique()
 
   if (join_rc_spread) {
-
     ody_rc_filter_subject(rc_data, filtered_cases$dem_sap) |>
       ody_rc_spread() |>
       dplyr::right_join(filtered_cases, by = "dem_sap") |>
@@ -2010,11 +2034,7 @@ ody_rc_search_ttm <- function(
         tidyselect::all_of(variables_of_interest),
         .after = "dem_sap"
       )
-
   } else {
-
     filtered_cases
-
   }
-
 }

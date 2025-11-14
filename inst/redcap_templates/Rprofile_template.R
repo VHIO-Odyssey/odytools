@@ -1,4 +1,3 @@
-
 source(here::here(
   list.files(here::here(), "_dependencies.R$")
 ))
@@ -6,7 +5,7 @@ source(here::here(
 # Uncomment to set gander chat model
 # options(.gander_chat = ellmer::chat_openai(model = "gpt-4o-mini"))
 
-cli::rule(
+cli::cat_rule(
   left = "Odytools REDCap Project",
   right = utils::packageVersion("odytools"),
   line = 2

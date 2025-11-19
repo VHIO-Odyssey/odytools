@@ -168,6 +168,7 @@ Miscelaneous utilities.
 -   ody_apply_on_pattern
 -   ody_label_df
 -   ody_timetravel
+-   ody_exofilter
 
 ## **aes**
 

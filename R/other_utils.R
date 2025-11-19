@@ -12,14 +12,26 @@ NULL
 #' @return A character
 #' @export
 ody_add_version <- function(file_name, extension = "html", path = ".") {
-
   today_num <- lubridate::today() |>
     stringr::str_remove_all("-")
   today_present <- list.files(path = path) |>
-    stringr::str_detect(stringr::str_c(file_name, "_", today_num, ".", extension)) |>
+    stringr::str_detect(stringr::str_c(
+      file_name,
+      "_",
+      today_num,
+      ".",
+      extension
+    )) |>
     any()
   today_present_mult <- list.files(path = path) |>
-    stringr::str_detect(stringr::str_c(file_name, "_", today_num, "_\\d", ".", extension)) |>
+    stringr::str_detect(stringr::str_c(
+      file_name,
+      "_",
+      today_num,
+      "_\\d",
+      ".",
+      extension
+    )) |>
     any()
 
   if (today_present & !today_present_mult) {
@@ -35,13 +47,10 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
 
     current_ver <- stringr::str_c("_", today_num, "_", current_ver + 1)
   } else {
-
     current_ver <- stringr::str_c("_", today_num)
-
   }
 
   stringr::str_c(file_name, current_ver, ".", extension)
-
 }
 
 #' Generate a file path for saving output with versioning.
@@ -54,7 +63,6 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
 #'
 #' @export
 ody_save_path <- function(...) {
-
   path <- stringr::str_c(head(c(...), -1), collapse = "/")
 
   file <- tail(c(...), 1) |>
@@ -64,11 +72,11 @@ ody_save_path <- function(...) {
   here::here(
     path,
     ody_add_version(
-      file[1], file[2],
+      file[1],
+      file[2],
       here::here(path)
     )
   )
-
 }
 
 
@@ -81,7 +89,8 @@ ody_save_path <- function(...) {
 #'
 #' @return data_frame with names changes according to names_df.
 #' @export
-ody_change_names <- function(data_frame, names_df) { #CANDIDATE
+ody_change_names <- function(data_frame, names_df) {
+  #CANDIDATE
 
   data_frame_names <- names(data_frame)
 
@@ -90,19 +99,16 @@ ody_change_names <- function(data_frame, names_df) { #CANDIDATE
   new_names <- purrr::map_chr(
     data_frame_names,
     function(x) {
-
       name <- dplyr::filter(names_df, .data$current == x) |>
         dplyr::pull("new")
 
       if (length(name) == 0) x else name
-
     }
   )
 
   names(data_frame) <- new_names
 
   data_frame
-
 }
 
 
@@ -120,29 +126,28 @@ ody_change_names <- function(data_frame, names_df) { #CANDIDATE
 #'
 #' @return An list of arguments internaly used in some odytools functions
 #' @export
-ody_options <- function(label_size = 1,
-                        minwidth_var = 200,
-                        n_dec = 1,
-                        minwidth_level = 100,
-                        width_density_plot = 700,
-                        width_bar = 100,
-                        groups_plot_height = 300,
-                        full_group_label = FALSE,
-                        border_color = "#DEDEDE") {
-
+ody_options <- function(
+  label_size = 1,
+  minwidth_var = 200,
+  n_dec = 1,
+  minwidth_level = 100,
+  width_density_plot = 700,
+  width_bar = 100,
+  groups_plot_height = 300,
+  full_group_label = FALSE,
+  border_color = "#DEDEDE"
+) {
   list(
-    label_size = label_size,                 # ody_summarise_df
-    minwidth_var = minwidth_var,             # ody_summarise_df
-    n_dec = n_dec,                           # ody_summarise_df
-    minwidth_level = minwidth_level,         # ody_summarise_df
+    label_size = label_size, # ody_summarise_df
+    minwidth_var = minwidth_var, # ody_summarise_df
+    n_dec = n_dec, # ody_summarise_df
+    minwidth_level = minwidth_level, # ody_summarise_df
     width_density_plot = width_density_plot, # ody_summarise_df
-    width_bar = width_bar,                   # ody_summarise_df
+    width_bar = width_bar, # ody_summarise_df
     groups_plot_height = groups_plot_height, # ody_summarise_df
-    full_group_label = full_group_label,     # ody_summarise_df
-    border_color = border_color              # ody_summarise_df
+    full_group_label = full_group_label, # ody_summarise_df
+    border_color = border_color # ody_summarise_df
   )
-
-
 }
 
 
@@ -150,7 +155,6 @@ ody_options <- function(label_size = 1,
 #'
 #' @export
 ody_proj_init <- function() {
-
   rlang::check_installed(c("conflicted", "git2r"))
 
   project_name <- get_project_name()
@@ -166,19 +170,25 @@ ody_proj_init <- function() {
   # Root Templates
   file.copy(
     system.file(
-      "project_templates", "Rprofile_template.R", package = "odytools"
+      "project_templates",
+      "Rprofile_template.R",
+      package = "odytools"
     ),
     here::here(".Rprofile")
   )
   file.copy(
     system.file(
-      "project_templates", "dependencies_template.R", package = "odytools"
+      "project_templates",
+      "dependencies_template.R",
+      package = "odytools"
     ),
     here::here(stringr::str_c(project_name, "_dependencies.R"))
   )
   file.copy(
     system.file(
-      "project_templates", "sandbox_template.R", package = "odytools"
+      "project_templates",
+      "sandbox_template.R",
+      package = "odytools"
     ),
     here::here(stringr::str_c(project_name, "_sandbox.R"))
   )
@@ -186,7 +196,9 @@ ody_proj_init <- function() {
   # Data Template
   file.copy(
     system.file(
-      "project_templates", "data_template.R", package = "odytools"
+      "project_templates",
+      "data_template.R",
+      package = "odytools"
     ),
     here::here("data", stringr::str_c(project_name, "_data.R"))
   )
@@ -194,7 +206,9 @@ ody_proj_init <- function() {
   # function template
   file.copy(
     system.file(
-      "project_templates", "functions_template.R", package = "odytools"
+      "project_templates",
+      "functions_template.R",
+      package = "odytools"
     ),
     here::here("functions", stringr::str_c(project_name, "_functions.R"))
   )
@@ -202,23 +216,30 @@ ody_proj_init <- function() {
   # Report templates
   file.copy(
     system.file(
-      "project_templates", "report_template.qmd", package = "odytools"
+      "project_templates",
+      "report_template.qmd",
+      package = "odytools"
     ),
     here::here("analysis", stringr::str_c(project_name, "_analysis.qmd"))
   )
   file.copy(
     system.file(
-      "project_templates", "report_template.qmd", package = "odytools"
+      "project_templates",
+      "report_template.qmd",
+      package = "odytools"
     ),
     here::here(
-      "quality", stringr::str_c(project_name, "_quality.qmd")
+      "quality",
+      stringr::str_c(project_name, "_quality.qmd")
     )
   )
 
   # Gitignore template
   file.copy(
     system.file(
-      "project_templates", "gitignore_template", package = "odytools"
+      "project_templates",
+      "gitignore_template",
+      package = "odytools"
     ),
     here::here(".gitignore")
   )
@@ -226,39 +247,36 @@ ody_proj_init <- function() {
   # Memento template
   file.copy(
     system.file(
-      "project_templates", "memento_template.md", package = "odytools"
+      "project_templates",
+      "memento_template.md",
+      package = "odytools"
     ),
     here::here("docs", stringr::str_c(project_name, "_memento.md"))
   )
-
 }
 
 # Helper function to create a lockfile
 save_lock <- function() {
-
   rlang::check_installed("renv")
 
   lock_exists <- any(list.files(here::here()) == "renv.lock")
 
   if (lock_exists) {
-
     question <- rstudioapi::showQuestion(
       "Save Lock file",
       "This action will overwrite an already existing Lock file. Are you sure?",
-      ok = "Yes, overwrite.", cancel = "No, cancel."
+      ok = "Yes, overwrite.",
+      cancel = "No, cancel."
     )
 
     if (!question) stop("Aborted by user")
-
   }
 
   renv::lockfile_create() |>
     renv::lockfile_write()
-
 }
 
 update_odytools <- function() {
-
   rlang::check_installed("devtools")
 
   current_version <- as.character(packageVersion("odytools"))
@@ -267,11 +285,14 @@ update_odytools <- function() {
     "Update odytools from GitHub",
     stringr::str_c(
       "Do you want to update odytools? (current version ",
-      current_version, ")"
+      current_version,
+      ")"
     )
   )
 
-  if (!sure) stop("Update aborted")
+  if (!sure) {
+    stop("Update aborted")
+  }
 
   if ("odytools" %in% (.packages())) {
     detach("package:odytools", unload = TRUE)
@@ -280,7 +301,8 @@ update_odytools <- function() {
   master_branch <- rstudioapi::showQuestion(
     "Update odytools from GitHub",
     "From which branch do you want to update?",
-    ok = "Master", cancel = "Dev"
+    ok = "Master",
+    cancel = "Dev"
   )
 
   if (master_branch) {
@@ -294,23 +316,24 @@ update_odytools <- function() {
 
 # Helper function of ody_compare_1_vs_others
 compare_1_vs_others <- function(df) {
-
   level <- levels(df[[1]])
 
   p_values <- purrr::map_dbl(
     level,
-    ~wilcox.test(
+    ~ wilcox.test(
       df[[2]][df[[1]] == .],
       df[[2]][df[[1]] != .]
     )$p.value
   )
 
   median_group <- purrr::map_dbl(
-    level, ~median(df[[2]][df[[1]] == .], na.rm = TRUE)
+    level,
+    ~ median(df[[2]][df[[1]] == .], na.rm = TRUE)
   )
 
   median_others <- purrr::map_dbl(
-    level, ~median(df[[2]][df[[1]] != .], na.rm = TRUE)
+    level,
+    ~ median(df[[2]][df[[1]] != .], na.rm = TRUE)
   )
 
   tibble::tibble(
@@ -319,7 +342,6 @@ compare_1_vs_others <- function(df) {
     median_others = median_others,
     p_value = p_values
   )
-
 }
 
 #' Compare 1 level vs all other
@@ -331,10 +353,9 @@ compare_1_vs_others <- function(df) {
 #'
 #' @export
 ody_compare_1_vs_others <- function(data_frame, p_method = "BH") {
-
   result <- purrr::map_df(
     names(data_frame)[-1],
-    ~compare_1_vs_others(
+    ~ compare_1_vs_others(
       data_frame |>
         select(1, .)
     ) |>
@@ -347,7 +368,6 @@ ody_compare_1_vs_others <- function(data_frame, p_method = "BH") {
       adj_p = p.adjust(.data$p_value, method = p_method)
     ) |>
     dplyr::ungroup()
-
 }
 
 
@@ -362,20 +382,17 @@ ody_compare_1_vs_others <- function(data_frame, p_method = "BH") {
 #' @return A language object or the its evaluation if .eval = TRUE
 #' @export
 ody_glue2lang <- function(..., .envir = parent.frame(), .eval = FALSE) {
-
   rlang::check_installed("glue")
 
   glued_lang <- glue::glue(..., .envir = .envir) |>
     str2lang()
 
   if (.eval) eval(glued_lang, envir = .envir) else glued_lang
-
 }
 
 # Function to check if exists and updated renv.lock and a git repository
 # update_threshold is the number of days to consider the lockfile outdated
 check_renvlock <- function(update_threshold = 30) {
-
   git_last_modif <- file.mtime(here::here(".git"))
   renvlock_last_modif <- file.mtime(here::here("renv.lock"))
 
@@ -405,47 +422,52 @@ check_renvlock <- function(update_threshold = 30) {
     last_renvlock_date <- renvlock_last_modif |>
       lubridate::as_datetime(tz = Sys.timezone())
     dif_time <- lubridate::time_length(
-      last_renvlock_date - last_commit_date, "days"
+      last_renvlock_date - last_commit_date,
+      "days"
     ) |>
       round(2)
 
     if (dif_time < -1 * update_threshold) {
-
-    cli::cli_alert_warning(
-      stringr::str_c("Last renv.lock: ", lubridate::as_date(last_renvlock_date))
-    )
-    cli::cli_alert_warning(
-      stringr::str_c("Last commit: ", lubridate::as_date(last_commit_date))
-    )
-    cli::cli_alert_warning(
-      stringr::str_c(
-        "Time difference of ", dif_time, " days"
+      cli::cli_alert_warning(
+        stringr::str_c(
+          "Last renv.lock: ",
+          lubridate::as_date(last_renvlock_date)
+        )
       )
-    )
-
+      cli::cli_alert_warning(
+        stringr::str_c("Last commit: ", lubridate::as_date(last_commit_date))
+      )
+      cli::cli_alert_warning(
+        stringr::str_c(
+          "Time difference of ",
+          dif_time,
+          " days"
+        )
+      )
     }
 
     if (dif_time >= -1 * update_threshold) {
-
       cli::cli_alert_success(
         stringr::str_c(
-          "Last renv.lock: ", lubridate::as_date(last_renvlock_date)
+          "Last renv.lock: ",
+          lubridate::as_date(last_renvlock_date)
         )
       )
       cli::cli_alert_success(
         stringr::str_c(
-          "Last commit: ", lubridate::as_date(last_commit_date)
+          "Last commit: ",
+          lubridate::as_date(last_commit_date)
         )
       )
       cli::cli_alert_success(
         stringr::str_c(
-          "Time difference of ", dif_time, " days"
+          "Time difference of ",
+          dif_time,
+          " days"
         )
       )
     }
-
   }
-
 }
 
 #' Convert GT Table to Image
@@ -466,7 +488,6 @@ check_renvlock <- function(update_threshold = 30) {
 #'
 #' @export
 ody_gt2image <- function(gt_table, type = c("raster", "ggplot"), zoom = 2) {
-
   rlang::check_installed(c("webshot2", "magick", "grDevices"))
 
   type <- rlang::arg_match(type)
@@ -481,10 +502,11 @@ ody_gt2image <- function(gt_table, type = c("raster", "ggplot"), zoom = 2) {
 
   table_image <- magick::image_read(path_gt_table_image)
 
-  if (type == "raster") return(table_image)
+  if (type == "raster") {
+    return(table_image)
+  }
 
   magick::image_ggplot(table_image, interpolate = TRUE)
-
 }
 
 #' Apply Function on Pattern
@@ -499,13 +521,13 @@ ody_gt2image <- function(gt_table, type = c("raster", "ggplot"), zoom = 2) {
 #'
 #' @return A data frame like the original input with the function applied to the matching columns.
 #' @export
-ody_apply_on_pattern <-  function(
-    df,
-    fn,
-    pattern,
-    all_any = any,
-    exclude = NULL) {
-
+ody_apply_on_pattern <- function(
+  df,
+  fn,
+  pattern,
+  all_any = any,
+  exclude = NULL
+) {
   # Target cols to check for pattern are all character columns except those in
   # exclude
   target_cols <-
@@ -527,7 +549,6 @@ ody_apply_on_pattern <-  function(
         }
       )
     )
-
 }
 
 #' Label Data Frame
@@ -545,7 +566,6 @@ ody_apply_on_pattern <-  function(
 #' @return A data frame with labeled variables and corresponding values according to the provided dictionary.
 #' @export
 ody_label_df <- function(raw_data, dictionary) {
-
   # Nested dictionary with vector dictionary of each variable
   nested_dic <- dictionary |>
     dplyr::select(.data$variable, .data$value_label, .data$value) |>
@@ -553,7 +573,7 @@ ody_label_df <- function(raw_data, dictionary) {
     dplyr::mutate(
       vec_dic = purrr::map_chr(
         .data$dic,
-        ~stringr::str_c(
+        ~ stringr::str_c(
           "c(",
           stringr::str_c("`", .$value_label, "` = '", .$value, "'") |>
             stringr::str_c(collapse = ", "),
@@ -564,7 +584,12 @@ ody_label_df <- function(raw_data, dictionary) {
     dplyr::filter(!is.na(.data$vec_dic))
 
   # Value labels of each variable in
-  val_labels_text <- stringr::str_c("`", nested_dic$variable, "` = ", nested_dic$vec_dic) |>
+  val_labels_text <- stringr::str_c(
+    "`",
+    nested_dic$variable,
+    "` = ",
+    nested_dic$vec_dic
+  ) |>
     na.omit() |>
     stringr::str_c(collapse = ", ")
 
@@ -575,32 +600,31 @@ ody_label_df <- function(raw_data, dictionary) {
     )
 
   if (any(names(dictionary) == "variable_label")) {
-
     var_labels_text <- dictionary |>
       dplyr::select(.data$variable_label, .data$variable) |>
       na.omit() |>
       unique() |>
-      purrr::pmap(~stringr::str_c("`", .y, "`",  " = '", .x, "'")) |>
+      purrr::pmap(~ stringr::str_c("`", .y, "`", " = '", .x, "'")) |>
       stringr::str_c(collapse = ", ")
 
     labelled_vars_data <- stringr::str_c(
-      "labelled::set_variable_labels(raw_data_chr,", var_labels_text, ")"
+      "labelled::set_variable_labels(raw_data_chr,",
+      var_labels_text,
+      ")"
     ) |>
       str2lang() |>
       eval()
-
   } else {
-
     labelled_vars_data <- raw_data_chr
-
   }
 
   stringr::str_c(
-    "labelled::set_value_labels(labelled_vars_data,", val_labels_text, ")"
+    "labelled::set_value_labels(labelled_vars_data,",
+    val_labels_text,
+    ")"
   ) |>
     str2lang() |>
     eval()
-
 }
 
 
@@ -614,25 +638,42 @@ ody_label_df <- function(raw_data, dictionary) {
 #'
 #' @export
 ody_timetravel <- function(timepoint) {
-
   backup <- list.files(here::here("data", "backups"), ".RData$") |>
     stringr::str_subset(timepoint)
 
-
   if (length(backup) == 0) {
-
     stop("No available timepoint")
-
   }
 
   if (length(backup) > 1) {
-
     stop("Ambiguous timepoint")
-
   }
 
   load(here::here("data", "backups", backup), envir = .GlobalEnv)
 
-  cli::cli_alert_info("The datasets have been replaced by the ones in {backup}.\nPlease, check the data before continuing with your analysis.")
+  cli::cli_alert_info(
+    "The datasets have been replaced by the ones in {backup}.\nPlease, check the data before continuing with your analysis."
+  )
+}
 
+
+#' External Filter Function
+#'
+#' Creates a filtering function that selects rows from a data frame based on an external reference data frame and a filter expression.
+#'
+#' @param external_df A data frame containing reference data for filtering.
+#' @param id_col The column name in both data frames that identifies subjects.
+#'
+#' @return A function that takes a data frame and a filter expression, returning the filtered data frame.
+#' @export
+ody_exofilter <- function(external_df, id_col) {
+  function(df, filter_expression) {
+    patients <-
+      external_df |>
+      dplyr::filter({{ filter_expression }}) |>
+      dplyr::pull({{ id_col }})
+
+    df |>
+      dplyr::filter({{ id_col }} %in% patients)
+  }
 }

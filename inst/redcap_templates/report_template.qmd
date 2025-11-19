@@ -1,7 +1,7 @@
 ---
 title: "Report title"
 date: today
-format: 
+format:
   html:
     fontsize: medium
     embed-resources: true
@@ -37,8 +37,9 @@ withr::with_dir(
   quarto::quarto_render(
     input = rstudioapi::getActiveDocumentContext()$path,
     output_file = odytools::ody_add_version(
-      rstudioapi::getActiveDocumentContext()$path |> 
-        stringr::str_remove_all("^.*/|\\..*$")
+      rstudioapi::getActiveDocumentContext()$path |>
+        basename() |>
+        tools::file_path_sans_ext()
     )
   )
 )

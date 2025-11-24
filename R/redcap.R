@@ -77,7 +77,33 @@ import_rc <- function(
   forms <- extract_data("instrument", token, url)
   events <- extract_data("event", token, url)
   forms_event_mapping <- extract_data("formEventMapping", token, url)
-  repeating <- extract_data("repeatingFormsEvents", token, url)
+  # repeating <- extract_data("repeatingFormsEvents", token, url)
+  # ! repeatingFormsEvents ya no es importable con privilegios estandar de la
+  # ! API. Se arregla deduciendo el patrón de repetición a partir del propio
+  # ! data frame de datos.
+  repeating_info_vars <-
+    redcap_data |>
+    dplyr::select(
+      tidyselect::any_of(c(
+        "redcap_event_name",
+        "redcap_repeat_instrument",
+        "redcap_repeat_instance"
+      ))
+    )
+  if (ncol(repeating_info_vars) == 0) {
+    repeating <- NULL
+  }
+  repeating <-
+    repeating_info_vars |>
+    dplyr::filter(!is.na(.data[["redcap_repeat_instance"]])) |>
+    dplyr::select(
+      tidyselect::any_of(c(
+        event_name = "redcap_event_name",
+        form_name = "redcap_repeat_instrument"
+      ))
+    ) |>
+    unique()
+
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {
@@ -190,9 +216,12 @@ import_rc <- function(
   ) {
     attr(redcap_data, "forms_events_mapping") <- forms_event_mapping
   }
-  if (stringr::str_detect(colnames(repeating)[1], "ERROR", negate = TRUE)) {
-    attr(redcap_data, "repeating") <- repeating
-  }
+  # Esta manera de decidir si meter repeating era para cuando se sacaba la info
+  # de la API. Lo conservo por si en el futuro se puede usar de nuevo.
+  # if (stringr::str_detect(colnames(repeating)[1], "ERROR", negate = TRUE)) {
+  #   attr(redcap_data, "repeating") <- repeating
+  # }
+  attr(redcap_data, "repeating") <- repeating
   if (stringr::str_detect(colnames(arms)[1], "ERROR", negate = TRUE)) {
     attr(redcap_data, "arms") <- arms
   }

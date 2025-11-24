@@ -92,18 +92,18 @@ import_rc <- function(
     )
   if (ncol(repeating_info_vars) == 0) {
     repeating <- NULL
+  } else {
+    repeating <-
+      repeating_info_vars |>
+      dplyr::filter(!is.na(.data[["redcap_repeat_instance"]])) |>
+      dplyr::select(
+        tidyselect::any_of(c(
+          event_name = "redcap_event_name",
+          form_name = "redcap_repeat_instrument"
+        ))
+      ) |>
+      unique()
   }
-  repeating <-
-    repeating_info_vars |>
-    dplyr::filter(!is.na(.data[["redcap_repeat_instance"]])) |>
-    dplyr::select(
-      tidyselect::any_of(c(
-        event_name = "redcap_event_name",
-        form_name = "redcap_repeat_instrument"
-      ))
-    ) |>
-    unique()
-
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {

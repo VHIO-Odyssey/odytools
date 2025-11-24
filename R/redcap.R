@@ -107,10 +107,20 @@ import_rc <- function(
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {
-    dag <- extract_data("dag", token, url)
+    # ! dag también se deja de extraer con privilegios estándar de la API.
+    # ! intento sacar la info de redcap_data directamente.
+    # dag <- extract_data("dag", token, url)
     subjects_dag <- redcap_data |>
       dplyr::select(1, "redcap_data_access_group") |>
       unique()
+    dag <- tibble::tibble(
+      data_access_group_name = unique(subjects_dag$redcap_data_access_group) |>
+        stringr::str_replace_all("__", " - ") |>
+        stringr::str_replace_all("_", " ") |>
+        stringr::str_to_upper(),
+      unique_group_name = unique(subjects_dag$redcap_data_access_group)
+    )
+
     redcap_data <- redcap_data |>
       dplyr::select(-"redcap_data_access_group")
   }

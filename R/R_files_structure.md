@@ -60,9 +60,11 @@ Functions to export and work on redcap projects.
 
 -   extract_data
 
--   import_rc [extract_data, get_single_field]
+-   import_rc [extract_data, get_single_field, get_dag]
 
 -   get_single_field
+
+-   get_dag
 
 -   process_raw_dic
 

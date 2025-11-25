@@ -1,5 +1,6 @@
-# odytools 0.9.4.9000
+# odytools 0.9.5
 
+- Updated internals to properly manage the new privileges requirements of REDCap API tokens.
 - Added `ody_exofilter`: a helper that creates an external-filter function to select rows from a data frame based on an external reference data frame and an identifier column. Useful for applying patient-level filters defined in separate datasets.
 
 

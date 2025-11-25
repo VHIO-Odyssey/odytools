@@ -1,6 +1,6 @@
 # Helper function to extract content in import_rc
 extract_data <- function(content, token, url) {
-  httr::POST(
+  result <- httr::POST(
     url,
     body = list(
       "token" = token,
@@ -12,6 +12,14 @@ extract_data <- function(content, token, url) {
   ) |>
     httr::content(show_col_types = FALSE) |>
     suppressWarnings()
+
+  attr(result, "is_available") <- stringr::str_detect(
+    names(result)[1],
+    "^ERROR",
+    negate = TRUE
+  )
+
+  result
 }
 
 
@@ -129,7 +137,8 @@ import_rc <- function(
 
     dag <-
       dplyr::left_join(
-        subjects_dag, dag_labels,
+        subjects_dag,
+        dag_labels,
         by = colnames(redcap_data)[1]
       ) |>
       dplyr::select(
@@ -2121,4 +2130,56 @@ ody_rc_search_ttm <- function(
   } else {
     filtered_cases
   }
+}
+
+
+#' Check availability of REDCap metadata types
+#'
+#' Query a REDCap API endpoint to determine which metadata types are available
+#' for the given project token.
+#'
+#' @param token Character. REDCap API project token used to authenticate the
+#'   request.
+#' @param url Character. Base URL of the REDCap API. Defaults to
+#'   \code{"https://redcap.vhio.net/redcap/api/"}.
+#'
+#' @details
+#' The function checks the following metadata types: \code{metadata},
+#' \code{project}, \code{instrument}, \code{event}, \code{formEventMapping},
+#' and \code{arm}.
+#'
+#' @return A tibble with two columns:
+#'   - \code{meta_info} (character): the metadata type name.
+#'   - \code{is_available} (logical): \code{TRUE} if the metadata type appears
+#'     available for the project, \code{FALSE} if not.
+#'
+#' @examples
+#' \dontrun{
+#' token <- "REDCAP_PROJECT_API_TOKEN"
+#' # Query availability of metadata types for the project
+#' ody_rc_check_metadata_availability(token)
+#' }
+#'
+#' @export
+ody_rc_check_metadata_availability <- function(
+  token,
+  url = "https://redcap.vhio.net/redcap/api/"
+) {
+  meta_names <- c(
+    "metadata",
+    "project",
+    "instrument",
+    "event",
+    "formEventMapping",
+    "arm"
+  )
+  is_available <- purrr::map_lgl(
+    meta_names,
+    ~ attr(extract_data(., token, url), "is_available")
+  )
+
+  tibble::tibble(
+    meta_info = meta_names,
+    is_available = is_available
+  )
 }

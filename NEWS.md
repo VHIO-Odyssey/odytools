@@ -1,3 +1,7 @@
+# odytools 0.9.5.9000
+
+- Added `ody_rc_check_metadata_availability` to verify if the metadata odytools needs to get from REDCap is available through a given API token.
+
 # odytools 0.9.5
 
 - Updated internals to properly manage the new privileges requirements of REDCap API tokens.

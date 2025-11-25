@@ -77,14 +77,64 @@ import_rc <- function(
   forms <- extract_data("instrument", token, url)
   events <- extract_data("event", token, url)
   forms_event_mapping <- extract_data("formEventMapping", token, url)
-  repeating <- extract_data("repeatingFormsEvents", token, url)
+  # repeating <- extract_data("repeatingFormsEvents", token, url)
+  # ! repeatingFormsEvents ya no es importable con privilegios estandar de la
+  # ! API. Se arregla deduciendo el patrón de repetición a partir del propio
+  # ! data frame de datos.
+  repeating_info_vars <-
+    redcap_data |>
+    dplyr::select(
+      tidyselect::any_of(c(
+        "redcap_event_name",
+        "redcap_repeat_instrument",
+        "redcap_repeat_instance"
+      ))
+    )
+  if (ncol(repeating_info_vars) == 0) {
+    repeating <- NULL
+  } else {
+    repeating <-
+      repeating_info_vars |>
+      dplyr::filter(!is.na(.data[["redcap_repeat_instance"]])) |>
+      dplyr::select(
+        tidyselect::any_of(c(
+          event_name = "redcap_event_name",
+          form_name = "redcap_repeat_instrument"
+        ))
+      ) |>
+      unique()
+  }
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {
-    dag <- extract_data("dag", token, url)
+    # ! dag también se deja de extraer con privilegios estándar de la API.
+    # ! intento sacar la info de redcap_data directamente.
+    # dag <- extract_data("dag", token, url)
     subjects_dag <- redcap_data |>
       dplyr::select(1, "redcap_data_access_group") |>
       unique()
+    dag_labels <- get_dag(
+      token,
+      colnames(redcap_data)[1],
+      url
+    ) |>
+      dplyr::select(
+        colnames(redcap_data)[1],
+        "redcap_data_access_group"
+      ) |>
+      unique()
+
+    dag <-
+      dplyr::left_join(
+        subjects_dag, dag_labels,
+        by = colnames(redcap_data)[1]
+      ) |>
+      dplyr::select(
+        data_access_group_name = "redcap_data_access_group.y",
+        unique_group_name = "redcap_data_access_group.x"
+      ) |>
+      unique()
+
     redcap_data <- redcap_data |>
       dplyr::select(-"redcap_data_access_group")
   }
@@ -190,9 +240,12 @@ import_rc <- function(
   ) {
     attr(redcap_data, "forms_events_mapping") <- forms_event_mapping
   }
-  if (stringr::str_detect(colnames(repeating)[1], "ERROR", negate = TRUE)) {
-    attr(redcap_data, "repeating") <- repeating
-  }
+  # Esta manera de decidir si meter repeating era para cuando se sacaba la info
+  # de la API. Lo conservo por si en el futuro se puede usar de nuevo.
+  # if (stringr::str_detect(colnames(repeating)[1], "ERROR", negate = TRUE)) {
+  #   attr(redcap_data, "repeating") <- repeating
+  # }
+  attr(redcap_data, "repeating") <- repeating
   if (stringr::str_detect(colnames(arms)[1], "ERROR", negate = TRUE)) {
     attr(redcap_data, "arms") <- arms
   }
@@ -259,6 +312,33 @@ get_single_field <- function(
 
   result[[1]]
 }
+
+# Second helper function to get the data access groups
+get_dag <- function(
+  token,
+  id_var,
+  url
+) {
+  formData <- list(
+    "token" = token,
+    content = "record",
+    action = "export",
+    format = "csv",
+    type = "flat",
+    csvDelimiter = "",
+    "fields[0]" = id_var,
+    rawOrLabel = "label",
+    rawOrLabelHeaders = "raw",
+    exportCheckboxLabel = "false",
+    exportSurveyFields = "false",
+    exportDataAccessGroups = "true",
+    returnFormat = "json"
+  )
+  response <- httr::POST(url, body = formData, encode = "form")
+  httr::content(response) |>
+    suppressMessages()
+}
+
 
 # Helper function that transform a redcap dictionary into a named vector.
 process_raw_dic <- function(raw_dic) {

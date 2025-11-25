@@ -9,9 +9,9 @@ get_project_name <- function() {
 
 # Helper to extract the import date of a redcap_data object.
 get_import_date <- function(redcap_data) {
-
   stringr::str_extract(
-    attr(redcap_data, "import_date"), "....-..-.. ..:.."
+    attr(redcap_data, "import_date"),
+    "....-..-.. ..:.."
   ) |>
     stringr::str_remove_all("-|:") |>
     stringr::str_replace(" ", "_")
@@ -19,7 +19,6 @@ get_import_date <- function(redcap_data) {
 
 # Helper function to set the directories structure of a RedCap project
 rc_init_dirs_files <- function() {
-
   rlang::check_installed("conflicted")
 
   project_name <- get_project_name()
@@ -37,19 +36,25 @@ rc_init_dirs_files <- function() {
   # Root Templates
   file.copy(
     system.file(
-      "redcap_templates", "Rprofile_template.R", package = "odytools"
+      "redcap_templates",
+      "Rprofile_template.R",
+      package = "odytools"
     ),
     here::here(".Rprofile")
   )
   file.copy(
     system.file(
-      "redcap_templates", "dependencies_template.R", package = "odytools"
+      "redcap_templates",
+      "dependencies_template.R",
+      package = "odytools"
     ),
     here::here(stringr::str_c(project_name, "_dependencies.R"))
   )
   file.copy(
     system.file(
-      "redcap_templates", "sandbox_template.R", package = "odytools"
+      "redcap_templates",
+      "sandbox_template.R",
+      package = "odytools"
     ),
     here::here(stringr::str_c(project_name, "_sandbox.R"))
   )
@@ -57,7 +62,9 @@ rc_init_dirs_files <- function() {
   # Datasets Template
   file.copy(
     system.file(
-      "redcap_templates", "datasets_template.R", package = "odytools"
+      "redcap_templates",
+      "datasets_template.R",
+      package = "odytools"
     ),
     here::here("data", "datasets", stringr::str_c(project_name, "_datasets.R"))
   )
@@ -65,7 +72,9 @@ rc_init_dirs_files <- function() {
   # function template
   file.copy(
     system.file(
-      "redcap_templates", "functions_template.R", package = "odytools"
+      "redcap_templates",
+      "functions_template.R",
+      package = "odytools"
     ),
     here::here("functions", stringr::str_c(project_name, "_functions.R"))
   )
@@ -73,33 +82,44 @@ rc_init_dirs_files <- function() {
   # Report templates
   file.copy(
     system.file(
-      "redcap_templates", "report_template.qmd", package = "odytools"
+      "redcap_templates",
+      "report_template.qmd",
+      package = "odytools"
     ),
     here::here("analysis", stringr::str_c(project_name, "_analysis.qmd"))
   )
   file.copy(
     system.file(
-      "redcap_templates", "report_template.qmd", package = "odytools"
+      "redcap_templates",
+      "report_template.qmd",
+      package = "odytools"
     ),
     here::here(
-      "quality", stringr::str_c(project_name, "_quality.qmd")
+      "quality",
+      stringr::str_c(project_name, "_quality.qmd")
     )
   )
 
   # hardcoding template
   file.copy(
     system.file(
-      "redcap_templates", "hardcoded_values.csv", package = "odytools"
+      "redcap_templates",
+      "hardcoded_values.csv",
+      package = "odytools"
     ),
     here::here(
-      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
+      "data",
+      "imports",
+      stringr::str_c(project_name, "_hardcoded_values.csv")
     )
   )
 
   # Gitignore template
   file.copy(
     system.file(
-      "redcap_templates", "gitignore_template", package = "odytools"
+      "redcap_templates",
+      "gitignore_template",
+      package = "odytools"
     ),
     here::here(".gitignore")
   )
@@ -107,16 +127,16 @@ rc_init_dirs_files <- function() {
   # Memento template
   file.copy(
     system.file(
-      "redcap_templates", "memento_template.md", package = "odytools"
+      "redcap_templates",
+      "memento_template.md",
+      package = "odytools"
     ),
     here::here("docs", stringr::str_c(project_name, "_memento.md"))
   )
-
 }
 
 # Helper function to make the datasets
 rc_make_datasets <- function(redcap_data) {
-
   project_name <- get_project_name()
 
   import_date <- get_import_date(redcap_data)
@@ -127,102 +147,112 @@ rc_make_datasets <- function(redcap_data) {
 
   purrr::walk(
     here::here("functions", functions_scripts),
-    source, local = rlang::current_env()
+    source,
+    local = rlang::current_env()
   )
 
   datasets_scripts <- list.files(here::here("data", "datasets"), ".R$")
 
   purrr::walk(
     here::here("data", "datasets", datasets_scripts),
-    source, local = rlang::current_env()
+    source,
+    local = rlang::current_env()
   )
 
   # Objects declared as datasets
   current_objects <- ls()
   dataset_index <- purrr::map_lgl(
-    current_objects, ~!is.null(attr(get(.), "is_dataset"))
+    current_objects,
+    ~ !is.null(attr(get(.), "is_dataset"))
   )
   to_datasets <- current_objects[dataset_index]
   datasets <- purrr::map(
     to_datasets,
-    ~get(.)
+    ~ get(.)
   )
   names(datasets) <- to_datasets
 
   attr(datasets, "import_date") <- attr(redcap_data, "import_date")
   attr(datasets, "project_title") <- attr(
-    redcap_data, "project_info"
+    redcap_data,
+    "project_info"
   )$project_title
 
   # Export datasets declared as export
   export_index <- purrr::map_lgl(
-    datasets, ~attr(., "export")
+    datasets,
+    ~ attr(., "export")
   )
 
   if (sum(export_index) > 0) {
-
     exported_tables <- datasets[export_index]
     file_names <- stringr::str_c(
-      project_name, "_", names(exported_tables), "_", import_date, ".csv"
+      project_name,
+      "_",
+      names(exported_tables),
+      "_",
+      import_date,
+      ".csv"
     )
 
     purrr::walk2(
-      exported_tables, file_names,
-      ~readr::write_csv2(.x, here::here("data", "exports", .y))
+      exported_tables,
+      file_names,
+      ~ readr::write_csv2(.x, here::here("data", "exports", .y))
     )
-
   }
 
   class(datasets) <- c("odytools_datasets_list", class(datasets))
 
   datasets
-
 }
 
 # Helper function  to make a datasets list in non REDCap projects
 rc_make_datasets_no_redcap <- function() {
-
   # Functions scripts are sourced first just in case the datasets scripts need
   # them.
   functions_scripts <- list.files(here::here("functions"), ".R$")
 
   purrr::walk(
     here::here("functions", functions_scripts),
-    source, local = rlang::current_env()
+    source,
+    local = rlang::current_env()
   )
 
   datasets_scripts <- list.files(here::here("data"), ".R$")
 
   purrr::walk(
     here::here("data", datasets_scripts),
-    source, local = rlang::current_env()
+    source,
+    local = rlang::current_env()
   )
 
   # Objects declared as datasets
   current_objects <- ls()
   dataset_index <- purrr::map_lgl(
-    current_objects, ~!is.null(attr(get(.), "is_dataset"))
+    current_objects,
+    ~ !is.null(attr(get(.), "is_dataset"))
   )
   to_datasets <- current_objects[dataset_index]
   datasets <- purrr::map(
     to_datasets,
-    ~get(.)
+    ~ get(.)
   )
   names(datasets) <- to_datasets
 
   class(datasets) <- c("odytools_datasets_list", class(datasets))
 
   datasets
-
 }
 
 # Start/Update a RedCap Project. Only Addin
 rc_init_update <- function() {
-
   rlang::check_installed("git2r")
 
   project_name <- get_project_name()
-  if (length(project_name) == 0) stop("No RStudio project detected.")
+  if (length(project_name) == 0) {
+    stop("No RStudio project detected.")
+  }
 
   # It is an update?
   # It is assumed to be an update if there is an RData named after the project.
@@ -271,8 +301,10 @@ rc_init_update <- function() {
     if (pre_update_project != post_update_project) {
       stop(
         "The project associated with the token provided (",
-        post_update_project, ") does not match the current project (",
-        pre_update_project, "). Update canceled."
+        post_update_project,
+        ") does not match the current project (",
+        pre_update_project,
+        "). Update canceled."
       )
     }
   }
@@ -284,21 +316,27 @@ rc_init_update <- function() {
 
   hardcoded_values <- readr::read_csv2(
     here::here(
-      "data", "imports", stringr::str_c(project_name, "_hardcoded_values.csv")
-
-    ), col_types = readr::cols(.default = readr::col_character())
-  ) |> suppressMessages()
+      "data",
+      "imports",
+      stringr::str_c(project_name, "_hardcoded_values.csv")
+    ),
+    col_types = readr::cols(.default = readr::col_character())
+  ) |>
+    suppressMessages()
 
   if (nrow(hardcoded_values) > 0) {
     redcap_data <- hardcode_values(redcap_data, hardcoded_values)
-    cli::cli_alert_info("This project has hardcoded values. Check them with {.code attr(redcap_data, \"hardcoded_values\")}")
+    cli::cli_alert_info(
+      "This project has hardcoded values. Check them with {.code attr(redcap_data, \"hardcoded_values\")}"
+    )
   }
 
   cli::cli_alert_info("Computing datasets...")
   datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
   save(
-    redcap_data, datasets,
+    redcap_data,
+    datasets,
     file = here::here(stringr::str_c(project_name, ".RData"))
   )
 
@@ -322,38 +360,35 @@ rc_init_update <- function() {
   }
 
   source(here::here(stringr::str_c(project_name, "_dependencies.R")))
-
 }
 
 # Refresh the Datasets List. Only Addin.
 rc_refresh_datasets <- function() {
-
   cli::cli_alert_info("Refreshing datasets...")
 
   rdatas <- list.files(here::here(), ".RData$")
-  if (length(rdatas) != 0) load(rdatas)
+  if (length(rdatas) != 0) {
+    load(rdatas)
+  }
 
   project_name <- get_project_name()
 
   # Datasets are refreshed in both REDCap and non-REDCap projects
   if (exists("redcap_data")) {
+    redcap_data <- get("redcap_data")
+    datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
-  redcap_data <- get("redcap_data")
-  datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
+    save(
+      redcap_data,
+      datasets,
+      file = here::here(stringr::str_c(project_name, ".RData"))
+    )
 
-
-  save(
-    redcap_data, datasets,
-    file = here::here(stringr::str_c(project_name, ".RData"))
-  )
-
-  load(
-    here::here(stringr::str_c(project_name, ".RData")),
-    envir = .GlobalEnv
-  )
-
+    load(
+      here::here(stringr::str_c(project_name, ".RData")),
+      envir = .GlobalEnv
+    )
   } else {
-
     datasets <- rc_make_datasets_no_redcap() |> suppressMessages()
 
     save(
@@ -365,16 +400,16 @@ rc_refresh_datasets <- function() {
       here::here(stringr::str_c(project_name, ".RData")),
       envir = .GlobalEnv
     )
-
   }
 
+  # Dependencies script is sourced again to ensure any change in datasets is
+  # reflected there (in function factories).
+  source(here::here(stringr::str_c(project_name, "_dependencies.R")))
   cli::cli_alert_success("Datasets successfully refreshed.\n")
-
 }
 
 # Save a copy of the current redcap_data and datasets. Only Addin
 rc_back_up <- function() {
-
   load(list.files(here::here(), ".RData$"))
 
   project_name <- get_project_name()
@@ -383,14 +418,16 @@ rc_back_up <- function() {
   datasets <- get("datasets")
 
   if (exists("redcap_data")) {
-
     # this to avoid package check complains about undefined objects
     redcap_data <- get("redcap_data")
 
     import_date <- get_import_date(redcap_data)
 
     backup_name <- stringr::str_c(
-      project_name, "_import_", import_date, ".RData"
+      project_name,
+      "_import_",
+      import_date,
+      ".RData"
     )
 
     backup_date <- Sys.time()
@@ -398,23 +435,27 @@ rc_back_up <- function() {
     attr(datasets, "backup_date") <- backup_date
 
     save(
-      redcap_data, datasets,
+      redcap_data,
+      datasets,
       file = here::here("data", "imports", backup_name)
     )
 
     message(
-      "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ", backup_name, "\n"
+      "A backup copy of the import and its derived datasets has been stored\nin data/imports with the name ",
+      backup_name,
+      "\n"
     )
-
   } else {
-
     backup_date <- Sys.time()
     backup_date_label <-
       stringr::str_extract(backup_date, "....-..-.. ..:..") |>
       stringr::str_remove_all("-|:") |>
       stringr::str_replace(" ", "_")
     backup_name <- stringr::str_c(
-      project_name, "_backup_", backup_date_label, ".RData"
+      project_name,
+      "_backup_",
+      backup_date_label,
+      ".RData"
     )
 
     attr(datasets, "backup_date") <- backup_date
@@ -422,11 +463,11 @@ rc_back_up <- function() {
     save(datasets, file = here::here("data", "backups", backup_name))
 
     message(
-      "A backup copy of the datasets has been stored\nin data/backups with the name ", backup_name, "\n"
+      "A backup copy of the datasets has been stored\nin data/backups with the name ",
+      backup_name,
+      "\n"
     )
-
   }
-
 }
 
 #' Declare an object as belonging to datasets list
@@ -437,7 +478,6 @@ rc_back_up <- function() {
 #'
 #' @export
 ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
-
   class(object) <- c("odytools_dataset", class(object))
   # If the object is derived from an object already added to datasets, it will
   # inherit the "odytools_dataset" class so this unique() ensures the class is
@@ -453,7 +493,6 @@ ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
   }
 
   object
-
 }
 
 #' Get the name and the import dates (last and loaded) of the project
@@ -466,25 +505,27 @@ ody_add_to_datasets <- function(object, description = NULL, export = FALSE) {
 #'
 #' @export
 ody_rc_current <- function(as_list = FALSE) {
-
   # Current Redcap data in main RData
   rdatas <- list.files(here::here(), ".RData$")
   if (length(rdatas) == 0) {
-    return(cli::cli_alert_danger("No Redcap project detected. You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
-  }
-  else {
+    return(cli::cli_alert_danger(
+      "No Redcap project detected. You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."
+    ))
+  } else {
     purrr::walk(here::here(rdatas), load, envir = rlang::current_env())
     if (!exists("redcap_data", inherits = FALSE)) {
-      return(cli::cli_alert_danger("No Redcap project detected.You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."))
+      return(cli::cli_alert_danger(
+        "No Redcap project detected.You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."
+      ))
     }
   }
 
   # Import date of the loaded redcap
-  loaded_import_date  <- attr(
+  loaded_import_date <- attr(
     get("redcap_data", envir = .GlobalEnv),
     "import_date"
   ) |>
-    stringr::str_extract( "....-..-.. ..:..")
+    stringr::str_extract("....-..-.. ..:..")
 
   # Info of the current data (the oine stored in the main RData)
   import_date <- attr(get("redcap_data"), "import_date") |>
@@ -498,20 +539,22 @@ ody_rc_current <- function(as_list = FALSE) {
       last = import_date,
       loaded = loaded_import_date
     )
-  }else {
+  } else {
     cli::cli_alert_info(stringr::str_c("Name: {.strong ", project_name, "}"))
     cli::cli_alert_info(stringr::str_c("PID: ", project_id))
     cli::cli_alert_info(stringr::str_c(
-      "Last import: ", import_date
+      "Last import: ",
+      import_date
     ))
     cli::cli_alert_info(stringr::str_c(
-      "Loaded import: {.strong ", loaded_import_date, "}"
+      "Loaded import: {.strong ",
+      loaded_import_date,
+      "}"
     ))
   }
 }
 # Helper function to copy a new analysis template.Onla addin
 add_analysis_template <- function() {
-
   project_name <- get_project_name()
 
   n_analysis <- list.files(here::here("analysis")) |>
@@ -524,17 +567,21 @@ add_analysis_template <- function() {
     analysis_name <- stringr::str_c(project_name, "_analysis.qmd")
   } else {
     analysis_name <- stringr::str_c(
-      project_name, "_analysis_", n_analysis + 1, ".qmd"
+      project_name,
+      "_analysis_",
+      n_analysis + 1,
+      ".qmd"
     )
   }
 
   file.copy(
     system.file(
-      "redcap_templates", "report_template.qmd", package = "odytools"
+      "redcap_templates",
+      "report_template.qmd",
+      package = "odytools"
     ),
     here::here("analysis", analysis_name)
   )
-
 }
 
 
@@ -544,25 +591,22 @@ myView <- function(x, title) {
 }
 # View the metadata of the current project. Only Addin
 rc_view_metadata <- function() {
-
   load(list.files(here::here(), ".RData$"))
 
   attr(get("redcap_data"), "metadata") |> myView("Metadata")
-
 }
 
 # View the description of the datasets. Only Addin
 view_datasets <- function() {
-
   dplyr::tibble(
     dataset = names(get("datasets")),
-    exported = purrr::map_lgl(get("datasets"), ~attr(., "export")),
+    exported = purrr::map_lgl(get("datasets"), ~ attr(., "export")),
     description = purrr::map_chr(
       get("datasets"),
-      ~ifelse(is.null(attr(., "description")), NA, attr(., "description"))
+      ~ ifelse(is.null(attr(., "description")), NA, attr(., "description"))
     )
-  ) |> myView("Datasets Description")
-
+  ) |>
+    myView("Datasets Description")
 }
 
 #' Paradox-Free Time Travelling
@@ -575,65 +619,57 @@ view_datasets <- function() {
 #'
 #' @export
 ody_rc_timetravel <- function(timepoint) {
-
   import <- list.files(here::here("data", "imports"), ".RData$") |>
     stringr::str_subset(timepoint)
 
-
   if (length(import) == 0) {
-
     stop("No available timepoint")
-
   }
 
   if (length(import) > 1) {
-
     stop("Ambiguous timepoint")
-
   }
 
   load(here::here("data", "imports", import), envir = .GlobalEnv)
 
   ody_rc_current()
-
 }
 
 # Helper function to modify values in a longitudinal project
 hardcode_value_longproj <- function(
-    redcap_data,
-    event,
-    form,
-    variable,
-    id,
-    instance,
-    corrected_value) {
-
+  redcap_data,
+  event,
+  form,
+  variable,
+  id,
+  instance,
+  corrected_value
+) {
   event_index <- redcap_data$redcap_event_name == event
 
   form_index <- redcap_data$redcap_event_data[
     event_index
-  ][[1]]$redcap_form_name == form
+  ][[1]]$redcap_form_name ==
+    form
 
   subject_index <- redcap_data$redcap_event_data[
     event_index
   ][[1]]$redcap_form_data[
     form_index
-  ][[1]][, 1] == id
+  ][[1]][, 1] ==
+    id
 
   if (is.na(instance)) {
-
     case_index <- subject_index
-
   } else {
-
     instance_index <- redcap_data$redcap_event_data[
       event_index
     ][[1]]$redcap_form_data[
       form_index
-    ][[1]]$redcap_instance_number == instance
+    ][[1]]$redcap_instance_number ==
+      instance
 
     case_index <- subject_index & instance_index
-
   }
 
   selected <- redcap_data$redcap_event_data[
@@ -656,37 +692,34 @@ hardcode_value_longproj <- function(
     redcap_data,
     dplyr::pull(selected)
   )
-
 }
 
 
 # Helper function to modify values in a classic project
 hardcode_value_clasproj <- function(
-    redcap_data,
-    form,
-    variable,
-    id,
-    instance,
-    corrected_value) {
-
+  redcap_data,
+  form,
+  variable,
+  id,
+  instance,
+  corrected_value
+) {
   form_index <- redcap_data$redcap_form_name == form
 
   subject_index <- redcap_data$redcap_form_data[
     form_index
-  ][[1]][, 1] == id
+  ][[1]][, 1] ==
+    id
 
   if (is.na(instance)) {
-
     case_index <- subject_index
-
   } else {
-
     instance_index <- redcap_data$redcap_form_data[
       form_index
-    ][[1]]$redcap_instance_number == instance
+    ][[1]]$redcap_instance_number ==
+      instance
 
     case_index <- subject_index & instance_index
-
   }
 
   selected <- redcap_data$redcap_form_data[
@@ -705,19 +738,15 @@ hardcode_value_clasproj <- function(
     redcap_data,
     dplyr::pull(selected)
   )
-
 }
 
 # Function to apply values modification according to the strcuture of the
 # project.
 hardcode_values <- function(redcap_data, hardcode_df) {
-
   orig_values <- character()
 
   if (all(!is.na(hardcode_df$event))) {
-
     for (i in 1:nrow(hardcode_df)) {
-
       correction <- hardcode_value_longproj(
         redcap_data,
         hardcode_df$event[i],
@@ -731,12 +760,9 @@ hardcode_values <- function(redcap_data, hardcode_df) {
       redcap_data <- correction[[1]]
 
       orig_values <- c(orig_values, correction[[2]])
-
     }
-
   } else {
     for (i in 1:nrow(hardcode_df)) {
-
       correction <- hardcode_value_clasproj(
         redcap_data,
         hardcode_df$form[i],
@@ -750,7 +776,6 @@ hardcode_values <- function(redcap_data, hardcode_df) {
 
       orig_values <- c(orig_values, correction[[2]])
     }
-
   }
 
   corrections <- hardcode_df |>
@@ -762,21 +787,23 @@ hardcode_values <- function(redcap_data, hardcode_df) {
   attr(redcap_data, "hardcoded_values") <- corrections
 
   redcap_data
-
 }
 
 # Helper function to export the data and the dependencies file.
 # Addin only
 rc_export_data_dependencies <- function() {
-
   rdata_scripts <- here::here(list.files(here::here(), ".RData$"))
   dependencies_script <- here::here(list.files(here::here(), "dependencies.R$"))
-  functions_scripts <- here::here("functions", list.files(here::here("functions"), ".R$"))
-
-  folder_name <- stringr::str_c(
-    get_project_name(), "_", get_import_date(get("redcap_data"))
+  functions_scripts <- here::here(
+    "functions",
+    list.files(here::here("functions"), ".R$")
   )
 
+  folder_name <- stringr::str_c(
+    get_project_name(),
+    "_",
+    get_import_date(get("redcap_data"))
+  )
 
   dir.create(here::here(folder_name))
   dir.create(here::here(folder_name, "functions"))
@@ -785,7 +812,9 @@ rc_export_data_dependencies <- function() {
   file.copy(functions_scripts, here::here(folder_name, "functions"))
 
   cli::cli_alert_success(
-    stringr::str_c("The .RData file, along with the dependencies script and function scripts, has been copied to ", folder_name)
+    stringr::str_c(
+      "The .RData file, along with the dependencies script and function scripts, has been copied to ",
+      folder_name
+    )
   )
-
 }

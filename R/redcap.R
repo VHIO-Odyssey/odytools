@@ -113,13 +113,27 @@ import_rc <- function(
     subjects_dag <- redcap_data |>
       dplyr::select(1, "redcap_data_access_group") |>
       unique()
-    dag <- tibble::tibble(
-      data_access_group_name = unique(subjects_dag$redcap_data_access_group) |>
-        stringr::str_replace_all("__", " - ") |>
-        stringr::str_replace_all("_", " ") |>
-        stringr::str_to_upper(),
-      unique_group_name = unique(subjects_dag$redcap_data_access_group)
-    )
+    dag_labels <- get_dag(
+      token,
+      colnames(redcap_data)[1],
+      url
+    ) |>
+      dplyr::select(
+        colnames(redcap_data)[1],
+        "redcap_data_access_group"
+      ) |>
+      unique()
+
+    dag <-
+      dplyr::left_join(
+        subjects_dag, dag_labels,
+        by = colnames(redcap_data)[1]
+      ) |>
+      dplyr::select(
+        data_access_group_name = "redcap_data_access_group.y",
+        unique_group_name = "redcap_data_access_group.x"
+      ) |>
+      unique()
 
     redcap_data <- redcap_data |>
       dplyr::select(-"redcap_data_access_group")
@@ -298,6 +312,33 @@ get_single_field <- function(
 
   result[[1]]
 }
+
+# Second helper function to get the data access groups
+get_dag <- function(
+  token,
+  id_var,
+  url
+) {
+  formData <- list(
+    "token" = token,
+    content = "record",
+    action = "export",
+    format = "csv",
+    type = "flat",
+    csvDelimiter = "",
+    "fields[0]" = id_var,
+    rawOrLabel = "label",
+    rawOrLabelHeaders = "raw",
+    exportCheckboxLabel = "false",
+    exportSurveyFields = "false",
+    exportDataAccessGroups = "true",
+    returnFormat = "json"
+  )
+  response <- httr::POST(url, body = formData, encode = "form")
+  httr::content(response) |>
+    suppressMessages()
+}
+
 
 # Helper function that transform a redcap dictionary into a named vector.
 process_raw_dic <- function(raw_dic) {

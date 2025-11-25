@@ -122,7 +122,10 @@ import_rc <- function(
         colnames(redcap_data)[1],
         "redcap_data_access_group"
       ) |>
-      unique()
+      unique() |>
+      dplyr::mutate(
+        dplyr::across(tidyselect::everything(), as.character)
+      )
 
     dag <-
       dplyr::left_join(

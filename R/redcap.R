@@ -1102,12 +1102,13 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @export
 ody_rc_simplify_selection <- function(selected_data) {
   var_names <- names(selected_data)
-  redcap_vars_index <- var_names %in% c(
-    "redcap_event_name",
-    "redcap_form_name",
-    "redcap_instance_type",
-    "redcap_instance_number"
-  )
+  redcap_vars_index <- var_names %in%
+    c(
+      "redcap_event_name",
+      "redcap_form_name",
+      "redcap_instance_type",
+      "redcap_instance_number"
+    )
 
   if (sum(redcap_vars_index) == 0) {
     warning("No RedCap structure variables found.")
@@ -1648,9 +1649,13 @@ ody_rc_view <- function(data_app = NULL) {
     save(data_app, file = stringr::str_c(viewer_location, "/data_app.RData"))
   }
 
-  rstudioapi::jobRunScript(
-    stringr::str_c(viewer_location, "/data_viewer_runner.R")
-  )
+  if (Sys.getenv("RSTUDIO") == "1") {
+    rstudioapi::jobRunScript(
+      stringr::str_c(viewer_location, "/data_viewer_runner.R")
+    )
+  } else {
+    shiny::runApp(viewer_location)
+  }
 
   # rstudioapi::viewer("http://127.0.0.1:5921")
 }

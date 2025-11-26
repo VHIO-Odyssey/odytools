@@ -80,6 +80,8 @@ Functions to export and work on redcap projects.
 
 -   select_rc_classic
 
+-   ody_rc_simplify_selection
+
 -   ody_rc_select [select_rc_long, select_rc_classic]
 
 -   ody_rc_select_form

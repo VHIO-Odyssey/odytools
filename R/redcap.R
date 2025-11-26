@@ -1073,6 +1073,59 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 }
 
 
+#' Simplify a selection by dropping constant RedCap structure variables
+#'
+#' Remove RedCap structural columns (redcap_event_name, redcap_form_name,
+#' redcap_instance_type, redcap_instance_number) that are constant
+#' (single unique value) across the provided selection. This simplifies
+#' tables returned by selection helpers by removing redundant structural
+#' columns.
+#'
+#' @param selected_data A data frame or tibble (typically the output of
+#'   ody_rc_select or ody_rc_select_form).
+#'
+#' @return A tibble with any RedCap structural columns that are constant
+#'   removed. If none of the structural columns are present, a warning is
+#'   issued and the input is returned unchanged.
+#'
+#' @examples
+#' df <- tibble::tibble(
+#'   record_id = c("01_0001", "01_0002"),
+#'   redcap_event_name = c("registration_arm_1", "registration_arm_1"),
+#'   redcap_form_name = c("conclusion_of_mtb_portal", "conclusion_of_mtb_portal"),
+#'   redcap_instance_type = c("unique", "unique"),
+#'   redcap_instance_number = c(NA, NA),
+#'   mtb_status = c("3", "2")
+#' )
+#' ody_rc_simplify_selection(df)
+#'
+#' @export
+ody_rc_simplify_selection <- function(selected_data) {
+  var_names <- names(selected_data)
+  redcap_vars_index <- var_names %in% c(
+    "redcap_event_name",
+    "redcap_form_name",
+    "redcap_instance_type",
+    "redcap_instance_number"
+  )
+
+  if (sum(redcap_vars_index) == 0) {
+    warning("No RedCap structure variables found.")
+    return(selected_data)
+  }
+
+  var_unique_index <-
+    purrr::map_lgl(
+      var_names[redcap_vars_index],
+      ~ length(unique(selected_data[[.]])) == 1
+    )
+
+  selected_data |>
+    dplyr::select(
+      -tidyselect::all_of(var_names[redcap_vars_index][var_unique_index])
+    )
+}
+
 #' Select variables from a RedCap import
 #'
 #' @param rc_data RedCap data imported with ody_rc_import.

@@ -26,9 +26,8 @@ value across all rows.
 }}
 }
 \value{
-A tibble with any RedCap structural columns that are constant
-removed. If none of the structural columns are present, a warning is
-issued and the input is returned unchanged.
+A simplified data frame or list of data frames without the specified
+RedCap structural columns.
 }
 \description{
 Remove RedCap structural columns (redcap_event_name, redcap_form_name,

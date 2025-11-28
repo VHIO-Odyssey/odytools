@@ -818,3 +818,72 @@ rc_export_data_dependencies <- function() {
     )
   )
 }
+
+#' Read a data file from the project's data folder
+#'
+#' @param data_file Name of the data file to read.
+#' @param guess_cols Logical; if TRUE, column types are guessed, otherwise
+#' all columns are read as text.
+#'
+#' @return A data frame containing the contents of the specified file.
+#' @examples
+#' \dontrun{
+#'   df <- ody_read_data("mydata.csv")
+#'   df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
+#' }
+#' @export
+ody_read_data <- function(data_file, guess_cols = FALSE) {
+  if (stringr::str_detect(data_file, "\\.R$")) {
+    stop(
+      "The provided file appears to be an R script. Please provide a data file (e.g., .csv, .xlsx)."
+    )
+  }
+
+  data_files <-
+    list.files(
+      here::here("data"),
+      recursive = TRUE
+    )
+
+  data_file_index <-
+    stringr::str_detect(
+      data_files,
+      stringr::str_c(data_file, "$")
+    )
+
+  if (sum(data_file_index) == 0) {
+    stop("File not found in data/ folder.")
+  }
+
+  if (sum(data_file_index) > 1) {
+    matched_files <- data_files[data_file_index]
+    stop(
+      paste0(
+        "Multiple files in /data match the given name: ",
+        paste(matched_files, collapse = ", ")
+      )
+    )
+  }
+
+  data_file_path <- here::here("data", data_files[data_file_index])
+
+  is_excel <-
+    stringr::str_detect(
+      data_file,
+      stringr::str_c("\\.xlsx?$")
+    )
+
+  if (is_excel) {
+    rlang::check_installed("readxl")
+    readxl::read_excel(
+      data_file_path,
+      col_types = ifelse(guess_cols, "guess", "text")
+    )
+  } else {
+    rlang::check_installed("vroom")
+    vroom::vroom(
+      data_file_path,
+      col_types = list(.default = ifelse(guess_cols, "?", "c"))
+    )
+  }
+}

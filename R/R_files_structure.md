@@ -156,6 +156,7 @@ Functions to create and update RedCap projects in RStudio:
 -   hardcode_value_clasproj
 
 -   hardcode_values [hardcode_value_longproj, hardcode_value_clasproj]
+-   ody_read_data
 
 ## **other_utils**
 

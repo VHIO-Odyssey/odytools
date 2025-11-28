@@ -68,5 +68,7 @@ Suggests:
     ggsurvfit,
     openxlsx2,
     shinyalert,
-    shinytitle
+    shinytitle,
+    vroom,
+    readxl
 Config/testthat/edition: 3

@@ -2,13 +2,28 @@
 % Please edit documentation in R/redcap.R
 \name{ody_rc_simplify_selection}
 \alias{ody_rc_simplify_selection}
-\title{Simplify a selection by dropping constant RedCap structure variables}
+\title{Simplify a selection by dropping RedCap structure variables}
 \usage{
-ody_rc_simplify_selection(selected_data)
+ody_rc_simplify_selection(
+  selected_data,
+  join = FALSE,
+  method = c("unique", "all")
+)
 }
 \arguments{
-\item{selected_data}{A data frame or tibble (typically the output of
-ody_rc_select or ody_rc_select_form).}
+\item{selected_data}{A data frame or list of data frames (typically the
+output of ody_rc_select or ody_rc_select_form).}
+
+\item{join}{Logical. If TRUE and selected_data is a list of data frames,
+the simplified data frames will be joined with \code{dplyr::full_join} by all
+the common columns.}
+
+\item{method}{Method to determine which structural columns to remove:
+\itemize{
+\item "unique" (default): Remove structural columns that have a single unique
+value across all rows.
+\item "all": Remove all structural columns regardless of their values.
+}}
 }
 \value{
 A tibble with any RedCap structural columns that are constant
@@ -17,10 +32,8 @@ issued and the input is returned unchanged.
 }
 \description{
 Remove RedCap structural columns (redcap_event_name, redcap_form_name,
-redcap_instance_type, redcap_instance_number) that are constant
-(single unique value) across the provided selection. This simplifies
-tables returned by selection helpers by removing redundant structural
-columns.
+redcap_instance_type, redcap_instance_number) from a data frame or list of
+data frames.
 }
 \examples{
 df <- tibble::tibble(

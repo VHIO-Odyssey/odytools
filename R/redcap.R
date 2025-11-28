@@ -1073,20 +1073,24 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 }
 
 
-#' Simplify a selection by dropping constant RedCap structure variables
+#' Simplify a selection by dropping RedCap structure variables
 #'
 #' Remove RedCap structural columns (redcap_event_name, redcap_form_name,
-#' redcap_instance_type, redcap_instance_number) that are constant
-#' (single unique value) across the provided selection. This simplifies
-#' tables returned by selection helpers by removing redundant structural
-#' columns.
+#' redcap_instance_type, redcap_instance_number) from a data frame or list of
+#' data frames.
 #'
-#' @param selected_data A data frame or tibble (typically the output of
-#'   ody_rc_select or ody_rc_select_form).
+#' @param selected_data A data frame or list of data frames (typically the
+#' output of ody_rc_select or ody_rc_select_form).
+#' @param join Logical. If TRUE and selected_data is a list of data frames,
+#' the simplified data frames will be joined with `dplyr::full_join` by all
+#' the common columns.
+#' @param method Method to determine which structural columns to remove:
+#'  - "unique" (default): Remove structural columns that have a single unique
+#'   value across all rows.
+#' - "all": Remove all structural columns regardless of their values.
 #'
-#' @return A tibble with any RedCap structural columns that are constant
-#'   removed. If none of the structural columns are present, a warning is
-#'   issued and the input is returned unchanged.
+#' @return A simplified data frame or list of data frames without the specified
+#' RedCap structural columns.
 #'
 #' @examples
 #' df <- tibble::tibble(
@@ -1100,15 +1104,45 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' ody_rc_simplify_selection(df)
 #'
 #' @export
-ody_rc_simplify_selection <- function(selected_data) {
-  var_names <- names(selected_data)
-  redcap_vars_index <- var_names %in%
-    c(
-      "redcap_event_name",
-      "redcap_form_name",
-      "redcap_instance_type",
-      "redcap_instance_number"
+ody_rc_simplify_selection <- function(
+  selected_data,
+  join = FALSE,
+  method = c("unique", "all")
+) {
+  method <- rlang::arg_match(method)
+
+  if (is.data.frame(selected_data)) {
+    return(simplify_selection(selected_data, method))
+  }
+
+  simp_data <- purrr::map(selected_data, simplify_selection, method)
+
+  if (!join) {
+    return(simp_data)
+  }
+
+  simp_data |>
+    purrr::reduce(dplyr::full_join)
+}
+
+simplify_selection <- function(selected_data, method) {
+  redcap_vars <- c(
+    "redcap_event_name",
+    "redcap_form_name",
+    "redcap_instance_type",
+    "redcap_instance_number"
+  )
+
+  if (method == "all") {
+    return(
+      selected_data |>
+        dplyr::select(-tidyselect::any_of(redcap_vars))
     )
+  }
+
+  var_names <- names(selected_data)
+
+  redcap_vars_index <- var_names %in% redcap_vars
 
   if (sum(redcap_vars_index) == 0) {
     warning("No RedCap structure variables found.")
@@ -1126,6 +1160,7 @@ ody_rc_simplify_selection <- function(selected_data) {
       -tidyselect::all_of(var_names[redcap_vars_index][var_unique_index])
     )
 }
+
 
 #' Select variables from a RedCap import
 #'

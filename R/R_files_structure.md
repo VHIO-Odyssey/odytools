@@ -156,7 +156,7 @@ Functions to create and update RedCap projects in RStudio:
 -   hardcode_value_clasproj
 
 -   hardcode_values [hardcode_value_longproj, hardcode_value_clasproj]
--   ody_read_data
+
 
 ## **other_utils**
 
@@ -177,6 +177,7 @@ Miscelaneous utilities.
 -   ody_label_df
 -   ody_timetravel
 -   ody_exofilter
+-   ody_read_data
 
 ## **aes**
 

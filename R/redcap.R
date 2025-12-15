@@ -1104,8 +1104,8 @@ ody_rc_simplify_selection <- function(
   selected_data,
   join = FALSE
 ) {
-  event_mapping <- attr(redcap_data, "forms_events_mapping")
-  repeating <- attr(redcap_data, "repeating")
+  event_mapping <- attr(selected_data, "forms_events_mapping")
+  repeating <- attr(selected_data, "repeating")
 
   if (is.data.frame(selected_data)) {
     return(simplify_selection(selected_data, event_mapping, repeating))
@@ -1315,8 +1315,55 @@ ody_rc_select <- function(
   }
 
   # Attributes needed to simplify selection
-  attr(selection, "forms_events_mapping") <- attr(rc_data, "forms_events_mapping")
-  attr(selection, "repeating") <- attr(rc_data, "repeating")
+  ## Selected forms
+  if (is.data.frame(selection)) {
+    forms <- unique(selection$redcap_form_name)
+  } else {
+    forms <- names(selection)
+  }
+  event_mapping <- attr(rc_data, "forms_events_mapping")
+  if (!is.null(event_mapping)) {
+    attr(selection, "forms_events_mapping") <- event_mapping |>
+      dplyr::filter(.data$form %in% forms)
+  }
+
+  repeating <- attr(rc_data, "repeating")
+  if (!is.null(repeating)) {
+    repeating_forms <-
+      repeating |>
+      dplyr::filter(.data$form_name %in% forms)
+
+    if (!is.null(event_mapping)) {
+      repeating_events <-
+        repeating |>
+        dplyr::filter(
+          is.na(.data$form_name),
+          event_name %in%
+            (event_mapping |>
+              dplyr::filter(.data$form %in% forms) |>
+              dplyr::pull("unique_event_name"))
+        )
+    } else {
+      repeating_events <-
+        tibble::tibble(
+          event_name = character(0),
+          form_name = character(0)
+        )
+    }
+
+    repeating_all <- dplyr::bind_rows(
+      repeating_forms,
+      repeating_events
+    )
+
+    if (nrow(repeating_all) > 0) {
+      attr(selection, "repeating") <-
+        dplyr::bind_rows(
+          repeating_forms,
+          repeating_events
+        )
+    }
+  }
 
   selection
 }

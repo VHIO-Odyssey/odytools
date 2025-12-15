@@ -1118,12 +1118,18 @@ ody_rc_simplify_selection <- function(
     repeating
   )
 
-  if (!join) {
-    return(simp_data)
+  if (join) {
+    simp_data <-
+      simp_data |>
+      purrr::reduce(dplyr::full_join)
   }
 
-  simp_data |>
-    purrr::reduce(dplyr::full_join)
+  attr(simp_data, "meddra_codes") <- attr(selected_data, "meddra_codes")
+  attr(simp_data, "meddra_fields") <- attr(selected_data, "meddra_fields")
+  attr(simp_data, "atc_codes") <- attr(selected_data, "atc_codes")
+  attr(simp_data, "atc_fields") <- attr(selected_data, "atc_fields")
+
+  simp_data
 }
 
 simplify_selection <- function(selected_data, event_mapping, repeating) {

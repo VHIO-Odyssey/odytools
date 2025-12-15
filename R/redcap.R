@@ -1104,11 +1104,19 @@ ody_rc_simplify_selection <- function(
   selected_data,
   join = FALSE
 ) {
+  event_mapping <- attr(redcap_data, "forms_events_mapping")
+  repeating <- attr(redcap_data, "repeating")
+
   if (is.data.frame(selected_data)) {
-    return(simplify_selection(selected_data))
+    return(simplify_selection(selected_data, event_mapping, repeating))
   }
 
-  simp_data <- purrr::map(selected_data, simplify_selection)
+  simp_data <- purrr::map(
+    selected_data,
+    simplify_selection,
+    event_mapping,
+    repeating
+  )
 
   if (!join) {
     return(simp_data)
@@ -1118,12 +1126,11 @@ ody_rc_simplify_selection <- function(
     purrr::reduce(dplyr::full_join)
 }
 
-simplify_selection <- function(selected_data) {
+simplify_selection <- function(selected_data, event_mapping, repeating) {
   # Variables location
   ## The form the variables belong to (easy, taken from selected data)
   form <- unique(selected_data$redcap_form_name)
   ## Possible events the form can belong to (from attributes)
-  event_mapping <- attr(redcap_data, "forms_events_mapping")
   if (!is.null(event_mapping)) {
     possible_events <-
       event_mapping |>
@@ -1137,8 +1144,6 @@ simplify_selection <- function(selected_data) {
   removed_redcap_vars <- c("redcap_form_name", "redcap_instance_type")
 
   # Remove instance only if the form is not repeating in any event
-  repeating <- attr(redcap_data, "repeating")
-
   if (!is.null(repeating)) {
     repeating_forms <- repeating |>
       dplyr::pull(form_name) |>
@@ -1308,6 +1313,10 @@ ody_rc_select <- function(
     attr(selection, "atc_fields") <- sel_vars[sel_vars %in% all_atc]
     attr(selection, "atc_codes") <- attr(rc_data, "atc_codes")
   }
+
+  # Attributes needed to simplify selection
+  attr(selection, "forms_events_mapping") <- attr(rc_data, "forms_events_mapping")
+  attr(selection, "repeating") <- attr(rc_data, "repeating")
 
   selection
 }

@@ -1084,10 +1084,6 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @param join Logical. If TRUE and selected_data is a list of data frames,
 #' the simplified data frames will be joined with `dplyr::full_join` by all
 #' the common columns.
-#' @param method Method to determine which structural columns to remove:
-#'  - "unique" (default): Remove structural columns that have a single unique
-#'   value across all rows.
-#' - "all": Remove all structural columns regardless of their values.
 #'
 #' @return A simplified data frame or list of data frames without the specified
 #' RedCap structural columns.
@@ -1106,16 +1102,13 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @export
 ody_rc_simplify_selection <- function(
   selected_data,
-  join = FALSE,
-  method = c("unique", "all")
+  join = FALSE
 ) {
-  method <- rlang::arg_match(method)
-
   if (is.data.frame(selected_data)) {
-    return(simplify_selection(selected_data, method))
+    return(simplify_selection(selected_data))
   }
 
-  simp_data <- purrr::map(selected_data, simplify_selection, method)
+  simp_data <- purrr::map(selected_data, simplify_selection)
 
   if (!join) {
     return(simp_data)
@@ -1125,40 +1118,58 @@ ody_rc_simplify_selection <- function(
     purrr::reduce(dplyr::full_join)
 }
 
-simplify_selection <- function(selected_data, method) {
-  redcap_vars <- c(
-    "redcap_event_name",
-    "redcap_form_name",
-    "redcap_instance_type",
-    "redcap_instance_number"
-  )
-
-  if (method == "all") {
-    return(
-      selected_data |>
-        dplyr::select(-tidyselect::any_of(redcap_vars))
-    )
+simplify_selection <- function(selected_data) {
+  # Variables location
+  ## The form the variables belong to (easy, taken from selected data)
+  form <- unique(selected_data$redcap_form_name)
+  ## Possible events the form can belong to (from attributes)
+  event_mapping <- attr(redcap_data, "forms_events_mapping")
+  if (!is.null(event_mapping)) {
+    possible_events <-
+      event_mapping |>
+      dplyr::filter(form == .env$form) |>
+      dplyr::pull(unique_event_name)
+  } else {
+    possible_events <- "Classic_project_with_no_events"
   }
 
-  var_names <- names(selected_data)
+  # redcap_form_name and redcap_instance_number are always removed
+  removed_redcap_vars <- c("redcap_form_name", "redcap_instance_type")
 
-  redcap_vars_index <- var_names %in% redcap_vars
+  # Remove instance only if the form is not repeating in any event
+  repeating <- attr(redcap_data, "repeating")
 
-  if (sum(redcap_vars_index) == 0) {
-    warning("No RedCap structure variables found.")
-    return(selected_data)
+  if (!is.null(repeating)) {
+    repeating_forms <- repeating |>
+      dplyr::pull(form_name) |>
+      unique() |>
+      na.omit()
+
+    if (ncol(repeating) == 2) {
+      repeating_events <-
+        repeating |>
+        dplyr::filter(is.na(form_name)) |>
+        dplyr::pull(event_name)
+    } else {
+      repeating_events <- "No_repeating_events_in_this_project"
+    }
+  } else {
+    repeating_forms <- "No_repeating_forms_in_this_project"
+    repeating_events <- "No_repeating_events_in_this_project"
   }
 
-  var_unique_index <-
-    purrr::map_lgl(
-      var_names[redcap_vars_index],
-      ~ length(unique(selected_data[[.]])) == 1
-    )
+  if (!form %in% repeating_forms && !possible_events %in% repeating_events) {
+    removed_redcap_vars <- c(removed_redcap_vars, "redcap_instance_number")
+  }
+
+
+  # Remove event name only if the form belongs to a single event
+  if (length(possible_events) == 1) {
+    removed_redcap_vars <- c(removed_redcap_vars, "redcap_event_name")
+  }
 
   selected_data |>
-    dplyr::select(
-      -tidyselect::all_of(var_names[redcap_vars_index][var_unique_index])
-    )
+    dplyr::select(-tidyselect::any_of(removed_redcap_vars))
 }
 
 

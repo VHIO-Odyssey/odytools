@@ -1088,17 +1088,6 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @return A simplified data frame or list of data frames without the specified
 #' RedCap structural columns.
 #'
-#' @examples
-#' df <- tibble::tibble(
-#'   record_id = c("01_0001", "01_0002"),
-#'   redcap_event_name = c("registration_arm_1", "registration_arm_1"),
-#'   redcap_form_name = c("conclusion_of_mtb_portal", "conclusion_of_mtb_portal"),
-#'   redcap_instance_type = c("unique", "unique"),
-#'   redcap_instance_number = c(NA, NA),
-#'   mtb_status = c("3", "2")
-#' )
-#' ody_rc_simplify_selection(df)
-#'
 #' @export
 ody_rc_simplify_selection <- function(
   selected_data,
@@ -1135,13 +1124,13 @@ ody_rc_simplify_selection <- function(
 simplify_selection <- function(selected_data, event_mapping, repeating) {
   # Variables location
   ## The form the variables belong to (easy, taken from selected data)
-  form <- unique(selected_data$redcap_form_name)
+  form_origin <- unique(selected_data$redcap_form_name)
   ## Possible events the form can belong to (from attributes)
   if (!is.null(event_mapping)) {
     possible_events <-
       event_mapping |>
-      dplyr::filter(form == .env$form) |>
-      dplyr::pull(unique_event_name)
+      dplyr::filter(.data$form == form_origin) |>
+      dplyr::pull("unique_event_name")
   } else {
     possible_events <- "Classic_project_with_no_events"
   }
@@ -1152,15 +1141,15 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
   # Remove instance only if the form is not repeating in any event
   if (!is.null(repeating)) {
     repeating_forms <- repeating |>
-      dplyr::pull(form_name) |>
+      dplyr::pull("form_name") |>
       unique() |>
       na.omit()
 
     if (ncol(repeating) == 2) {
       repeating_events <-
         repeating |>
-        dplyr::filter(is.na(form_name)) |>
-        dplyr::pull(event_name)
+        dplyr::filter(is.na(.data$form_name)) |>
+        dplyr::pull("event_name")
     } else {
       repeating_events <- "No_repeating_events_in_this_project"
     }
@@ -1169,7 +1158,7 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
     repeating_events <- "No_repeating_events_in_this_project"
   }
 
-  if (!form %in% repeating_forms && !possible_events %in% repeating_events) {
+  if (!form_origin %in% repeating_forms && !possible_events %in% repeating_events) {
     removed_redcap_vars <- c(removed_redcap_vars, "redcap_instance_number")
   }
 
@@ -1344,7 +1333,7 @@ ody_rc_select <- function(
         repeating |>
         dplyr::filter(
           is.na(.data$form_name),
-          event_name %in%
+          .data$event_name %in%
             (event_mapping |>
               dplyr::filter(.data$form %in% forms) |>
               dplyr::pull("unique_event_name"))

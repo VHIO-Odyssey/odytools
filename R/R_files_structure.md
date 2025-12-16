@@ -178,6 +178,7 @@ Miscelaneous utilities.
 -   ody_timetravel
 -   ody_exofilter
 -   ody_read_data
+-   ody_repair_dates
 
 ## **aes**
 

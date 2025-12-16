@@ -4,11 +4,7 @@
 \alias{ody_rc_simplify_selection}
 \title{Simplify a selection by dropping RedCap structure variables}
 \usage{
-ody_rc_simplify_selection(
-  selected_data,
-  join = FALSE,
-  method = c("unique", "all")
-)
+ody_rc_simplify_selection(selected_data, join = FALSE)
 }
 \arguments{
 \item{selected_data}{A data frame or list of data frames (typically the
@@ -17,13 +13,6 @@ output of ody_rc_select or ody_rc_select_form).}
 \item{join}{Logical. If TRUE and selected_data is a list of data frames,
 the simplified data frames will be joined with \code{dplyr::full_join} by all
 the common columns.}
-
-\item{method}{Method to determine which structural columns to remove:
-\itemize{
-\item "unique" (default): Remove structural columns that have a single unique
-value across all rows.
-\item "all": Remove all structural columns regardless of their values.
-}}
 }
 \value{
 A simplified data frame or list of data frames without the specified
@@ -33,16 +22,4 @@ RedCap structural columns.
 Remove RedCap structural columns (redcap_event_name, redcap_form_name,
 redcap_instance_type, redcap_instance_number) from a data frame or list of
 data frames.
-}
-\examples{
-df <- tibble::tibble(
-  record_id = c("01_0001", "01_0002"),
-  redcap_event_name = c("registration_arm_1", "registration_arm_1"),
-  redcap_form_name = c("conclusion_of_mtb_portal", "conclusion_of_mtb_portal"),
-  redcap_instance_type = c("unique", "unique"),
-  redcap_instance_number = c(NA, NA),
-  mtb_status = c("3", "2")
-)
-ody_rc_simplify_selection(df)
-
 }

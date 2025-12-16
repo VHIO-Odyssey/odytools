@@ -28,7 +28,7 @@ within that folder and its subfolders.
 }
 \examples{
 \dontrun{
-  df <- ody_read_data("mydata.csv")
-  df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
+df <- ody_read_data("mydata.csv")
+df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
 }
 }

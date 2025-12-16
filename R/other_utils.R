@@ -90,7 +90,7 @@ ody_save_path <- function(...) {
 #' @return data_frame with names changes according to names_df.
 #' @export
 ody_change_names <- function(data_frame, names_df) {
-  #CANDIDATE
+  # CANDIDATE
 
   data_frame_names <- names(data_frame)
 
@@ -692,8 +692,8 @@ ody_exofilter <- function(external_df, id_col) {
 #' within that folder and its subfolders.
 #' @examples
 #' \dontrun{
-#'   df <- ody_read_data("mydata.csv")
-#'   df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
+#' df <- ody_read_data("mydata.csv")
+#' df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
 #' }
 #' @export
 ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE) {
@@ -751,4 +751,63 @@ ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE) {
       col_types = list(.default = ifelse(guess_cols, "?", "c"))
     )
   }
+}
+
+
+
+#' Repair date-like columns into Date class
+#'
+#' Convert messy date-like columns (character or numeric) into Date objects.
+#'
+#' @param data A data frame.
+#' @param ... One or more columns to repair.
+#'
+#' @details
+#' The function checks each selected value and attempts the following conversions, in order:
+#' - If NA, leaves as NA.
+#' - If lubridate::is.timepoint(), converts to Date.
+#' - If a 5-digit number (Excel serial), converts using janitor::excel_numeric_to_date().
+#' - If  matches "2 digits - 2 digits - 4 digits", parses with lubridate::dmy().
+#' - If matches "4 digits - 2 digits - 2 digits", parses with lubridate::ymd().
+#' - Otherwise the value becomes NA.
+#'
+#' @return A data frame with the selected columns converted to Date.
+#' @export
+ody_repair_dates <- function(data, ...) {
+  rlang::check_installed("janitor")
+
+  data |>
+    dplyr::mutate(
+      dplyr::across(
+        c(...),
+        ~ purrr::map(
+          .x,
+          function(x) {
+            if (is.na(x)) {
+              return(NA)
+            }
+
+            if (lubridate::is.timepoint(x)) {
+              return(as.Date(x))
+            }
+
+            if (stringr::str_detect(x, "^\\d{5}$")) {
+              return(janitor::excel_numeric_to_date(as.numeric(x)))
+            }
+
+            if (stringr::str_detect(x, "^\\d{2}.\\d{2}.\\d{4}$")) {
+              return(lubridate::dmy(x))
+            }
+
+            if (stringr::str_detect(x, "^\\d{4}.\\d{2}.\\d{2}$")) {
+              return(lubridate::ymd(x))
+            }
+
+            NA
+          }
+        ) |>
+          unlist() |>
+          as.Date()
+      )
+    )
 }

@@ -1159,7 +1159,8 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
   }
 
   if (
-    !form_origin %in% repeating_forms && !possible_events %in% repeating_events
+    !form_origin %in% repeating_forms &&
+      !any(possible_events %in% repeating_events)
   ) {
     removed_redcap_vars <- c(removed_redcap_vars, "redcap_instance_number")
   }

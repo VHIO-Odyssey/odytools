@@ -1158,10 +1158,11 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
     repeating_events <- "No_repeating_events_in_this_project"
   }
 
-  if (!form_origin %in% repeating_forms && !possible_events %in% repeating_events) {
+  if (
+    !form_origin %in% repeating_forms && !possible_events %in% repeating_events
+  ) {
     removed_redcap_vars <- c(removed_redcap_vars, "redcap_instance_number")
   }
-
 
   # Remove event name only if the form belongs to a single event
   if (length(possible_events) == 1) {
@@ -2094,24 +2095,17 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #' Add the sites to a RedCap table
 #'
 #' @param tbl The table to add the site to.
-#' @param redcap_data The redcap_data object with the sites information as attribute (the dag attribute of an ody_rc_import output). By default, the function looks for a redcap_data object in the environment.
+#' @param redcap_data The redcap_data object with the sites information as attribute
+#' (the dag attribute of an ody_rc_import output). Default is redcap_data.
 #' @param position The position of the site column. Default is 1.
 #'
 #' @return The same tbl with the site column added.
 #' @export
-ody_rc_add_site <- function(tbl, redcap_data = NULL, position = 1) {
-  if (is.null(redcap_data)) {
-    if (exists("redcap_data", envir = .GlobalEnv)) {
-      redcap_data <- get("redcap_data", envir = .GlobalEnv)
-    } else {
-      stop("No redcap_data object found.")
-    }
-  }
-
-  id_var <- attr(redcap_data, "id_var")
-  sites <- attr(redcap_data, "subjects_dag") |>
+ody_rc_add_site <- function(tbl, rc_data = redcap_data, position = 1) {
+  id_var <- attr(rc_data, "id_var")
+  sites <- attr(rc_data, "subjects_dag") |>
     dplyr::left_join(
-      attr(redcap_data, "dag"),
+      attr(rc_data, "dag"),
       by = c(redcap_data_access_group = "unique_group_name")
     ) |>
     dplyr::select(

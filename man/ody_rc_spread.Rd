@@ -15,7 +15,9 @@ ody_rc_spread(rc_data = NULL, join_events = FALSE)
 A tibble
 }
 \description{
-The function ody_rc_spread takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
+The function ody_rc_spread takes a REDCap data object and spreads it into a
+tibble with one row per subject (if the project has events it creates a list
+of tibbles, one per event). This is useful for creating Excel exports.
 }
 \details{
 If no data provided, the function checks whether there is a redcap_data object in the environment.

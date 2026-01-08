@@ -1971,7 +1971,9 @@ ody_rc_completeness <- function(
 
 #' Spread a Classic REDCap project into a 2D table
 #'
-#' The function ody_rc_spread takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
+#' The function ody_rc_spread takes a REDCap data object and spreads it into a
+#' tibble with one row per subject (if the project has events it creates a list
+#' of tibbles, one per event). This is useful for creating Excel exports.
 #'
 #' @param rc_data The object to spread.
 #' @param join_events Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.
@@ -2096,7 +2098,7 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #' Add the sites to a RedCap table
 #'
 #' @param tbl The table to add the site to.
-#' @param redcap_data The redcap_data object with the sites information as attribute
+#' @param rc_data The redcap_data object with the sites information as attribute
 #' (the dag attribute of an ody_rc_import output). Default is redcap_data.
 #' @param position The position of the site column. Default is 1.
 #'

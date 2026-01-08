@@ -4,12 +4,13 @@
 \alias{ody_rc_add_site}
 \title{Add the sites to a RedCap table}
 \usage{
-ody_rc_add_site(tbl, redcap_data = NULL, position = 1)
+ody_rc_add_site(tbl, rc_data = redcap_data, position = 1)
 }
 \arguments{
 \item{tbl}{The table to add the site to.}
 
-\item{redcap_data}{The redcap_data object with the sites information as attribute (the dag attribute of an ody_rc_import output). By default, the function looks for a redcap_data object in the environment.}
+\item{rc_data}{The redcap_data object with the sites information as attribute
+(the dag attribute of an ody_rc_import output). Default is redcap_data.}
 
 \item{position}{The position of the site column. Default is 1.}
 }

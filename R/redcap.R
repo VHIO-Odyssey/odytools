@@ -1982,15 +1982,7 @@ ody_rc_completeness <- function(
 #'
 #' @return A tibble
 #' @export
-ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
-  if (is.null(rc_data)) {
-    if (exists("redcap_data")) {
-      rc_data <- get("redcap_data")
-    } else {
-      stop("No data provided.")
-    }
-  }
-
+ody_rc_spread <- function(rc_data = redcap_data, join_events = FALSE) {
   if (!any(class(rc_data) == "odytools_redcap")) {
     stop("rc_data must be a redcap_data object imported with ody_rc_import.")
   }
@@ -2007,18 +1999,28 @@ ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
       purrr::set_names(rc_data$redcap_event_name)
 
     if (join_events) {
-      purrr::map2(
-        spread_list,
-        names(spread_list),
-        \(df_data, df_name) {
-          dplyr::rename_with(
-            df_data,
-            ~ stringr::str_c(df_name, ., sep = "__"),
-            !tidyselect::all_of(id_var)
+      n_events_form <-
+        attr(rc_data, "forms_events_mapping") |>
+        dplyr::count(form) |>
+        dplyr::pull(n)
+      # If a form appears in more than one event, we need to rename its variables
+      # to avoid duplicates when joining all events together. Renaming is done
+      # by adding the event name as prefix to all variables of the form.
+      if (any(n_events_form > 1)) {
+        spread_list <-
+          purrr::map2(
+            spread_list,
+            names(spread_list),
+            \(df_data, df_name) {
+              dplyr::rename_with(
+                df_data,
+                ~ stringr::str_c(df_name, ., sep = "__"),
+                !tidyselect::all_of(id_var)
+              )
+            }
           )
-        }
-      ) |>
-        purrr::reduce(dplyr::full_join, by = id_var)
+      }
+      purrr::reduce(spread_list, dplyr::full_join, by = id_var)
     } else {
       spread_list
     }

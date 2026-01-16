@@ -1,5 +1,7 @@
 # odytools 0.9.5.9000
 
+- Improved `ody_rc_spread`. Now, if a a project contains events but no form is
+  in more than one event, variables are not renamed with the event name.
 - Added `ody_repair_dates` to fix the format of  date columns.
 - Added `ody_read_data` to read data files in different formats (csv, xlsx, sav,
   dta, etc.) into a tibble assumed to be stored in the data/ folder of the
@@ -11,7 +13,6 @@
 
 - Updated internals to properly manage the new privileges requirements of REDCap API tokens.
 - Added `ody_exofilter`: a helper that creates an external-filter function to select rows from a data frame based on an external reference data frame and an identifier column. Useful for applying patient-level filters defined in separate datasets.
-
 
 # odytools 0.9.4
 

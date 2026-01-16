@@ -1330,7 +1330,7 @@ ody_rc_select <- function(
       repeating |>
       dplyr::filter(.data$form_name %in% forms)
 
-    if (!is.null(event_mapping)) {
+    if (!is.null(event_mapping) && any(names(repeating) == "event_name")) {
       repeating_events <-
         repeating |>
         dplyr::filter(

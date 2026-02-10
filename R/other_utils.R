@@ -707,7 +707,8 @@ ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE) {
     list.files(
       here::here("data"),
       recursive = TRUE
-    )
+    ) |>
+    stringr::str_subset("^[^(~$)]")
 
   data_file_index <-
     stringr::str_detect(
@@ -752,7 +753,6 @@ ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE) {
     )
   }
 }
-
 
 
 #' Repair date-like columns into Date class

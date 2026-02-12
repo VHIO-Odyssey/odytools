@@ -684,6 +684,8 @@ ody_exofilter <- function(external_df, id_col) {
 #' @param sheet Optional; if the file is an Excel file, specify the sheet to read.
 #' @param guess_cols Logical; if TRUE, column types are guessed, otherwise
 #' all columns are read as text.
+#' @param ... Additional arguments passed to the underlying reading functions
+#' (`readxl::read_excel` for Excel files and `vroom::vroom` for other files).
 #'
 #' @return A data frame containing the contents of the specified file.
 #' @details This function is intended to be used within "odytools" projects.
@@ -696,7 +698,7 @@ ody_exofilter <- function(external_df, id_col) {
 #' df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
 #' }
 #' @export
-ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE) {
+ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE, ...) {
   if (stringr::str_detect(data_file, "\\.R$")) {
     stop(
       "The provided file appears to be an R script. Please provide a data file (e.g., .csv, .xlsx)."
@@ -743,13 +745,15 @@ ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE) {
     readxl::read_excel(
       data_file_path,
       sheet = sheet,
-      col_types = ifelse(guess_cols, "guess", "text")
+      col_types = ifelse(guess_cols, "guess", "text"),
+      ...
     )
   } else {
     rlang::check_installed("vroom")
     vroom::vroom(
       data_file_path,
-      col_types = list(.default = ifelse(guess_cols, "?", "c"))
+      col_types = list(.default = ifelse(guess_cols, "?", "c")),
+      ...
     )
   }
 }

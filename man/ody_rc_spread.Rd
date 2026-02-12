@@ -4,7 +4,7 @@
 \alias{ody_rc_spread}
 \title{Spread a Classic REDCap project into a 2D table}
 \usage{
-ody_rc_spread(rc_data = NULL, join_events = FALSE)
+ody_rc_spread(rc_data = redcap_data, join_events = FALSE)
 }
 \arguments{
 \item{rc_data}{The object to spread.}

@@ -4,7 +4,7 @@
 \alias{ody_read_data}
 \title{Read a data file from the project's data folder}
 \usage{
-ody_read_data(data_file, sheet = NULL, guess_cols = FALSE)
+ody_read_data(data_file, sheet = NULL, guess_cols = FALSE, ...)
 }
 \arguments{
 \item{data_file}{Name of the data file to read.}
@@ -13,6 +13,9 @@ ody_read_data(data_file, sheet = NULL, guess_cols = FALSE)
 
 \item{guess_cols}{Logical; if TRUE, column types are guessed, otherwise
 all columns are read as text.}
+
+\item{...}{Additional arguments passed to the underlying reading functions
+(\code{readxl::read_excel} for Excel files and \code{vroom::vroom} for other files).}
 }
 \value{
 A data frame containing the contents of the specified file.

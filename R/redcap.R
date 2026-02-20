@@ -2338,6 +2338,32 @@ ody_rc_check_metadata_availability <- function(
   )
 }
 
+#' Arrange Master Therapy Data by Treatment Setting and Date
+#'
+#' This function organizes therapy records from REDCap data by arranging them
+#' according to treatment setting (neoadjuvant, adjuvant, or metastatic/palliative)
+#' and assigns sequential instance numbers within each patient.
+#'
+#' @param rc_data A REDCap data object containing `redcap_form_data` and
+#'   `redcap_form_name` elements, typically from a Master-like project.
+#'
+#' @return The input `rc_data` object with the antineoplasic_therapy form data
+#'   arranged and updated with sequential `redcap_instance_number` values.
+#'   If the therapy form is not found, returns the original data unchanged
+#'   with a warning.
+#'
+#' @details
+#' The function performs the following operations:
+#' \itemize{
+#'   \item Extracts the antineoplasic_therapy form from the REDCap data
+#'   \item Converts treatment setting labels to factors and assigns numeric values:
+#'     (-1 for Neoadjuvant, 0 for Adjuvant, line number for Metastatic/Palliative)
+#'   \item Arranges records by patient ID, therapy status, setting number, and start date
+#'   \item Assigns sequential instance numbers within each patient group
+#'   \item Returns the modified REDCap data object
+#' }
+#'
+#' @export
 ody_rc_arrange_master_therapy <- function(rc_data) {
   therapy <-
     rc_data$redcap_form_data[

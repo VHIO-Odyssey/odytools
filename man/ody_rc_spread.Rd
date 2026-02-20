@@ -7,7 +7,7 @@
 ody_rc_spread(rc_data = redcap_data, join_events = FALSE)
 }
 \arguments{
-\item{rc_data}{The object to spread. By default, the function looks for a redcap_data object in the environment.}
+\item{rc_data}{The object to spread. By default, redcap_data is used.}
 
 \item{join_events}{Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.}
 }

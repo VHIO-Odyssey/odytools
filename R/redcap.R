@@ -2118,7 +2118,7 @@ ody_rc_add_site <- function(tbl, rc_data = NULL, position = 1) {
     if (!exists("redcap_data")) {
       stop("No redcap_data object found.")
     }
-    rc_data <- get("redcap_data")
+    rc_data <- get("redcap_data", envir = parent.frame())
   }
 
   id_var <- attr(rc_data, "id_var")

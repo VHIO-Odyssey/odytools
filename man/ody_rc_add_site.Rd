@@ -10,7 +10,7 @@ ody_rc_add_site(tbl, rc_data = redcap_data, position = 1)
 \item{tbl}{The table to add the site to.}
 
 \item{rc_data}{The redcap_data object with the sites information as attribute
-(the dag attribute of an ody_rc_import output). Default is redcap_data.}
+(the dag attribute of an ody_rc_import output).}
 
 \item{position}{The position of the site column. Default is 1.}
 }

@@ -1975,7 +1975,7 @@ ody_rc_completeness <- function(
 #' tibble with one row per subject (if the project has events it creates a list
 #' of tibbles, one per event). This is useful for creating Excel exports.
 #'
-#' @param rc_data The object to spread.
+#' @param rc_data The object to spread. By default, redcap_data is used.
 #' @param join_events Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.
 #'
 #' @details If no data provided, the function checks whether there is a redcap_data object in the environment.
@@ -2001,8 +2001,8 @@ ody_rc_spread <- function(rc_data = redcap_data, join_events = FALSE) {
     if (join_events) {
       n_events_form <-
         attr(rc_data, "forms_events_mapping") |>
-        dplyr::count(form) |>
-        dplyr::pull(n)
+        dplyr::count(.data$form) |>
+        dplyr::pull("n")
       # If a form appears in more than one event, we need to rename its variables
       # to avoid duplicates when joining all events together. Renaming is done
       # by adding the event name as prefix to all variables of the form.
@@ -2101,7 +2101,7 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #'
 #' @param tbl The table to add the site to.
 #' @param rc_data The redcap_data object with the sites information as attribute
-#' (the dag attribute of an ody_rc_import output). Default is redcap_data.
+#' (the dag attribute of an ody_rc_import output).
 #' @param position The position of the site column. Default is 1.
 #'
 #' @return The same tbl with the site column added.
@@ -2336,4 +2336,51 @@ ody_rc_check_metadata_availability <- function(
     meta_info = meta_names,
     is_available = is_available
   )
+}
+
+ody_rc_arrange_master_therapy <- function(rc_data) {
+  therapy <-
+    rc_data$redcap_form_data[
+      rc_data$redcap_form_name == "antineoplasic_therapy"
+    ] |>
+    suppressWarnings()
+
+  if (length(therapy) == 0) {
+    warning(
+      "The provided REDCap data does not seem to belong to a Master-like project. Returning the original data."
+    )
+    return(rc_data)
+  }
+
+  arranged_therapy <-
+    therapy[[1]] |>
+    dplyr::mutate(
+      setting_fct_temp = labelled::to_factor(.data$ttm_setting),
+      setting_number_temp = dplyr::case_when(
+        setting_fct_temp == "Neoadjuvant" ~ "-1",
+        setting_fct_temp == "Adjuvant" ~ "0",
+        setting_fct_temp == "Metastatic or Palliative" ~
+          labelled::to_factor(.data$ttm_met_line_num)
+      ) |>
+        as.integer()
+    ) |>
+    dplyr::arrange(
+      .data$dem_sap,
+      .data$ttm_stat,
+      .data$setting_number_temp,
+      .data$ttm_startdate
+    ) |>
+    dplyr::group_by(.data$dem_sap) |>
+    dplyr::mutate(
+      redcap_instance_number = dplyr::row_number() |> as.character()
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(-"setting_fct_temp", -"setting_number_temp")
+
+  rc_data$redcap_form_data[
+    rc_data$redcap_form_name == "antineoplasic_therapy"
+  ] <-
+    list(arranged_therapy)
+
+  rc_data
 }

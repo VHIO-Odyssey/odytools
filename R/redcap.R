@@ -1982,7 +1982,14 @@ ody_rc_completeness <- function(
 #'
 #' @return A tibble
 #' @export
-ody_rc_spread <- function(rc_data = redcap_data, join_events = FALSE) {
+ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
+  if (is.null(rc_data)) {
+    if (!exists("redcap_data")) {
+      stop("No redcap_data object found.")
+    }
+    rc_data <- get("redcap_data")
+  }
+
   if (!any(class(rc_data) == "odytools_redcap")) {
     stop("rc_data must be a redcap_data object imported with ody_rc_import.")
   }
@@ -2101,12 +2108,19 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #'
 #' @param tbl The table to add the site to.
 #' @param rc_data The redcap_data object with the sites information as attribute
-#' (the dag attribute of an ody_rc_import output).
+#' (the dag attribute of an ody_rc_import output). If NULL, the function will look for a redcap_data object.
 #' @param position The position of the site column. Default is 1.
 #'
-#' @return The same tbl with the site column added.
+#' @return The same table with the site column added.
 #' @export
-ody_rc_add_site <- function(tbl, rc_data = redcap_data, position = 1) {
+ody_rc_add_site <- function(tbl, rc_data = NULL, position = 1) {
+  if (is.null(rc_data)) {
+    if (!exists("redcap_data")) {
+      stop("No redcap_data object found.")
+    }
+    rc_data <- get("redcap_data")
+  }
+
   id_var <- attr(rc_data, "id_var")
   sites <- attr(rc_data, "subjects_dag") |>
     dplyr::left_join(

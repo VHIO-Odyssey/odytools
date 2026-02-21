@@ -163,12 +163,12 @@ rc_make_datasets <- function(redcap_data) {
   current_objects <- ls()
   dataset_index <- purrr::map_lgl(
     current_objects,
-    ~ !is.null(attr(rlang::env_get(rlang::current_env(), .), "is_dataset"))
+    ~ !is.null(attr(rlang::env_get(rlang::caller_env(3), .), "is_dataset"))
   )
   to_datasets <- current_objects[dataset_index]
   datasets <- purrr::map(
     to_datasets,
-    ~ rlang::env_get(rlang::current_env(), .)
+    ~ rlang::env_get(rlang::caller_env(3), .)
   )
   names(datasets) <- to_datasets
 

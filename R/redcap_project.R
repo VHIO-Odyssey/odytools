@@ -523,9 +523,9 @@ ody_rc_current <- function(as_list = FALSE) {
     }
   }
 
-  # Import date of the loaded redcap.
+  # Import date of the loaded redcap .
   loaded_import_date <- attr(
-    rlang::env_get(rlang::caller_env(), "redcap_data"),
+    rlang::env_get(rlang::global_env(), "redcap_data"),
     "import_date"
   ) |>
     stringr::str_extract("....-..-.. ..:..")

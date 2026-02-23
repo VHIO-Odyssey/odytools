@@ -163,12 +163,12 @@ rc_make_datasets <- function(redcap_data) {
   current_objects <- ls()
   dataset_index <- purrr::map_lgl(
     current_objects,
-    ~ !is.null(attr(get(.), "is_dataset"))
+    ~ !is.null(attr(rlang::env_get(rlang::caller_env(3), .), "is_dataset"))
   )
   to_datasets <- current_objects[dataset_index]
   datasets <- purrr::map(
     to_datasets,
-    ~ get(.)
+    ~ rlang::env_get(rlang::caller_env(3), .)
   )
   names(datasets) <- to_datasets
 
@@ -231,12 +231,12 @@ rc_make_datasets_no_redcap <- function() {
   current_objects <- ls()
   dataset_index <- purrr::map_lgl(
     current_objects,
-    ~ !is.null(attr(get(.), "is_dataset"))
+    ~ !is.null(attr(rlang::env_get(rlang::caller_env(3), .), "is_dataset"))
   )
   to_datasets <- current_objects[dataset_index]
   datasets <- purrr::map(
     to_datasets,
-    ~ get(.)
+    ~ rlang::env_get(rlang::caller_env(3), .)
   )
   names(datasets) <- to_datasets
 
@@ -261,7 +261,10 @@ rc_init_update <- function() {
 
   if (is_update) {
     load(here::here(stringr::str_c(project_name, ".RData")))
-    pre_update_project <- attr(get("redcap_data"), "project_info")$project_title
+    pre_update_project <- attr(
+      rlang::env_get(rlang::current_env(), "redcap_data"),
+      "project_info"
+    )$project_title
     rm(redcap_data, datasets)
   } else {
     rc_init_dirs_files()
@@ -374,8 +377,8 @@ rc_refresh_datasets <- function() {
   project_name <- get_project_name()
 
   # Datasets are refreshed in both REDCap and non-REDCap projects
-  if (exists("redcap_data")) {
-    redcap_data <- get("redcap_data")
+  if (rlang::env_has(rlang::current_env(), "redcap_data")) {
+    redcap_data <- rlang::env_get(rlang::current_env(), "redcap_data")
     datasets <- rc_make_datasets(redcap_data) |> suppressMessages()
 
     save(
@@ -415,11 +418,11 @@ rc_back_up <- function() {
   project_name <- get_project_name()
 
   # this to avoid package check complains about undefined objects
-  datasets <- get("datasets")
+  datasets <- rlang::env_get(rlang::current_env(), "datasets")
 
-  if (exists("redcap_data")) {
+  if (rlang::env_has(rlang::current_env(), "redcap_data")) {
     # this to avoid package check complains about undefined objects
-    redcap_data <- get("redcap_data")
+    redcap_data <- rlang::env_get(rlang::current_env(), "redcap_data")
 
     import_date <- get_import_date(redcap_data)
 
@@ -513,25 +516,34 @@ ody_rc_current <- function(as_list = FALSE) {
     ))
   } else {
     purrr::walk(here::here(rdatas), load, envir = rlang::current_env())
-    if (!exists("redcap_data", inherits = FALSE)) {
+    if (!rlang::env_has(rlang::current_env(), "redcap_data")) {
       return(cli::cli_alert_danger(
         "No Redcap project detected.You can set up one by clicking on Addins/Odytools/Start|Update Redcap project."
       ))
     }
   }
 
-  # Import date of the loaded redcap
+  # Import date of the loaded redcap .
   loaded_import_date <- attr(
-    get("redcap_data", envir = .GlobalEnv),
+    rlang::env_get(rlang::global_env(), "redcap_data"),
     "import_date"
   ) |>
     stringr::str_extract("....-..-.. ..:..")
 
-  # Info of the current data (the oine stored in the main RData)
-  import_date <- attr(get("redcap_data"), "import_date") |>
+  # Info of the data stored in the main RData
+  import_date <- attr(
+    rlang::env_get(rlang::current_env(), "redcap_data"),
+    "import_date"
+  ) |>
     stringr::str_extract("....-..-.. ..:..")
-  project_name <- attr(get("redcap_data"), "project_info")$project_title
-  project_id <- attr(get("redcap_data"), "project_info")$project_id
+  project_name <- attr(
+    rlang::env_get(rlang::current_env(), "redcap_data"),
+    "project_info"
+  )$project_title
+  project_id <- attr(
+    rlang::env_get(rlang::current_env(), "redcap_data"),
+    "project_info"
+  )$project_id
 
   if (as_list) {
     list(

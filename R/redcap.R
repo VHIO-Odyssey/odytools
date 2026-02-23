@@ -1975,7 +1975,8 @@ ody_rc_completeness <- function(
 #' tibble with one row per subject (if the project has events it creates a list
 #' of tibbles, one per event). This is useful for creating Excel exports.
 #'
-#' @param rc_data The object to spread. By default, redcap_data is used.
+#' @param rc_data The object to spread. By default, a redcap_data object is used
+#' if it exists in the caller environment.
 #' @param join_events Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.
 #'
 #' @details If no data provided, the function checks whether there is a redcap_data object in the environment.
@@ -1984,10 +1985,10 @@ ody_rc_completeness <- function(
 #' @export
 ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
   if (is.null(rc_data)) {
-    if (!exists("redcap_data")) {
-      stop("No redcap_data object found.")
+    if (!rlang::env_has(rlang::caller_env(), "redcap_data")) {
+      stop("No redcap_data object found in the caller environment.")
     }
-    rc_data <- get("redcap_data")
+    rc_data <- rlang::env_get(rlang::caller_env(), "redcap_data")
   }
 
   if (!any(class(rc_data) == "odytools_redcap")) {
@@ -2108,17 +2109,18 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #'
 #' @param tbl The table to add the site to.
 #' @param rc_data The redcap_data object with the sites information as attribute
-#' (the dag attribute of an ody_rc_import output). If NULL, the function will look for a redcap_data object.
+#' (the dag attribute of an ody_rc_import output). If NULL, the function will
+#' look for a redcap_data object in the caller environment and use its dag attribute.
 #' @param position The position of the site column. Default is 1.
 #'
 #' @return The same table with the site column added.
 #' @export
 ody_rc_add_site <- function(tbl, rc_data = NULL, position = 1) {
   if (is.null(rc_data)) {
-    if (!exists("redcap_data")) {
+    if (!rlang::env_has(rlang::caller_env(), "redcap_data")) {
       stop("No redcap_data object found.")
     }
-    rc_data <- get("redcap_data", envir = parent.frame())
+    rc_data <- rlang::env_get(rlang::caller_env(), "redcap_data")
   }
 
   id_var <- attr(rc_data, "id_var")
@@ -2156,11 +2158,11 @@ ody_rc_add_label <- function(
   modify_names = FALSE
 ) {
   if (is.null(metadata)) {
-    if (!exists("redcap_data", envir = .GlobalEnv)) {
-      stop("No redcap_data object found.")
+    if (!rlang::env_has(rlang::caller_env(), "redcap_data")) {
+      stop("No redcap_data object found in the caller environment.")
     }
     metadata <- attr(
-      get("redcap_data", envir = .GlobalEnv),
+      rlang::env_get(rlang::caller_env(), "redcap_data"),
       "metadata"
     )
   } else if (!is.null(attr(metadata, "metadata"))) {

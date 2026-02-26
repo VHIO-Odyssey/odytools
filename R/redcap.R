@@ -2394,7 +2394,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     return(rc_data)
   }
 
-  arranged_therapy <-
+  arranged_therapy_v0 <-
     therapy[[1]] |>
     dplyr::mutate(
       setting_fct_temp = labelled::to_factor(.data$ttm_setting),
@@ -2414,15 +2414,38 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     ) |>
     dplyr::group_by(.data$dem_sap) |>
     dplyr::mutate(
-      redcap_instance_number = dplyr::row_number() |> as.character()
+      new_redcap_instance_number = dplyr::row_number() |> as.character(),
+      .after = "redcap_instance_number"
     ) |>
     dplyr::ungroup() |>
     dplyr::select(-"setting_fct_temp", -"setting_number_temp")
+
+  # Tomamos los casos que han cambiado para añadir la tabla como un atributo
+  # nuevo al redcap_data final.
+  arranged_cases <-
+    arranged_therapy_v0 |>
+    dplyr::filter(
+      new_redcap_instance_number != redcap_instance_number
+    ) |>
+    dplyr::select(
+      "dem_sap",
+      "redcap_instance_number",
+      "new_redcap_instance_number"
+    )
+
+  arranged_therapy <-
+    arranged_therapy_v0 |>
+    dplyr::select(-"redcap_instance_number") |>
+    dplyr::rename(
+      redcap_instance_number = "new_redcap_instance_number"
+    )
 
   rc_data$redcap_form_data[
     rc_data$redcap_form_name == "antineoplasic_therapy"
   ] <-
     list(arranged_therapy)
+
+  attr(rc_data, "rearranged_cases") <- arranged_cases
 
   rc_data
 }

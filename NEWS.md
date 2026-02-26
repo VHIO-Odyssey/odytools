@@ -1,5 +1,7 @@
 # odytools 0.9.5.9000
 
+- Added `ody_rc_arrange_master_therapy` to arrange the instances of the
+  antineoplasic_therapy form by the setting (Neo, Adj, 1L, 2L, ...).
 - Improved `ody_rc_spread`. Now, if a a project contains events but no form is
   in more than one event, variables are not renamed with the event name.
 - Added `ody_repair_dates` to fix the format of  date columns.

@@ -7,19 +7,22 @@
 ody_rc_arrange_master_therapy(rc_data)
 }
 \arguments{
-\item{rc_data}{A REDCap data object containing \code{redcap_form_data} and
-\code{redcap_form_name} elements, typically from a Master-like project.}
+\item{rc_data}{A Master-like REDCap data object.}
 }
 \value{
 The input \code{rc_data} object with the antineoplasic_therapy form data
-arranged and updated with sequential \code{redcap_instance_number} values.
+arranged and updated with sequential \code{redcap_instance_number} values. The
+attribute "rearranged_cases" is added to the returned object, containing a
+tibble with the cases that have been rearranged, with their original and
+new instance numbers.
 If the therapy form is not found, returns the original data unchanged
 with a warning.
 }
 \description{
-This function organizes therapy records from REDCap data by arranging them
-according to treatment setting (neoadjuvant, adjuvant, or metastatic/palliative)
-and assigns sequential instance numbers within each patient.
+This function organizes antineoplasic_therapy forms from master REDCap
+projects by arranging them according to treatment setting (neoadjuvant,
+adjuvant, or metastatic/palliative) and assigns sequential instance numbers
+within each patient.
 }
 \details{
 The function performs the following operations:

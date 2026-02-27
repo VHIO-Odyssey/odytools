@@ -2356,15 +2356,18 @@ ody_rc_check_metadata_availability <- function(
 
 #' Arrange Master Therapy Data by Treatment Setting and Date
 #'
-#' This function organizes therapy records from REDCap data by arranging them
-#' according to treatment setting (neoadjuvant, adjuvant, or metastatic/palliative)
-#' and assigns sequential instance numbers within each patient.
+#' This function organizes antineoplasic_therapy forms from master REDCap
+#' projects by arranging them according to treatment setting (neoadjuvant,
+#' adjuvant, or metastatic/palliative) and assigns sequential instance numbers
+#' within each patient.
 #'
-#' @param rc_data A REDCap data object containing `redcap_form_data` and
-#'   `redcap_form_name` elements, typically from a Master-like project.
+#' @param rc_data A Master-like REDCap data object.
 #'
 #' @return The input `rc_data` object with the antineoplasic_therapy form data
-#'   arranged and updated with sequential `redcap_instance_number` values.
+#'   arranged and updated with sequential `redcap_instance_number` values. The
+#'   attribute "rearranged_cases" is added to the returned object, containing a
+#'   tibble with the cases that have been rearranged, with their original and
+#'   new instance numbers.
 #'   If the therapy form is not found, returns the original data unchanged
 #'   with a warning.
 #'
@@ -2425,7 +2428,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
   arranged_cases <-
     arranged_therapy_v0 |>
     dplyr::filter(
-      new_redcap_instance_number != redcap_instance_number
+      .data$new_redcap_instance_number != .data$redcap_instance_number
     ) |>
     dplyr::select(
       "dem_sap",
@@ -2448,4 +2451,100 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
   attr(rc_data, "rearranged_cases") <- arranged_cases
 
   rc_data
+}
+
+
+#' Search for SAPs Across REDCap Projects
+#'
+#' This function searches for specific SAP values across
+#' multiple REDCap projects by querying their respective APIs using stored
+#' tokens.
+#'
+#' @param saps A character vector of SAP values to search for across projects.
+#' @param projects_tbl A tibble containing project configuration with columns:
+#'   \itemize{
+#'     \item `project`: Project identifiers/names
+#'     \item `token_name`: Environment variable names storing REDCap API tokens
+#'     \item `sap_var`: Field names in REDCap containing SAP values
+#'   }
+#'
+#' @return A tibble with columns:
+#'   \itemize{
+#'     \item `sap`: The SAP value being searched
+#'     \item One logical column per project (snake_case names): indicating presence
+#'       of each SAP in that project
+#'   }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Retrieves API tokens from environment variables specified in `projects_tbl`
+#'   \item Queries each REDCap project's API for SAP values
+#'   \item Creates a boolean matrix indicating which SAPs exist in which projects
+#'   \item Joins results across all projects by SAP value
+#'   \item Cleans column names to snake_case format
+#' }
+#'
+#' @note Requires environment variables to be set for all tokens in `projects_tbl$token_name`.
+#'   The REDCap API endpoint is fixed to "https://redcap.vhio.net/redcap/api/".
+#'
+#' @examples
+#' \dontrun{
+#'   projects <- tibble::tibble(
+#'     project = c("project_a", "project_b"),
+#'     token_name = c("REDCAP_TOKEN_A", "REDCAP_TOKEN_B"),
+#'     sap_var = c("sap_field_a", "sap_field_b")
+#'   )
+#'   saps_to_find <- c("SAP001", "SAP002", "SAP003")
+#'   result <- ody_rc_search_saps(saps_to_find, projects)
+#' }
+#'
+#' @export
+ody_rc_search_saps <- function(saps, projects_tbl) {
+  rlang::check_installed("janitor")
+
+  tokens <- purrr::map_chr(projects_tbl$token_name, Sys.getenv)
+
+  length_tokens <- purrr::map_int(tokens, nchar)
+
+  if (any(length_tokens == 0)) {
+    stop("Missing tokens")
+  }
+
+  all_patients_tbl <-
+    tibble::tibble(
+      project = projects_tbl$project,
+      sap_values = purrr::map2(
+        projects_tbl$sap_var,
+        tokens,
+        ~ get_single_field(
+          .y,
+          .x,
+          "raw",
+          "https://redcap.vhio.net/redcap/api/"
+        )
+      )
+    )
+
+  purrr::map(
+    projects_tbl$project,
+    function(proj) {
+      saps_proj <-
+        all_patients_tbl |>
+        dplyr::filter(project == proj) |>
+        tidyr::unnest(cols = c("sap_values")) |>
+        dplyr::pull("sap_values")
+
+      purrr::map(
+        saps,
+        ~ tibble::tibble(
+          sap = .x,
+          "{proj}" := .x %in% saps_proj
+        )
+      ) |>
+        purrr::list_rbind()
+    }
+  ) |>
+    purrr::reduce(dplyr::full_join, by = "sap") |>
+    janitor::clean_names()
 }

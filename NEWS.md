@@ -1,5 +1,6 @@
 # odytools 0.9.5.9000
 
+- Added `ody_rc_search_saps` to look for specific SAPs across multiple REDCap projects.
 - Added `ody_rc_arrange_master_therapy` to arrange the instances of the
   antineoplasic_therapy form by the setting (Neo, Adj, 1L, 2L, ...).
 - Improved `ody_rc_spread`. Now, if a a project contains events but no form is

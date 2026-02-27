@@ -26,7 +26,8 @@ of each SAP in that project
 }
 \description{
 This function searches for specific SAP values across
-multiple REDCap projects by querying their respective APIs using stored tokens.
+multiple REDCap projects by querying their respective APIs using stored
+tokens.
 }
 \details{
 The function:

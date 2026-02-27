@@ -2531,7 +2531,7 @@ ody_rc_search_saps <- function(saps, projects_tbl) {
     function(proj) {
       saps_proj <-
         all_patients_tbl |>
-        dplyr::filter(project == proj) |>
+        dplyr::filter(.data$project == proj) |>
         tidyr::unnest(cols = c("sap_values")) |>
         dplyr::pull("sap_values")
 

@@ -815,3 +815,85 @@ ody_repair_dates <- function(data, ...) {
       )
     )
 }
+
+#' Write Multiple Data Frames to an Excel Workbook
+#'
+#' This function creates an Excel workbook with multiple worksheets, where each
+#' worksheet contains a data frame. The worksheets are automatically formatted
+#' with tables and auto-sized columns.
+#'
+#' @param ... Data frames to be written to the Excel file. Each argument will
+#'   become a separate worksheet, with the worksheet name derived from the
+#'   argument name or expression.
+#' @param .file_path Character string specifying the file path where the Excel
+#'   file should be saved.
+#' @param .add_version Logical. If `TRUE` (default), uses `ody_save_path()` to
+#'   save the file with version control. If `FALSE`, uses `here::here()` for
+#'   the file path.
+#'
+#' @return Invisibly returns `NULL`. The function is called for its side effect
+#'   of creating an Excel file.
+#'
+#' @details
+#' The function performs the following operations:
+#' * Creates a new Excel workbook using `openxlsx2`
+#' * Adds each data frame as a separate worksheet
+#' * Formats data as tables with empty strings for NA values
+#' * Auto-sizes column widths for readability
+#' * Saves the workbook to the specified path
+#'
+#' @examples
+#' \dontrun{
+#' # Write multiple data frames to Excel
+#' ody_write_xlsx(
+#'   iris_data = iris,
+#'   mtcars_data = mtcars,
+#'   .file_path = "output/my_data.xlsx"
+#' )
+#'
+#' # Write without version control
+#' ody_write_xlsx(
+#'   sales = sales_df,
+#'   .file_path = "reports/sales.xlsx",
+#'   .add_version = FALSE
+#' )
+#' }
+#'
+#' @seealso [openxlsx2::wb_workbook()], [ody_save_path()]
+#'
+#' @export
+ody_write_xlsx <- function(..., .file_path, .add_version = TRUE) {
+  rlang::check_installed("openxlsx2")
+
+  elements <- rlang::enquos(...)
+
+  df_list <- purrr::map(elements, rlang::eval_tidy)
+
+  all_df <- all(purrr::map_lgl(df_list, is.data.frame))
+
+  if (!all_df) {
+    stop("All arguments must be data frames.")
+  }
+
+  df_names <- purrr::map_chr(elements, rlang::as_label)
+
+  wb <- openxlsx2::wb_workbook()
+
+  for (i in seq_along(df_list)) {
+    wb <-
+      openxlsx2::wb_add_worksheet(wb, df_names[i]) |>
+      openxlsx2::wb_add_data_table(x = df_list[[i]], na = "") |>
+      openxlsx2::wb_set_col_widths(
+        cols = 1:ncol(df_list[[i]]),
+        widths = "auto"
+      )
+  }
+
+  if (.add_version) {
+    save_func <- ody_save_path
+  } else {
+    save_func <- here::here
+  }
+
+  openxlsx2::wb_save(wb, save_func(.file_path))
+}

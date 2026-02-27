@@ -75,7 +75,7 @@ Functions to export and work on redcap projects.
 -   ody_rc_search_ttm [ody_rc_select_form, ody_rc_format, ody_rc_filter_subject, ody_rc_spread]
 -   ody_rc_check_metadata_availability [extract_data]
 -   ody_rc_arrange_master_therapy
--   ody_rc_search_saps [get_single_field]
+-   ody_rc_report_saps [get_single_field]
 
 ## **redcap_methods**
 
@@ -131,6 +131,7 @@ Miscelaneous utilities.
 -   ody_exofilter
 -   ody_read_data
 -   ody_repair_dates
+-   ody_write_xlsx
 
 ## **aes**
 

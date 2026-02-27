@@ -1,16 +1,13 @@
 # odytools 0.9.5.9000
 
-- Added `ody_rc_search_saps` to look for specific SAPs across multiple REDCap projects.
-- Added `ody_rc_arrange_master_therapy` to arrange the instances of the
-  antineoplasic_therapy form by the setting (Neo, Adj, 1L, 2L, ...).
-- Improved `ody_rc_spread`. Now, if a a project contains events but no form is
-  in more than one event, variables are not renamed with the event name.
-- Added `ody_repair_dates` to fix the format of  date columns.
-- Added `ody_read_data` to read data files in different formats (csv, xlsx, sav,
-  dta, etc.) into a tibble assumed to be stored in the data/ folder of the
-  current project.
-- Added `ody_rc_simplify_selection` to simplify the output of `ody_rc_select` by removing RedCap structural columns (redcap_event_name, redcap_form_name, redcap_instance_type, redcap_instance_number) that are not informative.
-- Added `ody_rc_check_metadata_availability` to verify if the metadata odytools needs to get from REDCap is available through a given API token.
+- Added `ody_write_xlsx` to write data frames to Excel files.
+- Added `ody_rc_report_saps` to report SAPs across multiple REDCap projects.
+- Added `ody_rc_arrange_master_therapy` to arrange instances of the antineoplastic therapy form by setting (Neo, Adj, 1L, 2L, etc.).
+- Improved `ody_rc_spread`: variables are no longer renamed with the event name if a project contains events but no form appears in more than one event.
+- Added `ody_repair_dates` to correct the format of date columns.
+- Added `ody_read_data` to read data files in various formats (csv, xlsx, sav, dta, etc.) into a tibble from the data/ folder of the current project.
+- Added `ody_rc_simplify_selection` to simplify the output of `ody_rc_select` by removing non-informative REDCap structural columns (redcap_event_name, redcap_form_name, redcap_instance_type, redcap_instance_number).
+- Added `ody_rc_check_metadata_availability` to verify whether the metadata required by odytools is available through a given API token.
 
 # odytools 0.9.5
 

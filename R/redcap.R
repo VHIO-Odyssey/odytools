@@ -2537,5 +2537,12 @@ ody_rc_report_saps <- function(projects_tbl) {
     )
   ) |>
     purrr::reduce(dplyr::full_join, by = "sap") |>
-    janitor::clean_names()
+    janitor::clean_names() |>
+    dplyr::mutate(
+      sap = as.character(.data$sap),
+      dplyr::across(
+        dplyr::where(is.logical),
+        ~ ifelse(., "Yes", "No") |> factor(levels = c("No", "Yes"))
+      )
+    )
 }

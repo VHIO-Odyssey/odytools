@@ -38,10 +38,10 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
     current_ver <- stringr::str_c("_", today_num, "_2")
   } else if (today_present_mult) {
     current_ver <- list.files(path = path) |>
-      stringr::str_extract(stringr::str_c(today_num, "_\\d")) |>
+      stringr::str_extract(stringr::str_c(today_num, "_\\d+")) |>
       unique() |>
       na.omit() |>
-      stringr::str_extract("\\d$") |>
+      stringr::str_extract("\\d+$") |>
       as.numeric() |>
       max()
 

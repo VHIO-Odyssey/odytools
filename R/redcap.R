@@ -2528,24 +2528,13 @@ ody_rc_report_saps <- function(projects_tbl) {
     all_patients_tbl$sap_values |>
     purrr::reduce(union)
 
-  purrr::map(
-    projects_tbl$project,
-    function(proj) {
-      saps_proj <-
-        all_patients_tbl |>
-        dplyr::filter(.data$project == proj) |>
-        tidyr::unnest(cols = c("sap_values")) |>
-        dplyr::pull("sap_values")
-
-      purrr::map(
-        all_patients,
-        ~ tibble::tibble(
-          sap = .x,
-          "{proj}" := .x %in% saps_proj
-        )
-      ) |>
-        purrr::list_rbind()
-    }
+  purrr::map2(
+    all_patients_tbl$project,
+    all_patients_tbl$sap_values,
+    ~ tibble::tibble(
+      sap = all_patients,
+      "{.x}" := all_patients %in% .y
+    )
   ) |>
     purrr::reduce(dplyr::full_join, by = "sap") |>
     janitor::clean_names()

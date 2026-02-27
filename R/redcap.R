@@ -2454,13 +2454,12 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 }
 
 
-#' Search for SAPs Across REDCap Projects
+#' Report SAPs Across REDCap Projects
 #'
-#' This function searches for specific SAP values across
+#' This function reports all SAP values present across
 #' multiple REDCap projects by querying their respective APIs using stored
 #' tokens.
 #'
-#' @param saps A character vector of SAP values to search for across projects.
 #' @param projects_tbl A tibble containing project configuration with columns:
 #'   \itemize{
 #'     \item `project`: Project identifiers/names
@@ -2470,7 +2469,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 #'
 #' @return A tibble with columns:
 #'   \itemize{
-#'     \item `sap`: The SAP value being searched
+#'     \item `sap`: The SAP value found across projects
 #'     \item One logical column per project (snake_case names): indicating presence
 #'       of each SAP in that project
 #'   }
@@ -2480,7 +2479,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 #' \enumerate{
 #'   \item Retrieves API tokens from environment variables specified in `projects_tbl`
 #'   \item Queries each REDCap project's API for SAP values
-#'   \item Creates a boolean matrix indicating which SAPs exist in which projects
+#'   \item Builds a boolean matrix indicating which SAPs exist in which projects
 #'   \item Joins results across all projects by SAP value
 #'   \item Cleans column names to snake_case format
 #' }
@@ -2495,12 +2494,11 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 #'     token_name = c("REDCAP_TOKEN_A", "REDCAP_TOKEN_B"),
 #'     sap_var = c("sap_field_a", "sap_field_b")
 #'   )
-#'   saps_to_find <- c("SAP001", "SAP002", "SAP003")
-#'   result <- ody_rc_search_saps(saps_to_find, projects)
+#'   result <- ody_rc_search_saps(projects)
 #' }
 #'
 #' @export
-ody_rc_search_saps <- function(saps, projects_tbl) {
+ody_rc_report_saps <- function(projects_tbl) {
   rlang::check_installed("janitor")
 
   tokens <- purrr::map_chr(projects_tbl$token_name, Sys.getenv)
@@ -2526,6 +2524,10 @@ ody_rc_search_saps <- function(saps, projects_tbl) {
       )
     )
 
+  all_patients <-
+    all_patients_tbl$sap_values |>
+    purrr::reduce(union)
+
   purrr::map(
     projects_tbl$project,
     function(proj) {
@@ -2536,7 +2538,7 @@ ody_rc_search_saps <- function(saps, projects_tbl) {
         dplyr::pull("sap_values")
 
       purrr::map(
-        saps,
+        all_patients,
         ~ tibble::tibble(
           sap = .x,
           "{proj}" := .x %in% saps_proj

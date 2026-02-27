@@ -826,10 +826,13 @@ ody_repair_dates <- function(data, ...) {
 #'   become a separate worksheet, with the worksheet name derived from the
 #'   argument name or expression.
 #' @param .file_path Character string specifying the file path where the Excel
-#'   file should be saved.
+#'   workbook will be saved. This should include the desired file name and
+#'   extension (e.g. "output/my_data.xlsx").
 #' @param .add_version Logical. If `TRUE` (default), uses `ody_save_path()` to
 #'   save the file with version control. If `FALSE`, uses `here::here()` for
 #'   the file path.
+#' @param .overwrite Logical. If `TRUE`, allows overwriting an existing file at
+#'  the specified path. Default is `FALSE`.
 #'
 #' @return Invisibly returns `NULL`. The function is called for its side effect
 #'   of creating an Excel file.
@@ -862,7 +865,12 @@ ody_repair_dates <- function(data, ...) {
 #' @seealso [openxlsx2::wb_workbook()], [ody_save_path()]
 #'
 #' @export
-ody_write_xlsx <- function(..., .file_path, .add_version = TRUE) {
+ody_write_xlsx <- function(
+  ...,
+  .file_path,
+  .add_version = TRUE,
+  .overwrite = FALSE
+) {
   rlang::check_installed("openxlsx2")
 
   elements <- rlang::enquos(...)
@@ -891,9 +899,12 @@ ody_write_xlsx <- function(..., .file_path, .add_version = TRUE) {
 
   if (.add_version) {
     save_func <- ody_save_path
+    .file_path <- stringr::str_split(.file_path, "/") |>
+      unlist()
   } else {
     save_func <- here::here
+    .file_path <- stringr::str_c(.file_path, collapse = "/")
   }
 
-  openxlsx2::wb_save(wb, save_func(.file_path))
+  openxlsx2::wb_save(wb, save_func(.file_path), overwrite = .overwrite)
 }

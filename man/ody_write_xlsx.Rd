@@ -4,7 +4,7 @@
 \alias{ody_write_xlsx}
 \title{Write Multiple Data Frames to an Excel Workbook}
 \usage{
-ody_write_xlsx(..., .file_path, .add_version = TRUE)
+ody_write_xlsx(..., .file_path, .add_version = TRUE, .overwrite = FALSE)
 }
 \arguments{
 \item{...}{Data frames to be written to the Excel file. Each argument will
@@ -12,11 +12,15 @@ become a separate worksheet, with the worksheet name derived from the
 argument name or expression.}
 
 \item{.file_path}{Character string specifying the file path where the Excel
-file should be saved.}
+workbook will be saved. This should include the desired file name and
+extension (e.g. "output/my_data.xlsx").}
 
 \item{.add_version}{Logical. If \code{TRUE} (default), uses \code{ody_save_path()} to
 save the file with version control. If \code{FALSE}, uses \code{here::here()} for
 the file path.}
+
+\item{.overwrite}{Logical. If \code{TRUE}, allows overwriting an existing file at
+the specified path. Default is \code{FALSE}.}
 }
 \value{
 Invisibly returns \code{NULL}. The function is called for its side effect

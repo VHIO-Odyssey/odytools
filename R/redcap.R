@@ -2354,6 +2354,90 @@ ody_rc_check_metadata_availability <- function(
   )
 }
 
+# Helper function to relocate adjuvantttm in advanced setting in
+# ody_rc_arrange_master_therapy
+relocate_advanced_adjuvance <- function(case) {
+  # Si alguna instancia no tiene setting definido o directamente no tiene
+  # adjuvancia avanzada, no hay nada que reubicar, se devuelve el caso tal cual.
+  has_missing_setting <- any(is.na(case$setting_number))
+  has_adv_adj <- any(case$setting_number == 0.5)
+
+  if (!has_adv_adj || has_missing_setting) {
+    return(case)
+  }
+
+  # Entradas de adjuvancia avanzada.
+  adv_adj_rows <- case |> dplyr::filter(.data$setting_number == 0.5)
+
+  # Entradas de líneas metastásicas.
+  adv_lines_rows <- case |> dplyr::filter(.data$setting_number >= 1)
+
+  # Si no hay líneas metastásicas, no hay nada que reubicar, se devuelve el caso
+  # tal cual.
+  if (nrow(adv_lines_rows) == 0) {
+    return(case)
+  }
+
+  # Si alguna de las líneas metastásicas no tiene fecha de referencia, no se
+  # puede ubicar la adjuvancia, se devuelve el caso con el setting de las
+  # adjuvancias modificado a NA.
+  if (any(is.na(adv_lines_rows$reference_date))) {
+    return(
+      case |>
+        dplyr::mutate(
+          setting_number = dplyr::case_when(
+            setting_number == 0.5 ~ NA_real_,
+            TRUE ~ setting_number
+          )
+        )
+    )
+  }
+
+  relocated_adv_adj_rows <-
+    adv_adj_rows |>
+    dplyr::mutate(
+      setting_number = purrr::map_dbl(
+        .data$reference_date,
+        \(x) {
+          # Se mira por fecha cuál es el next setting a la adjuvancia avanzada.
+          next_setting <-
+            adv_lines_rows |>
+            dplyr::filter(.data$reference_date > x) |>
+            dplyr::filter(
+              .data$setting_number == min(.data$setting_number)
+            ) |>
+            dplyr::pull("setting_number") |>
+            unique()
+
+          #Si realmente hay next setting se actualiza el setting de  la
+          #adjuvancia avanazda
+          if (length(next_setting) == 1) {
+            return(next_setting - 0.5)
+          }
+
+          # Si no hay next setting, se busca el setting anterior (next o
+          # anterior ha de haber seguro ya que ya  que se han descartado
+          # previamengte los casos sin ningun setting de linea)
+          prev_setting <-
+            adv_lines_rows |>
+            dplyr::filter(.data$reference_date < x) |>
+            dplyr::filter(
+              .data$setting_number == max(.data$setting_number)
+            ) |>
+            dplyr::pull("setting_number") |>
+            unique()
+
+          prev_setting + 0.5
+        }
+      )
+    )
+
+  dplyr::bind_rows(
+    case |> dplyr::filter(.data$setting_number != 0.5),
+    relocated_adv_adj_rows
+  )
+}
+
 #' Arrange Therapy Data in Master REDCap Projects
 #'
 #' Organize `antineoplasic_therapy` forms from master REDCap projects so
@@ -2387,10 +2471,17 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     ][[1]]
 
   # Definición del orden de cada instancia.
-  setting_order <-
+  setting_order_v0 <-
     therapy |>
     dplyr::mutate(
       setting_fct_temp = labelled::to_factor(.data$ttm_setting),
+      reference_date = dplyr::case_when(
+        # Fecha para ordenar dentro de cada setting_number.
+        !is.na(.data$ttm_startdate) ~ .data$ttm_startdate,
+        !is.na(.data$ttm_enddate) ~ .data$ttm_enddate,
+        !is.na(.data$ttm_pddate) ~ .data$ttm_pddate,
+        .default = NA
+      ),
       setting_number = dplyr::case_when(
         # Instancias con ttm_stat = "No" se asignan el orden -2, para que queden
         # antes de las adjuvancias.
@@ -2398,12 +2489,36 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
         setting_fct_temp == "Neoadjuvant" ~ "-1",
         # Se asigna el orden 0 a las adjuvancias después del primario.
         setting_fct_temp == "Adjuvant" & ttm_ad_int == "1" ~ "0",
+        # Inicialnete se asigna el 0.5 a las adjuvancias avanzadas .
+        # Posteriormente se reubican exactamente entre qué lineas metastasicas
+        # cae. Como la reubicación se basa en la fech de referencia, que esta
+        # exista también es un requerimiento.
+        setting_fct_temp == "Adjuvant" &
+          ttm_ad_int == "2" &
+          !is.na(reference_date) ~ "0.5",
         setting_fct_temp == "Metastatic or Palliative" ~
           labelled::to_factor(.data$ttm_met_line_num)
       ) |>
-        as.integer()
+        as.numeric(),
     ) |>
-    dplyr::select("dem_sap", "redcap_instance_number", "setting_number")
+    dplyr::select(
+      "dem_sap",
+      "redcap_instance_number",
+      "setting_number",
+      "reference_date"
+    )
+
+  # Reubicación de las adjuvancias avanzadas.
+  setting_order <-
+    unique(setting_order_v0$dem_sap) |>
+    purrr::map(
+      ~ setting_order_v0 |>
+        dplyr::filter(.data$dem_sap == .x) |>
+        relocate_advanced_adjuvance() |>
+        suppressWarnings(),
+      .progress = "Arranging 'adjuvance' at advanced settings"
+    ) |>
+    purrr::list_rbind()
 
   # Pacientes con alguna instancia con setting_number NA.
   fail_arrangement <-
@@ -2412,10 +2527,12 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     dplyr::pull("dem_sap") |>
     unique()
 
-  # Ordenación según setting_number y dentro de este por ttm_startdate.
+  # Ordenación según setting_number y dentro de este por reference_date.
   # Se crea un nuevo numero de instancia después de reordenar.
+  # Sólo se reordenan los casos con todos sus setting number definidos
   arranged_therapy_v0 <-
     therapy |>
+    dplyr::filter(!.data$dem_sap %in% fail_arrangement) |>
     dplyr::left_join(
       setting_order,
       by = c("dem_sap", "redcap_instance_number")
@@ -2423,7 +2540,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     dplyr::arrange(
       .data$dem_sap,
       .data$setting_number,
-      .data$ttm_startdate
+      .data$reference_date
     ) |>
     dplyr::group_by(.data$dem_sap) |>
     dplyr::mutate(
@@ -2431,7 +2548,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
       .after = "redcap_instance_number"
     ) |>
     dplyr::ungroup() |>
-    dplyr::select(-"setting_number")
+    dplyr::select(-"setting_number", -"reference_date")
 
   # Tomamos los casos que han cambiado para añadir la tabla como un atributo
   # nuevo al redcap_data final.
@@ -2446,13 +2563,21 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
       "new_redcap_instance_number"
     )
 
-  # Tabla final reordenada.
+  # Casos que no se han podido reordenar para añadirlos tal cual a la tabla
+  # final.
+  non_arranged_cases <-
+    therapy |>
+    dplyr::filter(.data$dem_sap %in% fail_arrangement)
+
+  # Tabla final con el nuevo número de instancia.
   arranged_therapy <-
     arranged_therapy_v0 |>
     dplyr::select(-"redcap_instance_number") |>
     dplyr::rename(
       redcap_instance_number = "new_redcap_instance_number"
-    )
+    ) |>
+    dplyr::bind_rows(non_arranged_cases) |>
+    dplyr::arrange(.data$dem_sap, .data$redcap_instance_number)
 
   rc_data$redcap_form_data[
     rc_data$redcap_form_name == "antineoplasic_therapy"
@@ -2464,7 +2589,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     warning(
       "Some patients (",
       length(fail_arrangement),
-      ") could not be fully arranged. They are listed in the 'rearrangement_fails' attribute."
+      ") were not arranged due to missing information. They are listed in the 'rearrangement_fails' attribute."
     )
     attr(rc_data, "rearrangement_fails") <- fail_arrangement
   }

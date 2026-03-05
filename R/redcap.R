@@ -2354,65 +2354,75 @@ ody_rc_check_metadata_availability <- function(
   )
 }
 
-#' Arrange Master Therapy Data by Treatment Setting and Date
+#' Arrange Therapy Data in Master REDCap Projects
 #'
-#' This function organizes antineoplasic_therapy forms from master REDCap
-#' projects by arranging them according to treatment setting (neoadjuvant,
-#' adjuvant, or metastatic/palliative) and assigns sequential instance numbers
-#' within each patient.
+#' Organize `antineoplasic_therapy` forms from master REDCap projects so
+#' instances are ordered chronologically.
 #'
-#' @param rc_data A Master-like REDCap data object.
+#' @param rc_data A Master-like REDCap data object. Accepted pojects so far:
+#'   - First Visits - Colorectal (PID 376)
 #'
 #' @return The input `rc_data` object with the antineoplasic_therapy form data
 #'   arranged and updated with sequential `redcap_instance_number` values. The
 #'   attribute "rearranged_cases" is added to the returned object, containing a
 #'   tibble with the cases that have been rearranged, with their original and
 #'   new instance numbers.
-#'   If the therapy form is not found, returns the original data unchanged
-#'   with a warning.
-#'
-#' @details
-#' The function performs the following operations:
-#' \itemize{
-#'   \item Extracts the antineoplasic_therapy form from the REDCap data
-#'   \item Converts treatment setting labels to factors and assigns numeric values:
-#'     (-1 for Neoadjuvant, 0 for Adjuvant, line number for Metastatic/Palliative)
-#'   \item Arranges records by patient ID, therapy status, setting number, and start date
-#'   \item Assigns sequential instance numbers within each patient group
-#'   \item Returns the modified REDCap data object
-#' }
+#'   If the REDCap data does not belong to an accepted project, a warning is
+#'   issued and the original data is returned unchanged.
 #'
 #' @export
 ody_rc_arrange_master_therapy <- function(rc_data) {
-  therapy <-
-    rc_data$redcap_form_data[
-      rc_data$redcap_form_name == "antineoplasic_therapy"
-    ] |>
-    suppressWarnings()
+  project_id <- attr(rc_data, "project_info")$project_id
 
-  if (length(therapy) == 0) {
+  if (!project_id %in% c(376)) {
     warning(
-      "The provided REDCap data does not seem to belong to a Master-like project. Returning the original data."
+      "The provided REDCap data does not belong to an accepted project. Returning original data unchanged."
     )
     return(rc_data)
   }
 
-  arranged_therapy_v0 <-
-    therapy[[1]] |>
+  therapy <-
+    rc_data$redcap_form_data[
+      rc_data$redcap_form_name == "antineoplasic_therapy"
+    ][[1]]
+
+  # Definición del orden de cada instancia.
+  setting_order <-
+    therapy |>
     dplyr::mutate(
       setting_fct_temp = labelled::to_factor(.data$ttm_setting),
-      setting_number_temp = dplyr::case_when(
+      setting_number = dplyr::case_when(
+        # Instancias con ttm_stat = "No" se asignan el orden -2, para que queden
+        # antes de las adjuvancias.
+        ttm_stat == "0" ~ "-2",
         setting_fct_temp == "Neoadjuvant" ~ "-1",
-        setting_fct_temp == "Adjuvant" ~ "0",
+        # Se asigna el orden 0 a las adjuvancias después del primario.
+        setting_fct_temp == "Adjuvant" & ttm_ad_int == "1" ~ "0",
         setting_fct_temp == "Metastatic or Palliative" ~
           labelled::to_factor(.data$ttm_met_line_num)
       ) |>
         as.integer()
     ) |>
+    dplyr::select("dem_sap", "redcap_instance_number", "setting_number")
+
+  # Pacientes con alguna instancia con setting_number NA.
+  fail_arrangement <-
+    setting_order |>
+    dplyr::filter(is.na(.data$setting_number)) |>
+    dplyr::pull("dem_sap") |>
+    unique()
+
+  # Ordenación según setting_number y dentro de este por ttm_startdate.
+  # Se crea un nuevo numero de instancia después de reordenar.
+  arranged_therapy_v0 <-
+    therapy |>
+    dplyr::left_join(
+      setting_order,
+      by = c("dem_sap", "redcap_instance_number")
+    ) |>
     dplyr::arrange(
       .data$dem_sap,
-      .data$ttm_stat,
-      .data$setting_number_temp,
+      .data$setting_number,
       .data$ttm_startdate
     ) |>
     dplyr::group_by(.data$dem_sap) |>
@@ -2421,7 +2431,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
       .after = "redcap_instance_number"
     ) |>
     dplyr::ungroup() |>
-    dplyr::select(-"setting_fct_temp", -"setting_number_temp")
+    dplyr::select(-"setting_number")
 
   # Tomamos los casos que han cambiado para añadir la tabla como un atributo
   # nuevo al redcap_data final.
@@ -2436,6 +2446,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
       "new_redcap_instance_number"
     )
 
+  # Tabla final reordenada.
   arranged_therapy <-
     arranged_therapy_v0 |>
     dplyr::select(-"redcap_instance_number") |>
@@ -2449,6 +2460,14 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     list(arranged_therapy)
 
   attr(rc_data, "rearranged_cases") <- arranged_cases
+  if (length(fail_arrangement) > 0) {
+    warning(
+      "Some patients (",
+      length(fail_arrangement),
+      ") could not be fully arranged. They are listed in the 'rearrangement_fails' attribute."
+    )
+    attr(rc_data, "rearrangement_fails") <- fail_arrangement
+  }
 
   rc_data
 }

@@ -2,12 +2,15 @@
 % Please edit documentation in R/redcap.R
 \name{ody_rc_arrange_master_therapy}
 \alias{ody_rc_arrange_master_therapy}
-\title{Arrange Master Therapy Data by Treatment Setting and Date}
+\title{Arrange Therapy Data in Master REDCap Projects}
 \usage{
 ody_rc_arrange_master_therapy(rc_data)
 }
 \arguments{
-\item{rc_data}{A Master-like REDCap data object.}
+\item{rc_data}{A Master-like REDCap data object. Accepted pojects so far:
+\itemize{
+\item First Visits - Colorectal (PID 376)
+}}
 }
 \value{
 The input \code{rc_data} object with the antineoplasic_therapy form data
@@ -15,23 +18,10 @@ arranged and updated with sequential \code{redcap_instance_number} values. The
 attribute "rearranged_cases" is added to the returned object, containing a
 tibble with the cases that have been rearranged, with their original and
 new instance numbers.
-If the therapy form is not found, returns the original data unchanged
-with a warning.
+If the REDCap data does not belong to an accepted project, a warning is
+issued and the original data is returned unchanged.
 }
 \description{
-This function organizes antineoplasic_therapy forms from master REDCap
-projects by arranging them according to treatment setting (neoadjuvant,
-adjuvant, or metastatic/palliative) and assigns sequential instance numbers
-within each patient.
-}
-\details{
-The function performs the following operations:
-\itemize{
-\item Extracts the antineoplasic_therapy form from the REDCap data
-\item Converts treatment setting labels to factors and assigns numeric values:
-(-1 for Neoadjuvant, 0 for Adjuvant, line number for Metastatic/Palliative)
-\item Arranges records by patient ID, therapy status, setting number, and start date
-\item Assigns sequential instance numbers within each patient group
-\item Returns the modified REDCap data object
-}
+Organize \code{antineoplasic_therapy} forms from master REDCap projects so
+instances are ordered chronologically.
 }

@@ -4,7 +4,14 @@
 \alias{ody_write_xlsx}
 \title{Write Multiple Data Frames to an Excel Workbook}
 \usage{
-ody_write_xlsx(..., .file_path, .add_version = TRUE, .overwrite = FALSE)
+ody_write_xlsx(
+  ...,
+  .file_path,
+  .add_version = TRUE,
+  .version_type = c("current_date", "import_date"),
+  .rc_name = "redcap_data",
+  .overwrite = FALSE
+)
 }
 \arguments{
 \item{...}{Data frames to be written to the Excel file. Each argument will
@@ -15,9 +22,16 @@ argument name or expression.}
 workbook will be saved. This should include the desired file name and
 extension (e.g. "output/my_data.xlsx").}
 
-\item{.add_version}{Logical. If \code{TRUE} (default), uses \code{ody_save_path()} to
-save the file with version control. If \code{FALSE}, uses \code{here::here()} for
-the file path.}
+\item{.add_version}{Logical. If \code{TRUE} (default), adds a version suffix to
+the file name. The version is determined by the \code{.version_type} argument.}
+
+\item{.version_type}{Character. Type of versioning to use when \code{.add_version = TRUE}.
+Options are "current_date" (default, uses today's date) or "import_date"
+(uses the import date from a RedCap data object).}
+
+\item{.rc_name}{Character. Name of the RedCap data object in the global
+environment to extract the import date from. Default is "redcap_data". Only
+used when \code{.version_type = "import_date"}.}
 
 \item{.overwrite}{Logical. If \code{TRUE}, allows overwriting an existing file at
 the specified path. Default is \code{FALSE}.}

@@ -828,11 +828,17 @@ ody_repair_dates <- function(data, ...) {
 #' @param .file_path Character string specifying the file path where the Excel
 #'   workbook will be saved. This should include the desired file name and
 #'   extension (e.g. "output/my_data.xlsx").
-#' @param .add_version Logical. If `TRUE` (default), uses `ody_save_path()` to
-#'   save the file with version control. If `FALSE`, uses `here::here()` for
-#'   the file path.
+#' @param .add_version Logical. If `TRUE` (default), adds a version suffix to
+#' the file name. The version is determined by the `.version_type` argument.
+#' @param .version_type Character. Type of versioning to use when `.add_version
+#' = TRUE`.
+#'   Options are "current_date" (default, uses today's date) or "import_date"
+#'   (uses the import date from a RedCap data object).
+#' @param .rc_name Character. Name of the RedCap data object in the global
+#' environment to extract the import date from. Default is "redcap_data". Only
+#' used when `.version_type = "import_date"`.
 #' @param .overwrite Logical. If `TRUE`, allows overwriting an existing file at
-#'  the specified path. Default is `FALSE`.
+#'   the specified path. Default is `FALSE`.
 #'
 #' @return Invisibly returns `NULL`. The function is called for its side effect
 #'   of creating an Excel file.
@@ -869,9 +875,15 @@ ody_write_xlsx <- function(
   ...,
   .file_path,
   .add_version = TRUE,
+  .version_type = c("current_date", "import_date"),
+  .rc_name = "redcap_data",
   .overwrite = FALSE
 ) {
   rlang::check_installed("openxlsx2")
+
+  if (.add_version) {
+    .version_type <- rlang::arg_match(.version_type)
+  }
 
   elements <- rlang::enquos(...)
 
@@ -897,10 +909,27 @@ ody_write_xlsx <- function(
       )
   }
 
-  if (.add_version) {
+  if (.add_version && .version_type == "current_date") {
     save_func <- ody_save_path
     .file_path <- stringr::str_split(.file_path, "/") |>
       unlist()
+  } else if (.add_version && .version_type == "import_date") {
+    save_func <- here::here
+    import_date <- attr(
+      rlang::env_get(rlang::global_env(), .rc_name),
+      "import_date"
+    ) |>
+      stringr::str_extract("....-..-.. ..:..") |>
+      stringr::str_remove_all("-|:") |>
+      stringr::str_replace_all(" ", "_")
+    .file_path <-
+      stringr::str_c(.file_path, collapse = "/") |>
+      stringr::str_remove("\\.xlsx$") |>
+      stringr::str_c(
+        "_",
+        import_date,
+        ".xlsx"
+      )
   } else {
     save_func <- here::here
     .file_path <- stringr::str_c(.file_path, collapse = "/")

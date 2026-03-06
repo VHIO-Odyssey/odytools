@@ -2521,7 +2521,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     purrr::list_rbind()
 
   # Pacientes con alguna instancia con setting_number NA.
-  fail_arrangement <-
+  any_missing_setting_pts <-
     setting_order |>
     dplyr::filter(is.na(.data$setting_number)) |>
     dplyr::pull("dem_sap") |>
@@ -2529,10 +2529,12 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 
   # Ordenación según setting_number y dentro de este por reference_date.
   # Se crea un nuevo numero de instancia después de reordenar.
-  # Sólo se reordenan los casos con todos sus setting number definidos
-  arranged_therapy_v0 <-
+  arranged_therapy_by_setting <-
     therapy |>
-    dplyr::filter(!.data$dem_sap %in% fail_arrangement) |>
+    dplyr::filter(
+      # Se excluyen pacientes con algún setting_number faltante.
+      !.data$dem_sap %in% any_missing_setting_pts
+    ) |>
     dplyr::left_join(
       setting_order,
       by = c("dem_sap", "redcap_instance_number")
@@ -2550,8 +2552,38 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     dplyr::ungroup() |>
     dplyr::select(-"setting_number", -"reference_date")
 
-  # Tomamos los casos que han cambiado para añadir la tabla como un atributo
-  # nuevo al redcap_data final.
+  # Ordenación solo por reference date para los pacientes con algún
+  # setting_number faltante.
+  arranged_therapy_by_date <-
+    therapy |>
+    dplyr::filter(.data$dem_sap %in% any_missing_setting_pts) |>
+    dplyr::left_join(
+      setting_order,
+      by = c("dem_sap", "redcap_instance_number")
+    ) |>
+    dplyr::arrange(
+      .data$dem_sap,
+      .data$reference_date
+    ) |>
+    dplyr::group_by(.data$dem_sap) |>
+    dplyr::mutate(
+      new_redcap_instance_number = dplyr::row_number() |> as.character(),
+      .after = "redcap_instance_number"
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(-"setting_number", -"reference_date")
+
+  # Unión de ambos tipos de ordenación.
+  arranged_therapy_v0 <-
+    dplyr::bind_rows(
+      arranged_therapy_by_setting,
+      arranged_therapy_by_date
+    ) |>
+    dplyr::arrange(.data$dem_sap, .data$new_redcap_instance_number)
+
+  # Antes de convertir las new_redcap_instance_number en las instancias
+  # definitivas, miramos qué casos han cambiado de instancia para incluir esta
+  # información en forma de attributo.
   arranged_cases <-
     arranged_therapy_v0 |>
     dplyr::filter(
@@ -2563,21 +2595,13 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
       "new_redcap_instance_number"
     )
 
-  # Casos que no se han podido reordenar para añadirlos tal cual a la tabla
-  # final.
-  non_arranged_cases <-
-    therapy |>
-    dplyr::filter(.data$dem_sap %in% fail_arrangement)
-
   # Tabla final con el nuevo número de instancia.
   arranged_therapy <-
     arranged_therapy_v0 |>
     dplyr::select(-"redcap_instance_number") |>
     dplyr::rename(
       redcap_instance_number = "new_redcap_instance_number"
-    ) |>
-    dplyr::bind_rows(non_arranged_cases) |>
-    dplyr::arrange(.data$dem_sap, .data$redcap_instance_number)
+    )
 
   rc_data$redcap_form_data[
     rc_data$redcap_form_name == "antineoplasic_therapy"
@@ -2585,13 +2609,13 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
     list(arranged_therapy)
 
   attr(rc_data, "rearranged_cases") <- arranged_cases
-  if (length(fail_arrangement) > 0) {
+  if (length(any_missing_setting_pts) > 0) {
     warning(
       "Some patients (",
-      length(fail_arrangement),
-      ") were not arranged due to missing information. They are listed in the 'rearrangement_fails' attribute."
+      length(any_missing_setting_pts),
+      ") were not fully arranged. They are listed in the 'rearrangement_fails' attribute."
     )
-    attr(rc_data, "rearrangement_fails") <- fail_arrangement
+    attr(rc_data, "rearrangement_fails") <- any_missing_setting_pts
   }
 
   rc_data

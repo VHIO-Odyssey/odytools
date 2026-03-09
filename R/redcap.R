@@ -2753,42 +2753,36 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 #'   \itemize{
 #'     \item `project`: Project identifiers/names
 #'     \item `token_name`: Environment variable names storing REDCap API tokens
-#'     \item `sap_var`: Field names in REDCap containing SAP values
+#'     \item `sap_name`: Field names in REDCap containing SAP values
 #'   }
 #'
 #' @return A tibble with columns:
 #'   \itemize{
-#'     \item `sap`: The SAP value found across projects
-#'     \item One logical column per project (snake_case names): indicating presence
-#'       of each SAP in that project
+#'     \item `SAP`: The SAP value found across projects
+#'     \item One logical column per project (snake_case names): indicating
+#'     presence of each SAP in that project
 #'   }
 #'
 #' @details
 #' The function:
 #' \enumerate{
-#'   \item Retrieves API tokens from environment variables specified in `projects_tbl`
+#'   \item Retrieves API tokens from environment variables specified in
+#'   `projects_tbl`
 #'   \item Queries each REDCap project's API for SAP values
 #'   \item Builds a boolean matrix indicating which SAPs exist in which projects
 #'   \item Joins results across all projects by SAP value
 #'   \item Cleans column names to snake_case format
 #' }
 #'
-#' @note Requires environment variables to be set for all tokens in `projects_tbl$token_name`.
+#' @note Requires environment variables to be set for all tokens in
+#' `projects_tbl$token_name`.
 #'   The REDCap API endpoint is fixed to "https://redcap.vhio.net/redcap/api/".
-#'
-#' @examples
-#' \dontrun{
-#'   projects <- tibble::tibble(
-#'     project = c("project_a", "project_b"),
-#'     token_name = c("REDCAP_TOKEN_A", "REDCAP_TOKEN_B"),
-#'     sap_var = c("sap_field_a", "sap_field_b")
-#'   )
-#'   result <- ody_rc_search_saps(projects)
-#' }
 #'
 #' @export
 ody_rc_report_saps <- function(projects_tbl) {
   rlang::check_installed("janitor")
+
+  projects_tbl <- janitor::clean_names(projects_tbl)
 
   tokens <- purrr::map_chr(projects_tbl$token_name, Sys.getenv)
 
@@ -2802,7 +2796,7 @@ ody_rc_report_saps <- function(projects_tbl) {
     tibble::tibble(
       project = projects_tbl$project,
       sap_values = purrr::map2(
-        projects_tbl$sap_var,
+        projects_tbl$sap_name,
         tokens,
         ~ get_single_field(
           .y,
@@ -2821,14 +2815,14 @@ ody_rc_report_saps <- function(projects_tbl) {
     all_patients_tbl$project,
     all_patients_tbl$sap_values,
     ~ tibble::tibble(
-      sap = all_patients,
+      SAP = all_patients,
       "{.x}" := all_patients %in% .y
     )
   ) |>
-    purrr::reduce(dplyr::full_join, by = "sap") |>
-    janitor::clean_names() |>
+    purrr::reduce(dplyr::full_join, by = "SAP") |>
+    # janitor::clean_names() |>
     dplyr::mutate(
-      sap = as.character(.data$sap),
+      SAP = as.character(.data$SAP),
       dplyr::across(
         dplyr::where(is.logical),
         ~ ifelse(., "Yes", "No") |> factor(levels = c("No", "Yes"))

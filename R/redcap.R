@@ -1750,13 +1750,28 @@ wait_for_local_port <- function(
 
 #' View a RedCap project
 #'
-#' @param data_app Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.
+#' Launch the REDCap Viewer.
 #'
-#' @return An html viewer
+#' @param data_app Imported data by `ody_rc_import()` (must be labelled and nested).
+#' If no data provided, the function looks for a `redcap_data` object in the
+#' caller environment. If not found, the viewer is launched with no data and the
+#' user can upload a RedCap import from the app interface.
 #'
 #' @details
-#' "RedCap Viewer" addin calls to this function
+#' "RedCap Viewer" addin calls to this function.
 #'
+#' If `data_app` is provided, just click on the app submit button without
+#' providing a token. The viewer will be launched with the provided data.
+#'
+#' The viewer is launched in a separate process. If RStudio is detected, it uses
+#' `rstudioapi::jobRunScript` to launch the viewer in a background R session.
+#' Otherwise, it uses `callr::r_bg` to start a new R process that runs the Shiny
+#' app. In such cases, process management is handled by storing the background
+#' process object in the caller environment (the global environment most of the
+#' cases) with a unique name with the pattern `redcap_viewer:<port_number>`. A
+#' process can be killed with `<process_name>$kill()`. The function
+#' `ody_rc_kill_viewers()` can be used to kill all viewer processes at once and
+#' remove the corresponding objects from the environment.
 #'
 #' @export
 ody_rc_view <- function(data_app = NULL) {
@@ -1814,18 +1829,8 @@ ody_rc_view <- function(data_app = NULL) {
           viewer_port = viewer_port
         )
       ),
-      envir = .GlobalEnv
+      envir = rlang::caller_env()
     )
-
-    # viewer_process <<- callr::r_bg(
-    #   function(viewer_location, viewer_port) {
-    #     shiny::runApp(viewer_location, port = viewer_port)
-    #   },
-    #   args = list(
-    #     viewer_location = viewer_location,
-    #     viewer_port = viewer_port
-    #   )
-    # )
 
     wait_for_local_port(viewer_port)
 
@@ -1841,6 +1846,40 @@ ody_rc_view <- function(data_app = NULL) {
   }
 }
 
+
+#' Kill all RedCap Viewer processes
+#'
+#' This function searches for all viewer processes launched by `ody_rc_view()`
+#' in the caller environment (typically the global environment) and kills them.
+#' It also removes the corresponding process objects from the environment.
+#'
+#' @export
+ody_rc_kill_viewers <- function() {
+  viewer_process <-
+    ls(
+      pattern = "^redcap_viewer:\\d+$",
+      envir = rlang::global_env()
+    )
+
+  if (length(viewer_process) == 0) {
+    cli::cli_alert_info("No viewer processes found.")
+    return(invisible())
+  }
+
+  purrr::walk(
+    viewer_process,
+    ~ rlang::env_get(rlang::global_env(), .x)$kill()
+  )
+
+  rm(list = viewer_process, envir = rlang::global_env())
+
+  cli::cli_alert_info(
+    stringr::str_c(
+      "Killed viewer processes:\n",
+      stringr::str_c(viewer_process, collapse = "\n")
+    )
+  )
+}
 
 # Helper function to check inside get_conditions_from_metadata whether the
 # the data_frame can be actually filtered by the elements of the

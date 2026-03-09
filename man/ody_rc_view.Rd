@@ -7,14 +7,27 @@
 ody_rc_view(data_app = NULL)
 }
 \arguments{
-\item{data_app}{Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.}
-}
-\value{
-An html viewer
+\item{data_app}{Imported data by \code{ody_rc_import()} (must be labelled and nested).
+If no data provided, the function looks for a \code{redcap_data} object in the
+caller environment. If not found, the viewer is launched with no data and the
+user can upload a RedCap import from the app interface.}
 }
 \description{
-View a RedCap project
+Launch the REDCap Viewer.
 }
 \details{
-"RedCap Viewer" addin calls to this function
+"RedCap Viewer" addin calls to this function.
+
+If \code{data_app} is provided, just click on the app submit button without
+providing a token. The viewer will be launched with the provided data.
+
+The viewer is launched in a separate process. If RStudio is detected, it uses
+\code{rstudioapi::jobRunScript} to launch the viewer in a background R session.
+Otherwise, it uses \code{callr::r_bg} to start a new R process that runs the Shiny
+app. In such cases, process management is handled by storing the background
+process object in the caller environment (the global environment most of the
+cases) with a unique name with the pattern \verb{redcap_viewer:<port_number>}. A
+process can be killed with \verb{<process_name>$kill()}. The function
+\code{ody_rc_kill_viewers()} can be used to kill all viewer processes at once and
+remove the corresponding objects from the environment.
 }

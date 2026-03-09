@@ -2751,7 +2751,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
 #'
 #' @param projects_tbl A tibble containing project configuration with columns:
 #'   \itemize{
-#'     \item `project`: Project identifiers/names
+#'     \item `title`: Project Title (for display purposes)
 #'     \item `token_name`: Environment variable names storing REDCap API tokens
 #'     \item `sap_name`: Field names in REDCap containing SAP values
 #'   }
@@ -2794,7 +2794,7 @@ ody_rc_report_saps <- function(projects_tbl) {
 
   all_patients_tbl <-
     tibble::tibble(
-      project = projects_tbl$project,
+      title = projects_tbl$title,
       sap_values = purrr::map2(
         projects_tbl$sap_name,
         tokens,
@@ -2812,7 +2812,7 @@ ody_rc_report_saps <- function(projects_tbl) {
     purrr::reduce(union)
 
   purrr::map2(
-    all_patients_tbl$project,
+    all_patients_tbl$title,
     all_patients_tbl$sap_values,
     ~ tibble::tibble(
       SAP = all_patients,

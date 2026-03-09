@@ -277,7 +277,7 @@ save_lock <- function() {
 }
 
 update_odytools <- function() {
-  rlang::check_installed("devtools")
+  rlang::check_installed("pak")
 
   current_version <- as.character(packageVersion("odytools"))
 
@@ -306,9 +306,9 @@ update_odytools <- function() {
   )
 
   if (master_branch) {
-    devtools::install_github("VHIO-Odyssey/odytools")
+    pak::pkg_install("VHIO-Odyssey/odytools")
   } else {
-    devtools::install_github("VHIO-Odyssey/odytools@dev")
+    pak::pkg_install("VHIO-Odyssey/odytools@dev")
   }
 
   require("odytools")

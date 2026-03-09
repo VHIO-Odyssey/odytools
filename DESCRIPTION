@@ -72,5 +72,6 @@ Suggests:
     shinyalert,
     shinytitle,
     vroom,
-    readxl
+    readxl,
+    pak
 Config/testthat/edition: 3

@@ -9,17 +9,17 @@ ody_rc_report_saps(projects_tbl)
 \arguments{
 \item{projects_tbl}{A tibble containing project configuration with columns:
 \itemize{
-\item \code{project}: Project identifiers/names
+\item \code{title}: Project Title (for display purposes)
 \item \code{token_name}: Environment variable names storing REDCap API tokens
-\item \code{sap_var}: Field names in REDCap containing SAP values
+\item \code{sap_name}: Field names in REDCap containing SAP values
 }}
 }
 \value{
 A tibble with columns:
 \itemize{
-\item \code{sap}: The SAP value found across projects
-\item One logical column per project (snake_case names): indicating presence
-of each SAP in that project
+\item \code{SAP}: The SAP value found across projects
+\item One logical column per project (snake_case names): indicating
+presence of each SAP in that project
 }
 }
 \description{
@@ -30,7 +30,8 @@ tokens.
 \details{
 The function:
 \enumerate{
-\item Retrieves API tokens from environment variables specified in \code{projects_tbl}
+\item Retrieves API tokens from environment variables specified in
+\code{projects_tbl}
 \item Queries each REDCap project's API for SAP values
 \item Builds a boolean matrix indicating which SAPs exist in which projects
 \item Joins results across all projects by SAP value
@@ -38,17 +39,7 @@ The function:
 }
 }
 \note{
-Requires environment variables to be set for all tokens in \code{projects_tbl$token_name}.
+Requires environment variables to be set for all tokens in
+\code{projects_tbl$token_name}.
 The REDCap API endpoint is fixed to "https://redcap.vhio.net/redcap/api/".
-}
-\examples{
-\dontrun{
-  projects <- tibble::tibble(
-    project = c("project_a", "project_b"),
-    token_name = c("REDCAP_TOKEN_A", "REDCAP_TOKEN_B"),
-    sap_var = c("sap_field_a", "sap_field_b")
-  )
-  result <- ody_rc_search_saps(projects)
-}
-
 }

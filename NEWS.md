@@ -2,7 +2,9 @@
 
 - Added `ody_write_xlsx` to write data frames to Excel files.
 - Added `ody_rc_report_saps` to report SAPs across multiple REDCap projects.
-- Added `ody_rc_arrange_master_therapy` to arrange instances of the antineoplastic therapy form by setting (Neo, Adj, 1L, 2L, etc.).
+- Added `ody_rc_arrange_master_therapy` to arrange instances of the
+  antineoplastic therapy form by setting (Neo, Adj, 1L, 2L, etc.). It only works
+  with Colorectal Master so far.
 - Improved `ody_rc_spread`: variables are no longer renamed with the event name if a project contains events but no form appears in more than one event.
 - Added `ody_repair_dates` to correct the format of date columns.
 - Added `ody_read_data` to read data files in various formats (csv, xlsx, sav, dta, etc.) into a tibble from the data/ folder of the current project.

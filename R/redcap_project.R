@@ -3,8 +3,14 @@
 
 # Helper to get the name of the project
 get_project_name <- function() {
-  list.files(here::here(), ".Rproj$") |>
-    stringr::str_remove(".Rproj$")
+  if (Sys.getenv("RSTUDIO") == "1") {
+    list.files(here::here(), ".Rproj$") |>
+      stringr::str_remove(".Rproj$")
+  } else if (Sys.getenv("POSITRON") == "1") {
+    # Añadido para Positron. Creo que es solución universal pero mantengo la
+    # aproximación antigua para RStudio
+    basename(here::here())
+  }
 }
 
 # Helper to extract the import date of a redcap_data object.

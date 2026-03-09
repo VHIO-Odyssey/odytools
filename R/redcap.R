@@ -1813,7 +1813,7 @@ ody_rc_view <- function(data_app = NULL) {
     rstudioapi::jobRunScript(
       stringr::str_c(viewer_location, "/data_viewer_runner.R")
     )
-  } else {
+  } else if (Sys.getenv("POSITRON") == "1") {
     viewer_port <- httpuv::randomPort()
 
     process_name <- stringr::str_c("redcap_viewer:", viewer_port)

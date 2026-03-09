@@ -1801,22 +1801,44 @@ ody_rc_view <- function(data_app = NULL) {
   } else {
     viewer_port <- httpuv::randomPort()
 
-    viewer_process <<- callr::r_bg(
-      function(viewer_location, viewer_port) {
-        shiny::runApp(viewer_location, port = viewer_port)
-      },
-      args = list(
-        viewer_location = viewer_location,
-        viewer_port = viewer_port
-      )
+    process_name <- stringr::str_c("redcap_viewer:", viewer_port)
+
+    assign(
+      process_name,
+      callr::r_bg(
+        function(viewer_location, viewer_port) {
+          shiny::runApp(viewer_location, port = viewer_port)
+        },
+        args = list(
+          viewer_location = viewer_location,
+          viewer_port = viewer_port
+        )
+      ),
+      envir = .GlobalEnv
     )
+
+    # viewer_process <<- callr::r_bg(
+    #   function(viewer_location, viewer_port) {
+    #     shiny::runApp(viewer_location, port = viewer_port)
+    #   },
+    #   args = list(
+    #     viewer_location = viewer_location,
+    #     viewer_port = viewer_port
+    #   )
+    # )
 
     wait_for_local_port(viewer_port)
 
-    rstudioapi::viewer(stringr::str_c("http://127.0.0.1:", viewer_port))
-  }
+    url <- stringr::str_c("http://127.0.0.1:", viewer_port)
 
-  # rstudioapi::viewer("http://127.0.0.1:5921")
+    # Open with the OS default browser.
+    # On Windows, cmd/start resolves the URL using the default HTTP handler.
+    if (.Platform$OS.type == "windows") {
+      system2("cmd.exe", args = c("/c", "start", "", url))
+    } else {
+      utils::browseURL(url)
+    }
+  }
 }
 
 

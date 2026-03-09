@@ -1707,6 +1707,47 @@ ody_rc_translate_atc <- function(rc_df) {
 }
 
 
+# Helper function to wait until a local TCP port is ready.
+wait_for_local_port <- function(
+  port,
+  host = "127.0.0.1",
+  timeout = 8,
+  interval = 0.1
+) {
+  cli::cli_alert_info("Starting viewer app...")
+
+  deadline <- Sys.time() + timeout
+
+  repeat {
+    con <- suppressWarnings(
+      try(
+        socketConnection(
+          host = host,
+          port = port,
+          open = "r+",
+          blocking = TRUE,
+          timeout = 1
+        ),
+        silent = TRUE
+      )
+    )
+
+    if (!inherits(con, "try-error")) {
+      close(con)
+      cli::cli_alert_success("Viewer ready")
+      return(TRUE)
+    }
+
+    if (Sys.time() >= deadline) {
+      cli::cli_alert_warning("Connection timeout")
+      return(FALSE)
+    }
+
+    Sys.sleep(interval)
+  }
+}
+
+
 #' View a RedCap project
 #'
 #' @param data_app Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.
@@ -1723,6 +1764,8 @@ ody_rc_view <- function(data_app = NULL) {
     "DT",
     "bsicons",
     "shiny",
+    "callr",
+    "httpuv",
     "bslib",
     "shinycssloaders",
     "reactablefmtr",
@@ -1740,8 +1783,11 @@ ody_rc_view <- function(data_app = NULL) {
     package = "odytools"
   )
 
-  if (is.null(data_app) && exists("redcap_data")) {
-    data_app <- get("redcap_data")
+  if (
+    is.null(data_app) &&
+      rlang::env_has(env = rlang::caller_env(), "redcap_data")
+  ) {
+    data_app <- rlang::env_get(env = rlang::caller_env(), "redcap_data")
   }
 
   if (!is.null(data_app)) {
@@ -1753,7 +1799,21 @@ ody_rc_view <- function(data_app = NULL) {
       stringr::str_c(viewer_location, "/data_viewer_runner.R")
     )
   } else {
-    shiny::runApp(viewer_location)
+    viewer_port <- httpuv::randomPort()
+
+    viewer_process <<- callr::r_bg(
+      function(viewer_location, viewer_port) {
+        shiny::runApp(viewer_location, port = viewer_port)
+      },
+      args = list(
+        viewer_location = viewer_location,
+        viewer_port = viewer_port
+      )
+    )
+
+    wait_for_local_port(viewer_port)
+
+    rstudioapi::viewer(stringr::str_c("http://127.0.0.1:", viewer_port))
   }
 
   # rstudioapi::viewer("http://127.0.0.1:5921")

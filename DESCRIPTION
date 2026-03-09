@@ -32,6 +32,7 @@ Imports:
 Suggests:
     bsicons,
     bslib,
+    callr,
     conflicted,
     devtools,
     DHARMa,
@@ -65,6 +66,7 @@ Suggests:
     testthat (>= 3.0.0),
     patchwork,
     gtreg,
+    httpuv,
     ggsurvfit,
     openxlsx2,
     shinyalert,

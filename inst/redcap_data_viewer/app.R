@@ -47,43 +47,54 @@ ui <- page_sidebar(
       tabPanel(
         "selectors",
         selectizeInput(
-          "dag", HTML("<b>Filter Site</b>"),
+          "dag",
+          HTML("<b>Filter Site</b>"),
           choices = NULL,
-          width = "100%", multiple = TRUE
+          width = "100%",
+          multiple = TRUE
         ),
         selectizeInput(
-          "group", HTML("<b>Project Specific Filters</b>"),
+          "group",
+          HTML("<b>Project Specific Filters</b>"),
           choices = NULL,
-          width = "100%", multiple = TRUE
+          width = "100%",
+          multiple = TRUE
         ),
         checkboxInput(
-          "intersect", "All selected project specific filters must be met.",
+          "intersect",
+          "All selected project specific filters must be met.",
           value = TRUE
         ),
         fileInput(
-          "external_table", HTML("<b>Filter From External Table</b>"),
+          "external_table",
+          HTML("<b>Filter From External Table</b>"),
           accept = ".xlsx"
         ),
         actionButton("reset", HTML("<b>Reset External Filter</b>")),
         selectizeInput(
-          "patient", HTML("<b>Filter Patient</b>"),
+          "patient",
+          HTML("<b>Filter Patient</b>"),
           choices = NULL,
-          width = "100%", multiple = TRUE
+          width = "100%",
+          multiple = TRUE
         ),
         Separator(),
         selectInput(
-          "event", HTML("<b>Select Event</b>"),
+          "event",
+          HTML("<b>Select Event</b>"),
           choices = NULL,
           width = "100%"
         ),
         selectInput(
-          "form", HTML("<b>Select Form</b>"),
+          "form",
+          HTML("<b>Select Form</b>"),
           choices = NULL,
           width = "100%"
         ),
         Separator(),
         textAreaInput(
-          "vars", HTML("<b>Variable Merger</b>"),
+          "vars",
+          HTML("<b>Variable Merger</b>"),
           height = 350,
           placeholder = "Type the names of the variables you wish to join in this box, following this pattern:\n\nvar1;\nvar2[1, 2];\nvar3[0, -1]\n\nThe values in brackets [] are used to select specific instances. Results are shown in the 'Merged Data' tab.",
         ),
@@ -92,7 +103,8 @@ ui <- page_sidebar(
         actionButton("submit_join", HTML("<b>Merge</b>")),
         Separator(),
         selectInput(
-          "extra_tables", HTML("<b>Extra Tables</b>"),
+          "extra_tables",
+          HTML("<b>Extra Tables</b>"),
           choices = NULL,
           width = "100%"
         ),
@@ -106,11 +118,13 @@ ui <- page_sidebar(
       popover(
         tagList("Data", bs_icon("gear", class = "ms-auto")),
         radioButtons(
-          "data_type", HTML("<b>Field Type</b>"),
+          "data_type",
+          HTML("<b>Field Type</b>"),
           c("Raw [Label]", "Labels", "Raw"),
           inline = TRUE
         )
-      ), DTOutput("table") |> withSpinner()
+      ),
+      DTOutput("table") |> withSpinner()
     ),
     nav_panel("Metadata", DT::dataTableOutput("metadata") |> withSpinner()),
     nav_panel(
@@ -122,7 +136,11 @@ ui <- page_sidebar(
           value = FALSE
         )
       ),
-      downloadButton("download_completeness", "Download Completeness table", width = "25%"),
+      downloadButton(
+        "download_completeness",
+        "Download Completeness table",
+        width = "25%"
+      ),
       reactableOutput("completeness") |> withSpinner()
     ),
     nav_panel("Descriptive", reactableOutput("descriptive") |> withSpinner()),
@@ -131,10 +149,28 @@ ui <- page_sidebar(
 )
 
 server <- function(input, output, session) {
+  # Check if data_app.RData exists at startup
+  file_exists <- reactive({
+    length(list.files(pattern = "^data_app.RData$")) == 1
+  })
+
+  # Auto-load data if file exists
+  observeEvent(
+    file_exists(),
+    {
+      if (file_exists()) {
+        # Directly trigger data loading
+        shinyjs::click("submit")
+      }
+    },
+    once = TRUE
+  )
+
   data_app <- eventReactive(
     input$submit,
     {
-      waiter_show( # show the waiter
+      waiter_show(
+        # show the waiter
         html = tagList(
           spin_fading_circles(),
           "Please wait while the data is being loaded.
@@ -155,7 +191,8 @@ server <- function(input, output, session) {
       if (class(data_app)[1] == "try-error") {
         waiter_hide()
         shinyalert(
-          "Invalid Token", "Reload the page and try again.",
+          "Invalid Token",
+          "Reload the page and try again.",
           showConfirmButton = FALSE,
           type = "error"
         )
@@ -168,7 +205,8 @@ server <- function(input, output, session) {
             redcap_event_name = "No events",
             redcap_repeating_event = FALSE,
             redcap_event_data = list(data_app)
-          ), data_app
+          ),
+          data_app
         )
       }
 
@@ -181,7 +219,8 @@ server <- function(input, output, session) {
   observeEvent(data_app(), {
     title <- str_c(
       attr(data_app(), "project_info")$project_title,
-      ", PID ", attr(data_app(), "project_info")$project_id
+      ", PID ",
+      attr(data_app(), "project_info")$project_id
     )
 
     change_window_title(session, title)
@@ -205,7 +244,8 @@ server <- function(input, output, session) {
     }
 
     updateSelectizeInput(
-      session, "dag",
+      session,
+      "dag",
       choices = dag_choices,
       selected = default_dag
     )
@@ -226,7 +266,8 @@ server <- function(input, output, session) {
       )
 
       updateSelectizeInput(
-        session, "group",
+        session,
+        "group",
         choices = group_choices,
         selected = "All"
       )
@@ -234,7 +275,8 @@ server <- function(input, output, session) {
       group_choices <- c("No predefined filters")
 
       updateSelectizeInput(
-        session, "group",
+        session,
+        "group",
         choices = group_choices,
         selected = "No predefined filters"
       )
@@ -255,7 +297,8 @@ server <- function(input, output, session) {
   # Candidate patients according to filter specififc filters
   patients_group <- reactive({
     if (
-      any(input$group %in% c("All", "No predefined filters")) || is.null(input$group)
+      any(input$group %in% c("All", "No predefined filters")) ||
+        is.null(input$group)
     ) {
       attr(data_app(), "subjects")
     } else if (attr(data_app(), "project_info")$project_id == 123) {
@@ -266,19 +309,22 @@ server <- function(input, output, session) {
         function(group) {
           if (group == "BOB - Module 1") {
             ody_rc_select(
-              data_app(), mtb_registration_module
+              data_app(),
+              mtb_registration_module
             ) |>
               filter(mtb_registration_module == "1") |>
               pull(record_id)
           } else if (group == "BOB - Module 2") {
             ody_rc_select(
-              data_app(), mtb_registration_module
+              data_app(),
+              mtb_registration_module
             ) |>
               filter(mtb_registration_module == "2") |>
               pull(record_id)
           } else if (group == "BOB - Module 3") {
             ody_rc_select(
-              data_app(), mtb_registration_module
+              data_app(),
+              mtb_registration_module
             ) |>
               filter(mtb_registration_module == "3") |>
               pull(record_id)
@@ -305,7 +351,6 @@ server <- function(input, output, session) {
               ody_rc_select(data_app(), amivant_date_d1) |>
               filter(redcap_instance_number == 1) |>
               select(record_id, amivant_date_d1)
-
 
             module |>
               left_join(m1_start, by = "record_id") |>
@@ -383,7 +428,6 @@ server <- function(input, output, session) {
     }
   })
 
-
   patients_list <- reactive({
     c(patients_dag(), patients_group(), patients_external())
   })
@@ -397,9 +441,11 @@ server <- function(input, output, session) {
     )
 
     updateSelectizeInput(
-      session, "patient",
+      session,
+      "patient",
       choices = patient_choices,
-      server = TRUE, selected = "All"
+      server = TRUE,
+      selected = "All"
     )
   })
 
@@ -410,9 +456,10 @@ server <- function(input, output, session) {
 
     # If there are two or more arms in the project,
     # the arm name is added to the event name
-    if (!is.null(data_app_arms) &&
-      nrow(data_app_arms) > 1 &&
-      !is.null(data_app_events)
+    if (
+      !is.null(data_app_arms) &&
+        nrow(data_app_arms) > 1 &&
+        !is.null(data_app_events)
     ) {
       data_app_events <- left_join(
         data_app_events,
@@ -435,7 +482,8 @@ server <- function(input, output, session) {
     }
 
     updateSelectInput(
-      session, "event",
+      session,
+      "event",
       choices = events_choices
     )
   })
@@ -463,7 +511,8 @@ server <- function(input, output, session) {
       names(forms_choices) <- present_forms$instrument_label
 
       updateSelectInput(
-        session, "form",
+        session,
+        "form",
         choices = forms_choices,
         selected = ""
       )
@@ -477,7 +526,9 @@ server <- function(input, output, session) {
     # BOB specific extra tables
     if (attr(data_app(), "project_info")$project_id == 123) {
       group_choices <- c(
-        group_choices, "Module 1 Lock Status", "Tumor Measures Table"
+        group_choices,
+        "Module 1 Lock Status",
+        "Tumor Measures Table"
       )
     }
 
@@ -493,7 +544,8 @@ server <- function(input, output, session) {
     }
 
     updateSelectInput(
-      session, "extra_tables",
+      session,
+      "extra_tables",
       choices = group_choices
     )
   })
@@ -569,7 +621,9 @@ server <- function(input, output, session) {
               # truco para que los missings declarados salgan sin etiqueta
               x_labels <- as_factor(x) |> as.character()
               x_labels2 <- ifelse(
-                is.na(x) & !is.na(as_factor(x)), "", x_labels
+                is.na(x) & !is.na(as_factor(x)),
+                "",
+                x_labels
               )
               return(
                 str_c(
@@ -592,7 +646,11 @@ server <- function(input, output, session) {
       ) |>
       select(where(~ !is.logical(.)))
 
-    if (data_app()[1, 1] == "No events") formatted_form[, -1] else formatted_form
+    if (data_app()[1, 1] == "No events") {
+      formatted_form[, -1]
+    } else {
+      formatted_form
+    }
 
     current_meddra_fields <- names(formatted_form)[
       names(formatted_form) %in% attr(data_app(), "meddra_fields")
@@ -651,7 +709,6 @@ server <- function(input, output, session) {
     formatted_form
   })
 
-
   output$table <- renderDT({
     validate(
       need(
@@ -677,7 +734,9 @@ server <- function(input, output, session) {
     attr(data_app(), "metadata") |>
       filter(field_name %in% names(raw_table())[-(1:5)]) |>
       select(
-        field_name, field_label, field_type,
+        field_name,
+        field_label,
+        field_type,
         choices_calculations = select_choices_or_calculations,
         branching_logic,
         validation_type = text_validation_type_or_show_slider_number,
@@ -686,7 +745,9 @@ server <- function(input, output, session) {
       ) |>
       mutate(
         choices_calculations = str_replace_all(
-          choices_calculations, "\\|", "<br>"
+          choices_calculations,
+          "\\|",
+          "<br>"
         )
       ) |>
       datatable(
@@ -708,7 +769,10 @@ server <- function(input, output, session) {
       comp_table <- raw_table() |>
         mutate(
           "{id_var}" := str_c(
-            .data[[id_var]], "(", redcap_instance_number, ")"
+            .data[[id_var]],
+            "(",
+            redcap_instance_number,
+            ")"
           )
         )
     } else {
@@ -819,7 +883,8 @@ server <- function(input, output, session) {
       select(all_of(needed_vars)) |>
       ody_rc_format() |>
       ody_summarise_df(
-        show_completeness = FALSE, searchable = TRUE,
+        show_completeness = FALSE,
+        searchable = TRUE,
         pagination = FALSE
       )
   })
@@ -897,8 +962,10 @@ server <- function(input, output, session) {
           group_by(.data[[id_var]], redcap_event_name) |>
           mutate(
             double_index = str_c(
-              redcap_instance_number, " (-",
-              n() - as.numeric(redcap_instance_number) + 1, ")"
+              redcap_instance_number,
+              " (-",
+              n() - as.numeric(redcap_instance_number) + 1,
+              ")"
             ),
             double_index = if_else(is.na(double_index), "0", double_index),
             .after = redcap_instance_number
@@ -914,8 +981,11 @@ server <- function(input, output, session) {
         index_neg <- index[index < 0]
         index_0 <- index[index == 0]
 
-
-        if (length(index_pos) == 0 && length(index_neg) == 0 && length(index_0) == 0) {
+        if (
+          length(index_pos) == 0 &&
+            length(index_neg) == 0 &&
+            length(index_0) == 0
+        ) {
           return(
             selected_var |>
               select(-redcap_instance_number) |>
@@ -947,7 +1017,6 @@ server <- function(input, output, session) {
           zero_filter <- selected_var |> slice(0)
         }
 
-
         bind_rows(zero_filter, pos_filter, neg_filter) |>
           select(-redcap_instance_number) |>
           arrange(.data[[id_var]]) |>
@@ -962,8 +1031,12 @@ server <- function(input, output, session) {
         x |>
           mutate(
             "{y}__loc" := str_c(
-              redcap_event_name, "[", str_replace_na(double_index), "]"
-            ) |> str_remove_all("\\[NA\\]$") |>
+              redcap_event_name,
+              "[",
+              str_replace_na(double_index),
+              "]"
+            ) |>
+              str_remove_all("\\[NA\\]$") |>
               str_remove("^No events"),
             .after = 1
           ) |>
@@ -1035,29 +1108,35 @@ server <- function(input, output, session) {
     filename = function() {
       str_c(
         attr(data_app(), "project_info")$project_title,
-        " ", input$extra_tables, " ",
+        " ",
+        input$extra_tables,
+        " ",
         format(attr(data_app(), "import_date"), "%Y%m%d_%H%M"),
         ".xlsx"
       )
     },
     content = function(file) {
-      if (attr(data_app(), "project_info")$project_id == 123 &&
-        input$extra_tables == "Module 1 Lock Status") {
+      if (
+        attr(data_app(), "project_info")$project_id == 123 &&
+          input$extra_tables == "Module 1 Lock Status"
+      ) {
         source("./functions/get_lock_status.R")
         source("./functions/extra_table_bob_mod1_lock_status.R")
 
         notif_id <- showNotification(
           str_c(
-            "Please, wait while '", input$extra_tables, "' is being generated."
+            "Please, wait while '",
+            input$extra_tables,
+            "' is being generated."
           ),
           duration = NULL,
           closeButton = FALSE
         )
         on.exit(removeNotification(notif_id), add = TRUE)
 
-
         extra_table <- extra_table_bob_mod1_lock_status(
-          data_app(), input$token
+          data_app(),
+          input$token
         )
 
         wb <- createWorkbook()
@@ -1067,13 +1146,17 @@ server <- function(input, output, session) {
         saveWorkbook(wb, file, overwrite = TRUE)
       }
 
-      if (attr(data_app(), "project_info")$project_id == 123 &&
-        input$extra_tables == "Tumor Measures Table") {
+      if (
+        attr(data_app(), "project_info")$project_id == 123 &&
+          input$extra_tables == "Tumor Measures Table"
+      ) {
         source("./functions/extra_table_bob_measures.R")
 
         notif_id <- showNotification(
           str_c(
-            "Please, wait while '", input$extra_tables, "' is being generated."
+            "Please, wait while '",
+            input$extra_tables,
+            "' is being generated."
           ),
           duration = NULL,
           closeButton = FALSE
@@ -1089,17 +1172,20 @@ server <- function(input, output, session) {
         saveWorkbook(wb, file, overwrite = TRUE)
       }
 
-      if (data_app()$redcap_event_name[1] == "No events" &&
-        input$extra_tables == "One row per subject table") {
+      if (
+        data_app()$redcap_event_name[1] == "No events" &&
+          input$extra_tables == "One row per subject table"
+      ) {
         notif_id <- showNotification(
           str_c(
-            "Please, wait while '", input$extra_tables, "' is being generated."
+            "Please, wait while '",
+            input$extra_tables,
+            "' is being generated."
           ),
           duration = NULL,
           closeButton = FALSE
         )
         on.exit(removeNotification(notif_id), add = TRUE)
-
 
         data <- data_app()$redcap_event_data[[1]]
 

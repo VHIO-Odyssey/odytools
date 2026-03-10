@@ -532,11 +532,14 @@ server <- function(input, output, session) {
       )
     }
 
-    # Spreaded data table for non-longitudinal projects
-    if (data_app()$redcap_event_name[1] == "No events") {
+    # Spreaded data table. BoB is excluded because the spreaded table is too big
+    # and causes memory issues.
+    if (attr(data_app(), "project_info")$project_id != 123) {
       group_choices <- c(group_choices, "One row per subject table")
     }
 
+    # Not used since all projects will have at least one download option. I keep
+    # it for security.
     if (is.null(group_choices)) {
       group_choices <- "No extra tables"
 
@@ -1173,8 +1176,8 @@ server <- function(input, output, session) {
       }
 
       if (
-        data_app()$redcap_event_name[1] == "No events" &&
-          input$extra_tables == "One row per subject table"
+        input$extra_tables == "One row per subject table" &&
+          attr(data_app(), "project_info")$project_id != 123
       ) {
         notif_id <- showNotification(
           str_c(
@@ -1187,14 +1190,21 @@ server <- function(input, output, session) {
         )
         on.exit(removeNotification(notif_id), add = TRUE)
 
-        data <- data_app()$redcap_event_data[[1]]
+        # If there are no events, extract the import from the "no events"
+        # wrapper, since ody_rc_spread includes a check to ensure that the
+        # object is of class odytools_redcap.
+        if (data_app()$redcap_event_name[1] == "No events") {
+          data <- data_app()$redcap_event_data[[1]]
+        } else {
+          data <- data_app()
+        }
 
-        extra_table <- ody_rc_spread(data)
+        extra_table <- ody_rc_spread(data, join_events = TRUE)
 
         wb <- createWorkbook()
         addWorksheet(wb, attr(data_app(), "project_info")$project_title)
         writeDataTable(wb, 1, extra_table)
-        # setColWidths(wb, 1, cols = 1:ncol(extra_table), widths = "auto")
+        #setColWidths(wb, 1, cols = 1:ncol(extra_table), widths = "auto")
         saveWorkbook(wb, file, overwrite = TRUE)
       }
     }

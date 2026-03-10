@@ -2225,6 +2225,8 @@ ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
   }
 }
 
+# Helper function to spread a redcap_data form data. It is used in ody_rc_spread
+# for both classic and long formats.
 spreader <- function(rc_data, id_var) {
   has_repeating <- any(rc_data$redcap_repeating_form)
   has_unique <- any(!rc_data$redcap_repeating_form)

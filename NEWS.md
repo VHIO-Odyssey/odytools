@@ -10,6 +10,7 @@
 - Added `ody_read_data` to read data files in various formats (csv, xlsx, sav, dta, etc.) into a tibble from the data/ folder of the current project.
 - Added `ody_rc_simplify_selection` to simplify the output of `ody_rc_select` by removing non-informative REDCap structural columns (redcap_event_name, redcap_form_name, redcap_instance_type, redcap_instance_number).
 - Added `ody_rc_check_metadata_availability` to verify whether the metadata required by odytools is available through a given API token.
+- Added `ody_rc_clean_missing_codes` to clean overlapping user-defined missing codes and value labels in labelled variables.
 
 # odytools 0.9.5
 

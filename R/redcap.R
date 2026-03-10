@@ -1573,6 +1573,70 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 }
 
 
+#' Clean overlapping user-missing codes in labelled variables
+#'
+#' Removes user-defined missing codes (`labelled::na_values`) that overlap with
+#' existing value labels (`labelled::val_labels`) in each column of a data
+#' frame. This helps avoid conflicts before formatting or converting labelled
+#' variables.
+#'
+#' @param rc_df A data frame (typically obtined from `ody_rc_select`) with
+#' labelled variables.
+#'
+#' @return A data frame with updated user-defined missing codes.
+#'
+#' @details
+#' For each column, if any value in `na_values` is also present among
+#' `val_labels`, the overlapping values are removed from `na_values`.
+#' Informative messages are emitted indicating which codes were removed and from
+#' which variable.
+#'
+#' @export
+ody_rc_clean_missing_codes <- function(rc_df) {
+  purrr::map2_df(
+    rc_df,
+    names(rc_df),
+    function(x, y) {
+      current_na <- labelled::na_values(x)
+      variable_labels <- labelled::val_labels(x)
+
+      # Si no hay user-defined missing codes o no hay etiquetas de valor, se
+      # devuelve la variable sin cambios.
+      if (is.null(current_na) || is.null(variable_labels)) {
+        return(x)
+      }
+
+      # Índice de los valores de etiquetas que se superponen con los missing
+      # codes.
+      values_overlap_index <- variable_labels %in% current_na
+
+      if (sum(values_overlap_index) == 0) {
+        return(x)
+      }
+
+      overlapped_values <- variable_labels[values_overlap_index]
+
+      # Se extrae de los missing codes aquellos que se superponen con las etiquetas de valor.
+      no_overlapped_na <- current_na[!current_na %in% overlapped_values]
+      if (length(no_overlapped_na) == 0) {
+        no_overlapped_na <- NULL
+      }
+
+      labelled::na_values(x) <- no_overlapped_na
+      cli::cli_alert_info(
+        stringr::str_c(
+          stringr::str_c(overlapped_values, collapse = ", "),
+          " removed from missing data codes of ",
+          y,
+          " due to overlap with value labels."
+        )
+      )
+      x
+    }
+  )
+}
+
+
 #' Format RedCap variables
 #'
 #' Format all variables from an ody_rc_select dataframe according to the
@@ -1582,8 +1646,11 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #' @param keep_user_na Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.
 #'
 #' @details
-#' Formating proceeds as follows:
-#' - Values defined as numeric in redcap -> as.numeric (also redcap_repeat_instance).
+#' Bejore formating, `ody_rc_clean_missing_codes` is applied to avoid conflicts
+#' between user defined missing values and value labels. Then, formating
+#' proceeds according to the variable metadata:
+#' - Values defined as numeric in redcap -> as.numeric (also
+#'   redcap_repeat_instance).
 #' - Values defined as date in redcap -> ymd
 #' - Values defined as datetime in redcap -> ymd_hm
 #' - Values labelled in redcap -> to_factor
@@ -1593,53 +1660,53 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #' @return A tibble
 #' @export
 ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
-  dplyr::mutate(
-    rc_df,
-    dplyr::across(
-      tidyselect::everything(),
-      function(x) {
-        label <- attr(x, "label")
-        labels <- labelled::val_labels(x)
+  ody_rc_clean_missing_codes(rc_df) |>
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::everything(),
+        function(x) {
+          label <- attr(x, "label")
+          labels <- labelled::val_labels(x)
 
-        if (is.null(label)) {
-          return(x)
-        }
-
-        if (keep_user_na) {
-          labelled::na_values(x) <- NULL
-          if (is.null(labels)) {
-            return(as.character(x))
+          if (is.null(label)) {
+            return(x)
           }
-        }
 
-        x_no_user_na <- labelled::user_na_to_na(x)
+          if (keep_user_na) {
+            labelled::na_values(x) <- NULL
+            if (is.null(labels)) {
+              return(as.character(x))
+            }
+          }
 
-        if (
-          stringr::str_detect(label, "(number\\)$)|(integer\\)$)|(calc\\)$)")
-        ) {
-          result <- labelled::unlabelled(x_no_user_na) |>
-            as.numeric()
-        } else if (!is.null(labels)) {
-          result <- labelled::to_factor(x_no_user_na)
-          attr(result, "label") <- NULL
-        } else if (stringr::str_detect(label, ":date_.+\\)$")) {
-          result <- lubridate::ymd(x_no_user_na)
-        } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
-          result <- stringr::str_c(x_no_user_na, ":00") |>
-            lubridate::hms(x_no_user_na)
-        } else if (stringr::str_detect(label, ":time\\)$")) {
-          result <- lubridate::hm(x_no_user_na)
-        } else if (stringr::str_detect(label, "truefalse\\)$")) {
-          result <- unclass(x_no_user_na) |>
-            as.numeric() |>
-            as.logical()
-        } else {
-          result <- as.character(x_no_user_na)
+          x_no_user_na <- labelled::user_na_to_na(x)
+
+          if (
+            stringr::str_detect(label, "(number\\)$)|(integer\\)$)|(calc\\)$)")
+          ) {
+            result <- labelled::unlabelled(x_no_user_na) |>
+              as.numeric()
+          } else if (!is.null(labels)) {
+            result <- labelled::to_factor(x_no_user_na)
+            attr(result, "label") <- NULL
+          } else if (stringr::str_detect(label, ":date_.+\\)$")) {
+            result <- lubridate::ymd(x_no_user_na)
+          } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
+            result <- stringr::str_c(x_no_user_na, ":00") |>
+              lubridate::hms(x_no_user_na)
+          } else if (stringr::str_detect(label, ":time\\)$")) {
+            result <- lubridate::hm(x_no_user_na)
+          } else if (stringr::str_detect(label, "truefalse\\)$")) {
+            result <- unclass(x_no_user_na) |>
+              as.numeric() |>
+              as.logical()
+          } else {
+            result <- as.character(x_no_user_na)
+          }
+          result
         }
-        result
-      }
+      )
     )
-  )
 }
 
 

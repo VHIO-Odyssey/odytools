@@ -19,9 +19,7 @@ Format all variables from an ody_rc_select dataframe according to the
 variable metadata.
 }
 \details{
-Bejore formating, \code{ody_rc_clean_missing_codes} is applied to avoid conflicts
-between user defined missing values and value labels. Then, formating
-proceeds according to the variable metadata:
+Formatting is performed as follows:
 \itemize{
 \item Values defined as numeric in redcap -> as.numeric (also
 redcap_repeat_instance).

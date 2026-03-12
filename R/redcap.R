@@ -1646,9 +1646,7 @@ ody_rc_clean_missing_codes <- function(rc_df) {
 #' @param keep_user_na Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.
 #'
 #' @details
-#' Bejore formating, `ody_rc_clean_missing_codes` is applied to avoid conflicts
-#' between user defined missing values and value labels. Then, formating
-#' proceeds according to the variable metadata:
+#' Formatting is performed as follows:
 #' - Values defined as numeric in redcap -> as.numeric (also
 #'   redcap_repeat_instance).
 #' - Values defined as date in redcap -> ymd
@@ -1660,53 +1658,53 @@ ody_rc_clean_missing_codes <- function(rc_df) {
 #' @return A tibble
 #' @export
 ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
-  ody_rc_clean_missing_codes(rc_df) |>
-    dplyr::mutate(
-      dplyr::across(
-        tidyselect::everything(),
-        function(x) {
-          label <- attr(x, "label")
-          labels <- labelled::val_labels(x)
+  dplyr::mutate(
+    rc_df,
+    dplyr::across(
+      tidyselect::everything(),
+      function(x) {
+        label <- attr(x, "label")
+        labels <- labelled::val_labels(x)
 
-          if (is.null(label)) {
-            return(x)
-          }
-
-          if (keep_user_na) {
-            labelled::na_values(x) <- NULL
-            if (is.null(labels)) {
-              return(as.character(x))
-            }
-          }
-
-          x_no_user_na <- labelled::user_na_to_na(x)
-
-          if (
-            stringr::str_detect(label, "(number\\)$)|(integer\\)$)|(calc\\)$)")
-          ) {
-            result <- labelled::unlabelled(x_no_user_na) |>
-              as.numeric()
-          } else if (!is.null(labels)) {
-            result <- labelled::to_factor(x_no_user_na)
-            attr(result, "label") <- NULL
-          } else if (stringr::str_detect(label, ":date_.+\\)$")) {
-            result <- lubridate::ymd(x_no_user_na)
-          } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
-            result <- stringr::str_c(x_no_user_na, ":00") |>
-              lubridate::hms(x_no_user_na)
-          } else if (stringr::str_detect(label, ":time\\)$")) {
-            result <- lubridate::hm(x_no_user_na)
-          } else if (stringr::str_detect(label, "truefalse\\)$")) {
-            result <- unclass(x_no_user_na) |>
-              as.numeric() |>
-              as.logical()
-          } else {
-            result <- as.character(x_no_user_na)
-          }
-          result
+        if (is.null(label)) {
+          return(x)
         }
-      )
+
+        if (keep_user_na) {
+          labelled::na_values(x) <- NULL
+          if (is.null(labels)) {
+            return(as.character(x))
+          }
+        }
+
+        x_no_user_na <- labelled::user_na_to_na(x)
+
+        if (
+          stringr::str_detect(label, "(number\\)$)|(integer\\)$)|(calc\\)$)")
+        ) {
+          result <- labelled::unlabelled(x_no_user_na) |>
+            as.numeric()
+        } else if (!is.null(labels)) {
+          result <- labelled::to_factor(x_no_user_na)
+          attr(result, "label") <- NULL
+        } else if (stringr::str_detect(label, ":date_.+\\)$")) {
+          result <- lubridate::ymd(x_no_user_na)
+        } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
+          result <- stringr::str_c(x_no_user_na, ":00") |>
+            lubridate::hms(x_no_user_na)
+        } else if (stringr::str_detect(label, ":time\\)$")) {
+          result <- lubridate::hm(x_no_user_na)
+        } else if (stringr::str_detect(label, "truefalse\\)$")) {
+          result <- unclass(x_no_user_na) |>
+            as.numeric() |>
+            as.logical()
+        } else {
+          result <- as.character(x_no_user_na)
+        }
+        result
+      }
     )
+  )
 }
 
 

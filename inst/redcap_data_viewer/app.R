@@ -411,7 +411,7 @@ server <- function(input, output, session) {
       return(attr(data_app(), "subjects"))
     }
 
-    external_table <- read_xlsx(input$external_table$datapath)
+    external_table <- readxl::read_xlsx(input$external_table$datapath)
 
     id_var <- attr(data_app(), "id_var")
 

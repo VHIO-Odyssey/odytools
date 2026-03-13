@@ -1830,15 +1830,16 @@ wait_for_local_port <- function(
 #'
 #' Launch the REDCap Viewer.
 #'
-#' @param data_app Imported data by `ody_rc_import()` (must be labelled and nested).
+#' @param data_app Imported data by `ody_rc_import()` (must be labelled and
+#' nested).
+#' If no data provided, the function looks for a `redcap_data` object in the
+#' caller environment. If not found, the viewer is launched with no data and the
+#' user can upload a RedCap import from the app interface.
 #' @param bg_process Logical. If TRUE (default), the viewer is launched in a
 #' background process, allowing the user to continue working in the R session.
 #' If FALSE, the viewer runs in the current R session, blocking it until the
 #' viewer is closed.
 #'
-#' If no data provided, the function looks for a `redcap_data` object in the
-#' caller environment. If not found, the viewer is launched with no data and the
-#' user can upload a RedCap import from the app interface.
 #'
 #' @details
 #' "RedCap Viewer" addin calls to this function.

@@ -4,12 +4,18 @@
 \alias{ody_rc_format}
 \title{Format RedCap variables}
 \usage{
-ody_rc_format(rc_df, keep_user_na = FALSE)
+ody_rc_format(rc_df, keep_user_na = FALSE, clean_missing_codes = FALSE)
 }
 \arguments{
 \item{rc_df}{Dataframe derived from a RedCap import with ody_rc_select}
 
 \item{keep_user_na}{Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.}
+
+\item{clean_missing_codes}{Logical. Should user defined missing codes that
+overlap with value labels be cleaned before formatting? Default is FALSE.
+This is usefull in those rare occasions when the label of a variable value is
+equal to one of the user defined missing codes (e.g "OTH" in the UNLOCK
+project is a missing data code and also a data label in tum_histology)}
 }
 \value{
 A tibble

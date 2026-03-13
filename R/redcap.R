@@ -1644,6 +1644,11 @@ ody_rc_clean_missing_codes <- function(rc_df) {
 #'
 #' @param rc_df Dataframe derived from a RedCap import with ody_rc_select
 #' @param keep_user_na Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.
+#' @param clean_missing_codes Logical. Should user defined missing codes that
+#' overlap with value labels be cleaned before formatting? Default is FALSE.
+#' This is usefull in those rare occasions when the label of a variable value is
+#' equal to one of the user defined missing codes (e.g "OTH" in the UNLOCK
+#' project is a missing data code and also a data label in tum_histology)
 #'
 #' @details
 #' Formatting is performed as follows:
@@ -1657,7 +1662,15 @@ ody_rc_clean_missing_codes <- function(rc_df) {
 #'
 #' @return A tibble
 #' @export
-ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
+ody_rc_format <- function(
+  rc_df,
+  keep_user_na = FALSE,
+  clean_missing_codes = FALSE
+) {
+  if (clean_missing_codes) {
+    rc_df <- ody_rc_clean_missing_codes(rc_df)
+  }
+
   dplyr::mutate(
     rc_df,
     dplyr::across(
@@ -1818,6 +1831,11 @@ wait_for_local_port <- function(
 #' Launch the REDCap Viewer.
 #'
 #' @param data_app Imported data by `ody_rc_import()` (must be labelled and nested).
+#' @param bg_process Logical. If TRUE (default), the viewer is launched in a
+#' background process, allowing the user to continue working in the R session.
+#' If FALSE, the viewer runs in the current R session, blocking it until the
+#' viewer is closed.
+#'
 #' If no data provided, the function looks for a `redcap_data` object in the
 #' caller environment. If not found, the viewer is launched with no data and the
 #' user can upload a RedCap import from the app interface.
@@ -1839,7 +1857,7 @@ wait_for_local_port <- function(
 #' remove the corresponding objects from the environment.
 #'
 #' @export
-ody_rc_view <- function(data_app = NULL) {
+ody_rc_view <- function(data_app = NULL, bg_process = TRUE) {
   rlang::check_installed(c(
     "DT",
     "bsicons",
@@ -1874,11 +1892,11 @@ ody_rc_view <- function(data_app = NULL) {
     save(data_app, file = stringr::str_c(viewer_location, "/data_app.RData"))
   }
 
-  if (Sys.getenv("RSTUDIO") == "1") {
+  if (Sys.getenv("RSTUDIO") == "1" && bg_process) {
     rstudioapi::jobRunScript(
       stringr::str_c(viewer_location, "/data_viewer_runner.R")
     )
-  } else if (Sys.getenv("POSITRON") == "1") {
+  } else if (Sys.getenv("POSITRON") == "1" && bg_process) {
     viewer_port <- httpuv::randomPort()
 
     process_name <- stringr::str_c("redcap_viewer:", viewer_port)
@@ -1908,6 +1926,8 @@ ody_rc_view <- function(data_app = NULL) {
     } else {
       utils::browseURL(url)
     }
+  } else {
+    shiny::runApp(viewer_location)
   }
 }
 

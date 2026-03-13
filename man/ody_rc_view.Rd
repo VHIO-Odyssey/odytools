@@ -4,10 +4,16 @@
 \alias{ody_rc_view}
 \title{View a RedCap project}
 \usage{
-ody_rc_view(data_app = NULL)
+ody_rc_view(data_app = NULL, bg_process = TRUE)
 }
 \arguments{
-\item{data_app}{Imported data by \code{ody_rc_import()} (must be labelled and nested).
+\item{data_app}{Imported data by \code{ody_rc_import()} (must be labelled and nested).}
+
+\item{bg_process}{Logical. If TRUE (default), the viewer is launched in a
+background process, allowing the user to continue working in the R session.
+If FALSE, the viewer runs in the current R session, blocking it until the
+viewer is closed.
+
 If no data provided, the function looks for a \code{redcap_data} object in the
 caller environment. If not found, the viewer is launched with no data and the
 user can upload a RedCap import from the app interface.}

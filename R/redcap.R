@@ -2618,15 +2618,7 @@ relocate_advanced_adjuvance <- function(case) {
             dplyr::pull("setting_number") |>
             unique()
 
-          #Si realmente hay next setting se actualiza el setting de  la
-          #adjuvancia avanazda
-          if (length(next_setting) == 1) {
-            return(next_setting - 0.5)
-          }
-
-          # Si no hay next setting, se busca el setting anterior (next o
-          # anterior ha de haber seguro ya que ya  que se han descartado
-          # previamengte los casos sin ningun setting de linea)
+          # Se mira por fecha cuál es el prev setting a la adjuvancia avanzada.
           prev_setting <-
             adv_lines_rows |>
             dplyr::filter(.data$reference_date < x) |>
@@ -2636,7 +2628,24 @@ relocate_advanced_adjuvance <- function(case) {
             dplyr::pull("setting_number") |>
             unique()
 
-          prev_setting + 0.5
+          # Si hay next setting y prev setting se ubica la adjuvancia
+          # exactamente entre ambos. Esto resuelve el caso de que la adjuvancia
+          # quede entre dos instancias con el mismo setting.
+          if (length(next_setting) == 1 && length(prev_setting) == 1) {
+            return(mean(c(next_setting, prev_setting)))
+          }
+
+          #Si  solo hay next setting se actualiza el setting de  la
+          # adjuvancia avanazda respecto a este.
+          if (length(next_setting) == 1 && length(prev_setting) == 0) {
+            return(next_setting - 0.5)
+          }
+
+          # Si hay prev setting se actualiza el setting de  la adjuvancia
+          # avanzada respecto a este.
+          if (length(next_setting) == 0 && length(prev_setting) == 1) {
+            return(prev_setting + 0.5)
+          }
         }
       )
     )

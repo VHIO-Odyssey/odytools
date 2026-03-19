@@ -115,12 +115,16 @@ import_rc <- function(
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {
-    # ! dag también se deja de extraer con privilegios estándar de la API.
-    # ! intento sacar la info de redcap_data directamente.
+    #! dag también se deja de extraer con privilegios estándar de la API.
+    #! intento sacar la info de redcap_data directamente.
     # dag <- extract_data("dag", token, url)
     subjects_dag <- redcap_data |>
       dplyr::select(1, "redcap_data_access_group") |>
-      unique()
+      unique() |>
+      # In very rare cases a subject can be present but with absolutly no data,
+      # even with no dag info. It is removed to avoid a NA row in the final dag
+      # table.
+      na.omit()
     dag_labels <- get_dag(
       token,
       colnames(redcap_data)[1],
@@ -133,7 +137,11 @@ import_rc <- function(
       unique() |>
       dplyr::mutate(
         dplyr::across(tidyselect::everything(), as.character)
-      )
+      ) |>
+      # In very rare cases a subject can be present but with absolutly no data,
+      # even with no dag info. It is removed to avoid a NA row in the final dag
+      # table.
+      na.omit()
 
     dag <-
       dplyr::left_join(

@@ -74,9 +74,7 @@ Functions to export and work on redcap projects.
 -   ody_rc_add_site [dplyr, tibble, stringr]
 -   ody_rc_add_label [process_raw_dic, dplyr, labelled]
 -   ody_rc_get_metadata [extract_data, httr]
--   ody_rc_search_ttm [ody_rc_select_form, ody_rc_format, ody_rc_filter_subject, ody_rc_spread, dplyr, stringr, tidyr]
 -   ody_rc_check_metadata_availability [extract_data, httr, stringr]
--   ody_rc_arrange_master_therapy [dplyr, tidyr, stringr]
 -   ody_rc_report_saps [get_single_field, dplyr, tidyr, tibble, stringr]
 
 ## **redcap_methods**
@@ -110,6 +108,14 @@ Functions to create and update RedCap projects in RStudio:
 -   hardcode_value_clasproj [dplyr, stringr]
 -   hardcode_values [hardcode_value_longproj, hardcode_value_clasproj, dplyr]
 -   rc_export_data_dependencies [get_project_name, get_import_date, here, stringr, cli]
+
+## **redcap_master**
+
+Specific functions for Master-like REDCap structures.
+
+-   ody_rc_search_ttm [ody_rc_select_form, ody_rc_format, ody_rc_filter_subject, ody_rc_spread, rlang, dplyr, tidyselect]
+-   relocate_advanced_adjuvance [dplyr, purrr]
+-   ody_rc_arrange_master_therapy [relocate_advanced_adjuvance, dplyr, labelled, purrr]
 
 ## **other_utils**
 

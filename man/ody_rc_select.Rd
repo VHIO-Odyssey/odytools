@@ -2,37 +2,48 @@
 % Please edit documentation in R/redcap.R
 \name{ody_rc_select}
 \alias{ody_rc_select}
-\title{Select variables from a RedCap import}
+\title{Select variables from a REDCap import}
 \usage{
 ody_rc_select(
   rc_data,
   ...,
   .is_vector = FALSE,
   .if_different_forms = c("list", "join"),
+  .select_aux = FALSE,
   .include_aux = FALSE,
   .accept_form_name = TRUE
 )
 }
 \arguments{
-\item{rc_data}{RedCap data imported with ody_rc_import.}
+\item{rc_data}{REDCap data imported with \code{ody_rc_import()}.}
 
-\item{...}{Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.}
+\item{...}{Variable names to select. You can also pass a form name to select
+all variables from that form (unless \code{.accept_form_name = FALSE}).}
 
-\item{.is_vector}{Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.}
+\item{.is_vector}{Logical. If \code{TRUE}, the first element in \code{...} is treated
+as a character vector containing variable names.}
 
-\item{.if_different_forms}{What action take if the selected variables belong to different forms.
+\item{.if_different_forms}{How to handle selections spanning multiple forms:
 \itemize{
-\item list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
-\item join: Join all variables creating artifact NAs.
+\item \code{"list"}: returns one data frame per form (as a list), avoiding cross-form joins.
+\item \code{"join"}: returns a single joined data frame (may introduce structural \code{NA}s).
 }}
 
-\item{.include_aux}{When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE}
+\item{.select_aux}{Logical. If \code{TRUE}, selected checkbox variables are
+replaced by their auxiliary columns (\verb{___} columns; one TRUE/FALSE column
+per checkbox level).}
 
-\item{.accept_form_name}{Logical. If TRUE (default), a form name can be provided in ... to select all variables of that form. Set to FALSE if a variable is named as a form and you need to select the variable instead of the form. For selecting complete forms, it is now recommended to use \code{ody_rc_select_form}.}
+\item{.include_aux}{Logical. When selecting by form name, include all
+auxiliary checkbox columns from that form.}
+
+\item{.accept_form_name}{Logical. If \code{TRUE} (default), a form name in \code{...}
+selects all variables in that form. Set to \code{FALSE} when a variable has the
+same name as a form and you want that variable only. For form-level
+selection, \code{ody_rc_select_form()} is recommended.}
 }
 \value{
 A tibble with the selected variables.
 }
 \description{
-Select variables from a RedCap import
+Select variables from a REDCap import
 }

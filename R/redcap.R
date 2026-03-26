@@ -1183,16 +1183,25 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
 }
 
 
-#' Select variables from a RedCap import
+#' Select variables from a REDCap import
 #'
-#' @param rc_data RedCap data imported with ody_rc_import.
-#' @param ... Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.
-#' @param .is_vector Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.
-#' @param .if_different_forms What action take if the selected variables belong to different forms.
-#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
-#'    - join: Join all variables creating artifact NAs.
-#' @param .include_aux When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE
-#' @param .accept_form_name Logical. If TRUE (default), a form name can be provided in ... to select all variables of that form. Set to FALSE if a variable is named as a form and you need to select the variable instead of the form. For selecting complete forms, it is now recommended to use `ody_rc_select_form`.
+#' @param rc_data REDCap data imported with `ody_rc_import()`.
+#' @param ... Variable names to select. You can also pass a form name to select
+#'   all variables from that form (unless `.accept_form_name = FALSE`).
+#' @param .is_vector Logical. If `TRUE`, the first element in `...` is treated
+#'   as a character vector containing variable names.
+#' @param .if_different_forms How to handle selections spanning multiple forms:
+#'   - `"list"`: returns one data frame per form (as a list), avoiding cross-form joins.
+#'   - `"join"`: returns a single joined data frame (may introduce structural `NA`s).
+#' @param .select_aux Logical. If `TRUE`, selected checkbox variables are
+#'   replaced by their auxiliary columns (`___` columns; one TRUE/FALSE column
+#'   per checkbox level).
+#' @param .include_aux Logical. When selecting by form name, include all
+#'   auxiliary checkbox columns from that form.
+#' @param .accept_form_name Logical. If `TRUE` (default), a form name in `...`
+#'   selects all variables in that form. Set to `FALSE` when a variable has the
+#'   same name as a form and you want that variable only. For form-level
+#'   selection, `ody_rc_select_form()` is recommended.
 #'
 #' @return A tibble with the selected variables.
 #' @export
@@ -1201,6 +1210,7 @@ ody_rc_select <- function(
   ...,
   .is_vector = FALSE,
   .if_different_forms = c("list", "join"),
+  .select_aux = FALSE,
   .include_aux = FALSE,
   .accept_form_name = TRUE
 ) {
@@ -1265,6 +1275,31 @@ ody_rc_select <- function(
       needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars)
 
       sel_vars <- c(sel_vars, needed_aux)
+    }
+  } else if (.select_aux) {
+    # If the selection includes variables from a form and .select_aux = TRUE, all
+    # auxiliary checkbox variables of the selected variables will be added.
+    checkbox_vars <- metadata |>
+      dplyr::filter(
+        .data$field_name %in% sel_vars,
+        .data$field_type == "checkbox"
+      ) |>
+      dplyr::pull("field_name")
+
+    if (length(checkbox_vars) > 0) {
+      checkbox_vars_patterns <- stringr::str_c(
+        "^",
+        checkbox_vars,
+        "___"
+      ) |>
+        stringr::str_c(collapse = "|")
+
+      needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars_patterns)
+
+      sel_vars <- c(
+        stringr::str_subset(sel_vars, checkbox_vars, negate = TRUE),
+        needed_aux
+      )
     }
   }
 

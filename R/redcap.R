@@ -1297,7 +1297,12 @@ ody_rc_select <- function(
       needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars_patterns)
 
       sel_vars <- c(
-        stringr::str_subset(sel_vars, checkbox_vars, negate = TRUE),
+        stringr::str_subset(
+          sel_vars,
+          stringr::str_c("^", checkbox_vars, "$") |>
+            stringr::str_c(collapse = "|"),
+          negate = TRUE
+        ),
         needed_aux
       )
     }

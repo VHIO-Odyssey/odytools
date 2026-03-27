@@ -22,7 +22,7 @@ The function checks each selected value and attempts the following conversions, 
 \itemize{
 \item If NA, leaves as NA.
 \item If lubridate::is.timepoint(), converts to Date.
-\item If a 5-digit number (Excel serial), converts using janitor::excel_numeric_to_date().
+\item If a 4- or 5-digit number (Excel serial), converts using janitor::excel_numeric_to_date().
 \item If  matches "2 digits - 2 digits - 4 digits", parses with lubridate::dmy().
 \item If matches "4 digits - 2 digits - 2 digits", parses with lubridate::ymd().
 \item Otherwise the value becomes NA.

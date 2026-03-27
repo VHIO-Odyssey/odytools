@@ -770,7 +770,7 @@ ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE, ...) {
 #' The function checks each selected value and attempts the following conversions, in order:
 #' - If NA, leaves as NA.
 #' - If lubridate::is.timepoint(), converts to Date.
-#' - If a 5-digit number (Excel serial), converts using janitor::excel_numeric_to_date().
+#' - If a 4- or 5-digit number (Excel serial), converts using janitor::excel_numeric_to_date().
 #' - If  matches "2 digits - 2 digits - 4 digits", parses with lubridate::dmy().
 #' - If matches "4 digits - 2 digits - 2 digits", parses with lubridate::ymd().
 #' - Otherwise the value becomes NA.
@@ -795,7 +795,7 @@ ody_repair_dates <- function(data, ...) {
               return(as.Date(x))
             }
 
-            if (stringr::str_detect(x, "^\\d{5}$")) {
+            if (stringr::str_detect(x, "^\\d{4,5}$")) {
               return(janitor::excel_numeric_to_date(as.numeric(x)))
             }
 

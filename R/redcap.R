@@ -1751,8 +1751,7 @@ ody_rc_format <- function(
         } else if (stringr::str_detect(label, ":date_.+\\)$")) {
           result <- lubridate::ymd(x_no_user_na)
         } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
-          result <- stringr::str_c(x_no_user_na, ":00") |>
-            lubridate::hms(x_no_user_na)
+          result <- lubridate::ymd_hm(x_no_user_na)
         } else if (stringr::str_detect(label, ":time\\)$")) {
           result <- lubridate::hm(x_no_user_na)
         } else if (stringr::str_detect(label, "truefalse\\)$")) {

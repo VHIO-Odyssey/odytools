@@ -1,6 +1,6 @@
 # Helper function to extract content in import_rc
 extract_data <- function(content, token, url) {
-  httr::POST(
+  result <- httr::POST(
     url,
     body = list(
       "token" = token,
@@ -12,6 +12,14 @@ extract_data <- function(content, token, url) {
   ) |>
     httr::content(show_col_types = FALSE) |>
     suppressWarnings()
+
+  attr(result, "is_available") <- stringr::str_detect(
+    names(result)[1],
+    "^ERROR",
+    negate = TRUE
+  )
+
+  result
 }
 
 
@@ -107,12 +115,16 @@ import_rc <- function(
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {
-    # ! dag también se deja de extraer con privilegios estándar de la API.
-    # ! intento sacar la info de redcap_data directamente.
+    #! dag también se deja de extraer con privilegios estándar de la API.
+    #! intento sacar la info de redcap_data directamente.
     # dag <- extract_data("dag", token, url)
     subjects_dag <- redcap_data |>
       dplyr::select(1, "redcap_data_access_group") |>
-      unique()
+      unique() |>
+      # In very rare cases a subject can be present but with absolutly no data,
+      # even with no dag info. It is removed to avoid a NA row in the final dag
+      # table.
+      na.omit()
     dag_labels <- get_dag(
       token,
       colnames(redcap_data)[1],
@@ -125,11 +137,16 @@ import_rc <- function(
       unique() |>
       dplyr::mutate(
         dplyr::across(tidyselect::everything(), as.character)
-      )
+      ) |>
+      # In very rare cases a subject can be present but with absolutly no data,
+      # even with no dag info. It is removed to avoid a NA row in the final dag
+      # table.
+      na.omit()
 
     dag <-
       dplyr::left_join(
-        subjects_dag, dag_labels,
+        subjects_dag,
+        dag_labels,
         by = colnames(redcap_data)[1]
       ) |>
       dplyr::select(
@@ -1064,16 +1081,127 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 }
 
 
-#' Select variables from a RedCap import
+#' Simplify a selection by dropping RedCap structure variables
 #'
-#' @param rc_data RedCap data imported with ody_rc_import.
-#' @param ... Variable names to select. If the name of a form is provided, all the variables belonging to that form will be selected.
-#' @param .is_vector Logical. If TRUE, the first element of ... is considered a character vector with the names of the variables to be selected.
-#' @param .if_different_forms What action take if the selected variables belong to different forms.
-#'    - list: It returns a list with an element for each form so only variables belonging to the same form are joined in the same data frame.
-#'    - join: Join all variables creating artifact NAs.
-#' @param .include_aux When a form name is provided, all auxiliary checkbox variables will be added if .include_aux = TRUE
-#' @param .accept_form_name Logical. If TRUE (default), a form name can be provided in ... to select all variables of that form. Set to FALSE if a variable is named as a form and you need to select the variable instead of the form. For selecting complete forms, it is now recommended to use `ody_rc_select_form`.
+#' Remove RedCap structural columns (redcap_event_name, redcap_form_name,
+#' redcap_instance_type, redcap_instance_number) from a data frame or list of
+#' data frames.
+#'
+#' @param selected_data A data frame or list of data frames (typically the
+#' output of ody_rc_select or ody_rc_select_form).
+#' @param join Logical. If TRUE and selected_data is a list of data frames,
+#' the simplified data frames will be joined with `dplyr::full_join` by all
+#' the common columns.
+#'
+#' @return A simplified data frame or list of data frames without the specified
+#' RedCap structural columns.
+#'
+#' @export
+ody_rc_simplify_selection <- function(
+  selected_data,
+  join = FALSE
+) {
+  event_mapping <- attr(selected_data, "forms_events_mapping")
+  repeating <- attr(selected_data, "repeating")
+
+  if (is.data.frame(selected_data)) {
+    return(simplify_selection(selected_data, event_mapping, repeating))
+  }
+
+  simp_data <- purrr::map(
+    selected_data,
+    simplify_selection,
+    event_mapping,
+    repeating
+  )
+
+  if (join) {
+    simp_data <-
+      simp_data |>
+      purrr::reduce(dplyr::full_join)
+  }
+
+  attr(simp_data, "meddra_codes") <- attr(selected_data, "meddra_codes")
+  attr(simp_data, "meddra_fields") <- attr(selected_data, "meddra_fields")
+  attr(simp_data, "atc_codes") <- attr(selected_data, "atc_codes")
+  attr(simp_data, "atc_fields") <- attr(selected_data, "atc_fields")
+
+  simp_data
+}
+
+simplify_selection <- function(selected_data, event_mapping, repeating) {
+  # Variables location
+  ## The form the variables belong to (easy, taken from selected data)
+  form_origin <- unique(selected_data$redcap_form_name)
+  ## Possible events the form can belong to (from attributes)
+  if (!is.null(event_mapping)) {
+    possible_events <-
+      event_mapping |>
+      dplyr::filter(.data$form == form_origin) |>
+      dplyr::pull("unique_event_name")
+  } else {
+    possible_events <- "Classic_project_with_no_events"
+  }
+
+  # redcap_form_name and redcap_instance_number are always removed
+  removed_redcap_vars <- c("redcap_form_name", "redcap_instance_type")
+
+  # Remove instance only if the form is not repeating in any event
+  if (!is.null(repeating)) {
+    repeating_forms <- repeating |>
+      dplyr::pull("form_name") |>
+      unique() |>
+      na.omit()
+
+    if (ncol(repeating) == 2) {
+      repeating_events <-
+        repeating |>
+        dplyr::filter(is.na(.data$form_name)) |>
+        dplyr::pull("event_name")
+    } else {
+      repeating_events <- "No_repeating_events_in_this_project"
+    }
+  } else {
+    repeating_forms <- "No_repeating_forms_in_this_project"
+    repeating_events <- "No_repeating_events_in_this_project"
+  }
+
+  if (
+    !form_origin %in% repeating_forms &&
+      !any(possible_events %in% repeating_events)
+  ) {
+    removed_redcap_vars <- c(removed_redcap_vars, "redcap_instance_number")
+  }
+
+  # Remove event name only if the form belongs to a single event
+  if (length(possible_events) == 1) {
+    removed_redcap_vars <- c(removed_redcap_vars, "redcap_event_name")
+  }
+
+  selected_data |>
+    dplyr::select(-tidyselect::any_of(removed_redcap_vars))
+}
+
+
+#' Select variables from a REDCap import
+#'
+#' @param rc_data REDCap data imported with `ody_rc_import()`.
+#' @param ... Variable names to select. You can also pass a form name to select
+#'   all variables from that form (unless `.accept_form_name = FALSE`).
+#' @param .is_vector Logical. If `TRUE`, the first element in `...` is treated
+#'   as a character vector containing variable names.
+#' @param .if_different_forms How to handle selections spanning multiple forms:
+#'   - `"list"`: returns one data frame per form (as a list), avoiding cross-form joins.
+#'   - `"join"`: returns a single joined data frame (may introduce structural `NA`s).
+#' @param .select_aux Logical. If `TRUE`, selected checkbox variables are
+#'   replaced by their auxiliary columns (`___` columns; one TRUE/FALSE column
+#'   per checkbox level).
+#' @param .include_aux Logical. When selecting by form name, include all
+#'   auxiliary checkbox columns from that form.
+#' @param .accept_form_name Logical. If `TRUE` (default), a form name in `...`
+#'   selects all variables in that form. Set to `FALSE` when a variable has the
+#'   same name as a form and you want that variable only. For form-level
+#'   selection, `ody_rc_select_form()` is recommended.
 #'
 #' @return A tibble with the selected variables.
 #' @export
@@ -1082,6 +1210,7 @@ ody_rc_select <- function(
   ...,
   .is_vector = FALSE,
   .if_different_forms = c("list", "join"),
+  .select_aux = FALSE,
   .include_aux = FALSE,
   .accept_form_name = TRUE
 ) {
@@ -1147,6 +1276,36 @@ ody_rc_select <- function(
 
       sel_vars <- c(sel_vars, needed_aux)
     }
+  } else if (.select_aux) {
+    # If the selection includes variables from a form and .select_aux = TRUE, all
+    # auxiliary checkbox variables of the selected variables will be added.
+    checkbox_vars <- metadata |>
+      dplyr::filter(
+        .data$field_name %in% sel_vars,
+        .data$field_type == "checkbox"
+      ) |>
+      dplyr::pull("field_name")
+
+    if (length(checkbox_vars) > 0) {
+      checkbox_vars_patterns <- stringr::str_c(
+        "^",
+        checkbox_vars,
+        "___"
+      ) |>
+        stringr::str_c(collapse = "|")
+
+      needed_aux <- stringr::str_subset(checkbox_aux, checkbox_vars_patterns)
+
+      sel_vars <- c(
+        stringr::str_subset(
+          sel_vars,
+          stringr::str_c("^", checkbox_vars, "$") |>
+            stringr::str_c(collapse = "|"),
+          negate = TRUE
+        ),
+        needed_aux
+      )
+    }
   }
 
   if (.if_different_forms == "join") {
@@ -1198,6 +1357,57 @@ ody_rc_select <- function(
     all_atc <- attr(rc_data, "atc_fields")
     attr(selection, "atc_fields") <- sel_vars[sel_vars %in% all_atc]
     attr(selection, "atc_codes") <- attr(rc_data, "atc_codes")
+  }
+
+  # Attributes needed to simplify selection
+  ## Selected forms
+  if (is.data.frame(selection)) {
+    forms <- unique(selection$redcap_form_name)
+  } else {
+    forms <- names(selection)
+  }
+  event_mapping <- attr(rc_data, "forms_events_mapping")
+  if (!is.null(event_mapping)) {
+    attr(selection, "forms_events_mapping") <- event_mapping |>
+      dplyr::filter(.data$form %in% forms)
+  }
+
+  repeating <- attr(rc_data, "repeating")
+  if (!is.null(repeating)) {
+    repeating_forms <-
+      repeating |>
+      dplyr::filter(.data$form_name %in% forms)
+
+    if (!is.null(event_mapping) && any(names(repeating) == "event_name")) {
+      repeating_events <-
+        repeating |>
+        dplyr::filter(
+          is.na(.data$form_name),
+          .data$event_name %in%
+            (event_mapping |>
+              dplyr::filter(.data$form %in% forms) |>
+              dplyr::pull("unique_event_name"))
+        )
+    } else {
+      repeating_events <-
+        tibble::tibble(
+          event_name = character(0),
+          form_name = character(0)
+        )
+    }
+
+    repeating_all <- dplyr::bind_rows(
+      repeating_forms,
+      repeating_events
+    )
+
+    if (nrow(repeating_all) > 0) {
+      attr(selection, "repeating") <-
+        dplyr::bind_rows(
+          repeating_forms,
+          repeating_events
+        )
+    }
   }
 
   selection
@@ -1411,6 +1621,70 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 }
 
 
+#' Clean overlapping user-missing codes in labelled variables
+#'
+#' Removes user-defined missing codes (`labelled::na_values`) that overlap with
+#' existing value labels (`labelled::val_labels`) in each column of a data
+#' frame. This helps avoid conflicts before formatting or converting labelled
+#' variables.
+#'
+#' @param rc_df A data frame (typically obtined from `ody_rc_select`) with
+#' labelled variables.
+#'
+#' @return A data frame with updated user-defined missing codes.
+#'
+#' @details
+#' For each column, if any value in `na_values` is also present among
+#' `val_labels`, the overlapping values are removed from `na_values`.
+#' Informative messages are emitted indicating which codes were removed and from
+#' which variable.
+#'
+#' @export
+ody_rc_clean_missing_codes <- function(rc_df) {
+  purrr::map2_df(
+    rc_df,
+    names(rc_df),
+    function(x, y) {
+      current_na <- labelled::na_values(x)
+      variable_labels <- labelled::val_labels(x)
+
+      # Si no hay user-defined missing codes o no hay etiquetas de valor, se
+      # devuelve la variable sin cambios.
+      if (is.null(current_na) || is.null(variable_labels)) {
+        return(x)
+      }
+
+      # Índice de los valores de etiquetas que se superponen con los missing
+      # codes.
+      values_overlap_index <- variable_labels %in% current_na
+
+      if (sum(values_overlap_index) == 0) {
+        return(x)
+      }
+
+      overlapped_values <- variable_labels[values_overlap_index]
+
+      # Se extrae de los missing codes aquellos que se superponen con las etiquetas de valor.
+      no_overlapped_na <- current_na[!current_na %in% overlapped_values]
+      if (length(no_overlapped_na) == 0) {
+        no_overlapped_na <- NULL
+      }
+
+      labelled::na_values(x) <- no_overlapped_na
+      cli::cli_alert_info(
+        stringr::str_c(
+          stringr::str_c(overlapped_values, collapse = ", "),
+          " removed from missing data codes of ",
+          y,
+          " due to overlap with value labels."
+        )
+      )
+      x
+    }
+  )
+}
+
+
 #' Format RedCap variables
 #'
 #' Format all variables from an ody_rc_select dataframe according to the
@@ -1418,10 +1692,16 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #'
 #' @param rc_df Dataframe derived from a RedCap import with ody_rc_select
 #' @param keep_user_na Logical. Should user defined missing values be kept? Default is FALSE, so when formatting, user defined missing values are replaced by regular NAs.
+#' @param clean_missing_codes Logical. Should user defined missing codes that
+#' overlap with value labels be cleaned before formatting? Default is FALSE.
+#' This is usefull in those rare occasions when the label of a variable value is
+#' equal to one of the user defined missing codes (e.g "OTH" in the UNLOCK
+#' project is a missing data code and also a data label in tum_histology)
 #'
 #' @details
-#' Formating proceeds as follows:
-#' - Values defined as numeric in redcap -> as.numeric (also redcap_repeat_instance).
+#' Formatting is performed as follows:
+#' - Values defined as numeric in redcap -> as.numeric (also
+#'   redcap_repeat_instance).
 #' - Values defined as date in redcap -> ymd
 #' - Values defined as datetime in redcap -> ymd_hm
 #' - Values labelled in redcap -> to_factor
@@ -1430,7 +1710,15 @@ ody_rc_filter_subject <- function(redcap_data, subjects_vector) {
 #'
 #' @return A tibble
 #' @export
-ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
+ody_rc_format <- function(
+  rc_df,
+  keep_user_na = FALSE,
+  clean_missing_codes = FALSE
+) {
+  if (clean_missing_codes) {
+    rc_df <- ody_rc_clean_missing_codes(rc_df)
+  }
+
   dplyr::mutate(
     rc_df,
     dplyr::across(
@@ -1463,8 +1751,7 @@ ody_rc_format <- function(rc_df, keep_user_na = FALSE) {
         } else if (stringr::str_detect(label, ":date_.+\\)$")) {
           result <- lubridate::ymd(x_no_user_na)
         } else if (stringr::str_detect(label, ":datetime_.+\\)$")) {
-          result <- stringr::str_c(x_no_user_na, ":00") |>
-            lubridate::hms(x_no_user_na)
+          result <- lubridate::ymd_hm(x_no_user_na)
         } else if (stringr::str_detect(label, ":time\\)$")) {
           result <- lubridate::hm(x_no_user_na)
         } else if (stringr::str_detect(label, "truefalse\\)$")) {
@@ -1545,22 +1832,86 @@ ody_rc_translate_atc <- function(rc_df) {
 }
 
 
+# Helper function to wait until a local TCP port is ready.
+wait_for_local_port <- function(
+  port,
+  host = "127.0.0.1",
+  timeout = 8,
+  interval = 0.1
+) {
+  cli::cli_alert_info("Starting viewer app...")
+
+  deadline <- Sys.time() + timeout
+
+  repeat {
+    con <- suppressWarnings(
+      try(
+        socketConnection(
+          host = host,
+          port = port,
+          open = "r+",
+          blocking = TRUE,
+          timeout = 1
+        ),
+        silent = TRUE
+      )
+    )
+
+    if (!inherits(con, "try-error")) {
+      close(con)
+      cli::cli_alert_success("Viewer ready")
+      return(TRUE)
+    }
+
+    if (Sys.time() >= deadline) {
+      cli::cli_alert_warning("Connection timeout")
+      return(FALSE)
+    }
+
+    Sys.sleep(interval)
+  }
+}
+
+
 #' View a RedCap project
 #'
-#' @param data_app Imported data by ody_rc_import (must be labelled and nested). If no data provided, the function calls ody_rc_import to download it from RedCap.
+#' Launch the REDCap Viewer.
 #'
-#' @return An html viewer
+#' @param data_app Imported data by `ody_rc_import()` (must be labelled and
+#' nested).
+#' If no data provided, the function looks for a `redcap_data` object in the
+#' caller environment. If not found, the viewer is launched with no data and the
+#' user can upload a RedCap import from the app interface.
+#' @param bg_process Logical. If TRUE (default), the viewer is launched in a
+#' background process, allowing the user to continue working in the R session.
+#' If FALSE, the viewer runs in the current R session, blocking it until the
+#' viewer is closed.
+#'
 #'
 #' @details
-#' "RedCap Viewer" addin calls to this function
+#' "RedCap Viewer" addin calls to this function.
 #'
+#' If `data_app` is provided, just click on the app submit button without
+#' providing a token. The viewer will be launched with the provided data.
+#'
+#' The viewer is launched in a separate process. If RStudio is detected, it uses
+#' `rstudioapi::jobRunScript` to launch the viewer in a background R session.
+#' Otherwise, it uses `callr::r_bg` to start a new R process that runs the Shiny
+#' app. In such cases, process management is handled by storing the background
+#' process object in the caller environment (the global environment most of the
+#' cases) with a unique name with the pattern `redcap_viewer:<port_number>`. A
+#' process can be killed with `<process_name>$kill()`. The function
+#' `ody_rc_kill_viewers()` can be used to kill all viewer processes at once and
+#' remove the corresponding objects from the environment.
 #'
 #' @export
-ody_rc_view <- function(data_app = NULL) {
+ody_rc_view <- function(data_app = NULL, bg_process = TRUE) {
   rlang::check_installed(c(
     "DT",
     "bsicons",
     "shiny",
+    "callr",
+    "httpuv",
     "bslib",
     "shinycssloaders",
     "reactablefmtr",
@@ -1578,21 +1929,90 @@ ody_rc_view <- function(data_app = NULL) {
     package = "odytools"
   )
 
-  if (is.null(data_app) && exists("redcap_data")) {
-    data_app <- get("redcap_data")
+  if (
+    is.null(data_app) &&
+      rlang::env_has(env = rlang::caller_env(), "redcap_data")
+  ) {
+    data_app <- rlang::env_get(env = rlang::caller_env(), "redcap_data")
   }
 
   if (!is.null(data_app)) {
     save(data_app, file = stringr::str_c(viewer_location, "/data_app.RData"))
   }
 
-  rstudioapi::jobRunScript(
-    stringr::str_c(viewer_location, "/data_viewer_runner.R")
-  )
+  if (Sys.getenv("RSTUDIO") == "1" && bg_process) {
+    rstudioapi::jobRunScript(
+      stringr::str_c(viewer_location, "/data_viewer_runner.R")
+    )
+  } else if (Sys.getenv("POSITRON") == "1" && bg_process) {
+    viewer_port <- httpuv::randomPort()
 
-  # rstudioapi::viewer("http://127.0.0.1:5921")
+    process_name <- stringr::str_c("redcap_viewer:", viewer_port)
+
+    assign(
+      process_name,
+      callr::r_bg(
+        function(viewer_location, viewer_port) {
+          shiny::runApp(viewer_location, port = viewer_port)
+        },
+        args = list(
+          viewer_location = viewer_location,
+          viewer_port = viewer_port
+        )
+      ),
+      envir = rlang::caller_env()
+    )
+
+    wait_for_local_port(viewer_port)
+
+    url <- stringr::str_c("http://127.0.0.1:", viewer_port)
+
+    # Open with the OS default browser.
+    # On Windows, cmd/start resolves the URL using the default HTTP handler.
+    if (.Platform$OS.type == "windows") {
+      system2("cmd.exe", args = c("/c", "start", "", url))
+    } else {
+      utils::browseURL(url)
+    }
+  } else {
+    shiny::runApp(viewer_location)
+  }
 }
 
+
+#' Kill all RedCap Viewer processes
+#'
+#' This function searches for all viewer processes launched by `ody_rc_view()`
+#' in the caller environment (typically the global environment) and kills them.
+#' It also removes the corresponding process objects from the environment.
+#'
+#' @export
+ody_rc_kill_viewers <- function() {
+  viewer_process <-
+    ls(
+      pattern = "^redcap_viewer:\\d+$",
+      envir = rlang::global_env()
+    )
+
+  if (length(viewer_process) == 0) {
+    cli::cli_alert_info("No viewer processes found.")
+    return(invisible())
+  }
+
+  purrr::walk(
+    viewer_process,
+    ~ rlang::env_get(rlang::global_env(), .x)$kill()
+  )
+
+  rm(list = viewer_process, envir = rlang::global_env())
+
+  cli::cli_alert_info(
+    stringr::str_c(
+      "Killed viewer processes:\n",
+      stringr::str_c(viewer_process, collapse = "\n")
+    )
+  )
+}
 
 # Helper function to check inside get_conditions_from_metadata whether the
 # the data_frame can be actually filtered by the elements of the
@@ -1805,9 +2225,12 @@ ody_rc_completeness <- function(
 
 #' Spread a Classic REDCap project into a 2D table
 #'
-#' The function ody_rc_spread takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
+#' The function ody_rc_spread takes a REDCap data object and spreads it into a
+#' tibble with one row per subject (if the project has events it creates a list
+#' of tibbles, one per event). This is useful for creating Excel exports.
 #'
-#' @param rc_data The object to spread.
+#' @param rc_data The object to spread. By default, a redcap_data object is used
+#' if it exists in the caller environment.
 #' @param join_events Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.
 #'
 #' @details If no data provided, the function checks whether there is a redcap_data object in the environment.
@@ -1816,11 +2239,10 @@ ody_rc_completeness <- function(
 #' @export
 ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
   if (is.null(rc_data)) {
-    if (exists("redcap_data")) {
-      rc_data <- get("redcap_data")
-    } else {
-      stop("No data provided.")
+    if (!rlang::env_has(rlang::caller_env(), "redcap_data")) {
+      stop("No redcap_data object found in the caller environment.")
     }
+    rc_data <- rlang::env_get(rlang::caller_env(), "redcap_data")
   }
 
   if (!any(class(rc_data) == "odytools_redcap")) {
@@ -1839,18 +2261,28 @@ ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
       purrr::set_names(rc_data$redcap_event_name)
 
     if (join_events) {
-      purrr::map2(
-        spread_list,
-        names(spread_list),
-        \(df_data, df_name) {
-          dplyr::rename_with(
-            df_data,
-            ~ stringr::str_c(df_name, ., sep = "__"),
-            !tidyselect::all_of(id_var)
+      n_events_form <-
+        attr(rc_data, "forms_events_mapping") |>
+        dplyr::count(.data$form) |>
+        dplyr::pull("n")
+      # If a form appears in more than one event, we need to rename its variables
+      # to avoid duplicates when joining all events together. Renaming is done
+      # by adding the event name as prefix to all variables of the form.
+      if (any(n_events_form > 1)) {
+        spread_list <-
+          purrr::map2(
+            spread_list,
+            names(spread_list),
+            \(df_data, df_name) {
+              dplyr::rename_with(
+                df_data,
+                ~ stringr::str_c(df_name, ., sep = "__"),
+                !tidyselect::all_of(id_var)
+              )
+            }
           )
-        }
-      ) |>
-        purrr::reduce(dplyr::full_join, by = id_var)
+      }
+      purrr::reduce(spread_list, dplyr::full_join, by = id_var)
     } else {
       spread_list
     }
@@ -1859,6 +2291,8 @@ ody_rc_spread <- function(rc_data = NULL, join_events = FALSE) {
   }
 }
 
+# Helper function to spread a redcap_data form data. It is used in ody_rc_spread
+# for both classic and long formats.
 spreader <- function(rc_data, id_var) {
   has_repeating <- any(rc_data$redcap_repeating_form)
   has_unique <- any(!rc_data$redcap_repeating_form)
@@ -1930,24 +2364,25 @@ ody_rc_add_import_date <- function(file_name, extension = "csv") {
 #' Add the sites to a RedCap table
 #'
 #' @param tbl The table to add the site to.
-#' @param redcap_data The redcap_data object with the sites information as attribute (the dag attribute of an ody_rc_import output). By default, the function looks for a redcap_data object in the environment.
+#' @param rc_data The redcap_data object with the sites information as attribute
+#' (the dag attribute of an ody_rc_import output). If NULL, the function will
+#' look for a redcap_data object in the caller environment and use its dag attribute.
 #' @param position The position of the site column. Default is 1.
 #'
-#' @return The same tbl with the site column added.
+#' @return The same table with the site column added.
 #' @export
-ody_rc_add_site <- function(tbl, redcap_data = NULL, position = 1) {
-  if (is.null(redcap_data)) {
-    if (exists("redcap_data", envir = .GlobalEnv)) {
-      redcap_data <- get("redcap_data", envir = .GlobalEnv)
-    } else {
+ody_rc_add_site <- function(tbl, rc_data = NULL, position = 1) {
+  if (is.null(rc_data)) {
+    if (!rlang::env_has(rlang::caller_env(), "redcap_data")) {
       stop("No redcap_data object found.")
     }
+    rc_data <- rlang::env_get(rlang::caller_env(), "redcap_data")
   }
 
-  id_var <- attr(redcap_data, "id_var")
-  sites <- attr(redcap_data, "subjects_dag") |>
+  id_var <- attr(rc_data, "id_var")
+  sites <- attr(rc_data, "subjects_dag") |>
     dplyr::left_join(
-      attr(redcap_data, "dag"),
+      attr(rc_data, "dag"),
       by = c(redcap_data_access_group = "unique_group_name")
     ) |>
     dplyr::select(
@@ -1979,11 +2414,11 @@ ody_rc_add_label <- function(
   modify_names = FALSE
 ) {
   if (is.null(metadata)) {
-    if (!exists("redcap_data", envir = .GlobalEnv)) {
-      stop("No redcap_data object found.")
+    if (!rlang::env_has(rlang::caller_env(), "redcap_data")) {
+      stop("No redcap_data object found in the caller environment.")
     }
     metadata <- attr(
-      get("redcap_data", envir = .GlobalEnv),
+      rlang::env_get(rlang::caller_env(), "redcap_data"),
       "metadata"
     )
   } else if (!is.null(attr(metadata, "metadata"))) {
@@ -2077,48 +2512,141 @@ ody_rc_get_metadata <- function(
 }
 
 
-#' Search Patients with Specific Treatment
+#' Check availability of REDCap metadata types
 #'
-#' Filters RedCap data to identify patients who have received a specific treatment, suited for Master-like REDCap projects.
+#' Query a REDCap API endpoint to determine which metadata types are available
+#' for the given project token.
 #'
-#' @param rc_data A REDCap data object imported via `ody_rc_import`.
-#' @param filter_expression An expression to filter treatments. It is applyed to the `antineoplasic_therapy` form.
-#' @param variables_of_interest A character vector of additional variables to include in the output. Default variables are  "ttm_startdate", "ttm_enddate", "ttm_pddate" and "ttm_bestresponse".
-#' @param join_rc_spread Logical. If TRUE, joins the filtered cases with the wider REDCap data spread. Defaults to TRUE.
+#' @param token Character. REDCap API project token used to authenticate the
+#'   request.
+#' @param url Character. Base URL of the REDCap API. Defaults to
+#'   \code{"https://redcap.vhio.net/redcap/api/"}.
 #'
-#' @return A tibble with the filtered cases, optionally combined with the wider REDCap data.
+#' @details
+#' The function checks the following metadata types: \code{metadata},
+#' \code{project}, \code{instrument}, \code{event}, \code{formEventMapping},
+#' and \code{arm}.
+#'
+#' @return A tibble with two columns:
+#'   - \code{meta_info} (character): the metadata type name.
+#'   - \code{is_available} (logical): \code{TRUE} if the metadata type appears
+#'     available for the project, \code{FALSE} if not.
+#'
+#' @examples
+#' \dontrun{
+#' token <- "REDCAP_PROJECT_API_TOKEN"
+#' # Query availability of metadata types for the project
+#' ody_rc_check_metadata_availability(token)
+#' }
+#'
 #' @export
-ody_rc_search_ttm <- function(
-  rc_data,
-  filter_expression,
-  variables_of_interest = c(
-    "ttm_met_line_num",
-    "ttm_name",
-    "ttm_startdate",
-    "ttm_enddate",
-    "ttm_pddate",
-    "ttm_bestresponse"
-  ),
-  join_rc_spread = TRUE
+ody_rc_check_metadata_availability <- function(
+  token,
+  url = "https://redcap.vhio.net/redcap/api/"
 ) {
-  filter_expression <- rlang::enquo(filter_expression)
+  meta_names <- c(
+    "metadata",
+    "project",
+    "instrument",
+    "event",
+    "formEventMapping",
+    "arm"
+  )
+  is_available <- purrr::map_lgl(
+    meta_names,
+    ~ attr(extract_data(., token, url), "is_available")
+  )
 
-  filtered_cases <-
-    ody_rc_select_form(rc_data, "antineoplasic_therapy") |>
-    dplyr::filter(!!filter_expression) |>
-    ody_rc_format() |>
-    dplyr::select("dem_sap", tidyselect::all_of(variables_of_interest)) |>
-    unique()
+  tibble::tibble(
+    meta_info = meta_names,
+    is_available = is_available
+  )
+}
 
-  if (join_rc_spread) {
-    ody_rc_filter_subject(rc_data, filtered_cases$dem_sap) |>
-      ody_rc_spread() |>
-      dplyr::right_join(filtered_cases, by = "dem_sap") |>
-      dplyr::relocate(
-        tidyselect::all_of(variables_of_interest),
-        .after = "dem_sap"
-      )
-  } else {
-    filtered_cases
+
+#' Report SAPs Across REDCap Projects
+#'
+#' This function reports all SAP values present across
+#' multiple REDCap projects by querying their respective APIs using stored
+#' tokens.
+#'
+#' @param projects_tbl A tibble containing project configuration with columns:
+#'   \itemize{
+#'     \item `title`: Project Title (for display purposes)
+#'     \item `token_name`: Environment variable names storing REDCap API tokens
+#'     \item `sap_name`: Field names in REDCap containing SAP values
+#'   }
+#'
+#' @return A tibble with columns:
+#'   \itemize{
+#'     \item `SAP`: The SAP value found across projects
+#'     \item One logical column per project (snake_case names): indicating
+#'     presence of each SAP in that project
+#'   }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Retrieves API tokens from environment variables specified in
+#'   `projects_tbl`
+#'   \item Queries each REDCap project's API for SAP values
+#'   \item Builds a boolean matrix indicating which SAPs exist in which projects
+#'   \item Joins results across all projects by SAP value
+#'   \item Cleans column names to snake_case format
+#' }
+#'
+#' @note Requires environment variables to be set for all tokens in
+#' `projects_tbl$token_name`.
+#'   The REDCap API endpoint is fixed to "https://redcap.vhio.net/redcap/api/".
+#'
+#' @export
+ody_rc_report_saps <- function(projects_tbl) {
+  rlang::check_installed("janitor")
+
+  projects_tbl <- janitor::clean_names(projects_tbl)
+
+  tokens <- purrr::map_chr(projects_tbl$token_name, Sys.getenv)
+
+  length_tokens <- purrr::map_int(tokens, nchar)
+
+  if (any(length_tokens == 0)) {
+    stop("Missing tokens")
   }
+
+  all_patients_tbl <-
+    tibble::tibble(
+      title = projects_tbl$title,
+      sap_values = purrr::map2(
+        projects_tbl$sap_name,
+        tokens,
+        ~ get_single_field(
+          .y,
+          .x,
+          "raw",
+          "https://redcap.vhio.net/redcap/api/"
+        )
+      )
+    )
+
+  all_patients <-
+    all_patients_tbl$sap_values |>
+    purrr::reduce(union)
+
+  purrr::map2(
+    all_patients_tbl$title,
+    all_patients_tbl$sap_values,
+    ~ tibble::tibble(
+      SAP = all_patients,
+      "{.x}" := all_patients %in% .y
+    )
+  ) |>
+    purrr::reduce(dplyr::full_join, by = "SAP") |>
+    # janitor::clean_names() |>
+    dplyr::mutate(
+      SAP = as.character(.data$SAP),
+      dplyr::across(
+        dplyr::where(is.logical),
+        ~ ifelse(., "Yes", "No") |> factor(levels = c("No", "Yes"))
+      )
+    )
 }

@@ -8,3 +8,5 @@
 ^archive$
 ^images$
 ^\.vscode
+^\.positai$
+^\.claude$

@@ -7,7 +7,8 @@
 ody_rc_spread(rc_data = NULL, join_events = FALSE)
 }
 \arguments{
-\item{rc_data}{The object to spread.}
+\item{rc_data}{The object to spread. By default, a redcap_data object is used
+if it exists in the caller environment.}
 
 \item{join_events}{Logical. If set to TRUE and the project contains events, all events will be consolidated into a single tibble. By default, this is set to FALSE, which results in a list containing one tibble for each event being returned.}
 }
@@ -15,7 +16,9 @@ ody_rc_spread(rc_data = NULL, join_events = FALSE)
 A tibble
 }
 \description{
-The function ody_rc_spread takes a classic project (with no events) and spreads it into a tibble with one row per subject. This is useful for creating Excel exports.
+The function ody_rc_spread takes a REDCap data object and spreads it into a
+tibble with one row per subject (if the project has events it creates a list
+of tibbles, one per event). This is useful for creating Excel exports.
 }
 \details{
 If no data provided, the function checks whether there is a redcap_data object in the environment.

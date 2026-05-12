@@ -38,10 +38,10 @@ ody_add_version <- function(file_name, extension = "html", path = ".") {
     current_ver <- stringr::str_c("_", today_num, "_2")
   } else if (today_present_mult) {
     current_ver <- list.files(path = path) |>
-      stringr::str_extract(stringr::str_c(today_num, "_\\d")) |>
+      stringr::str_extract(stringr::str_c(today_num, "_\\d+")) |>
       unique() |>
       na.omit() |>
-      stringr::str_extract("\\d$") |>
+      stringr::str_extract("\\d+$") |>
       as.numeric() |>
       max()
 
@@ -90,7 +90,7 @@ ody_save_path <- function(...) {
 #' @return data_frame with names changes according to names_df.
 #' @export
 ody_change_names <- function(data_frame, names_df) {
-  #CANDIDATE
+  # CANDIDATE
 
   data_frame_names <- names(data_frame)
 
@@ -277,7 +277,7 @@ save_lock <- function() {
 }
 
 update_odytools <- function() {
-  rlang::check_installed("devtools")
+  rlang::check_installed("pak")
 
   current_version <- as.character(packageVersion("odytools"))
 
@@ -306,9 +306,9 @@ update_odytools <- function() {
   )
 
   if (master_branch) {
-    devtools::install_github("VHIO-Odyssey/odytools")
+    pak::pkg_install("VHIO-Odyssey/odytools")
   } else {
-    devtools::install_github("VHIO-Odyssey/odytools@dev")
+    pak::pkg_install("VHIO-Odyssey/odytools@dev")
   }
 
   require("odytools")
@@ -676,4 +676,264 @@ ody_exofilter <- function(external_df, id_col) {
     df |>
       dplyr::filter({{ id_col }} %in% patients)
   }
+}
+
+#' Read a data file from the project's data folder
+#'
+#' @param data_file Name of the data file to read.
+#' @param sheet Optional; if the file is an Excel file, specify the sheet to read.
+#' @param guess_cols Logical; if TRUE, column types are guessed, otherwise
+#' all columns are read as text.
+#' @param ... Additional arguments passed to the underlying reading functions
+#' (`readxl::read_excel` for Excel files and `vroom::vroom` for other files).
+#'
+#' @return A data frame containing the contents of the specified file.
+#' @details This function is intended to be used within "odytools" projects.
+#' It assumes data files are located in a subdirectory named "data"
+#' (inside the project directory) and the function searches for files
+#' within that folder and its subfolders.
+#' @examples
+#' \dontrun{
+#' df <- ody_read_data("mydata.csv")
+#' df <- ody_read_data("mydata.xlsx", guess_cols = TRUE)
+#' }
+#' @export
+ody_read_data <- function(data_file, sheet = NULL, guess_cols = FALSE, ...) {
+  if (stringr::str_detect(data_file, "\\.R$")) {
+    stop(
+      "The provided file appears to be an R script. Please provide a data file (e.g., .csv, .xlsx)."
+    )
+  }
+
+  data_files <-
+    list.files(
+      here::here("data"),
+      recursive = TRUE
+    ) |>
+    stringr::str_subset("^[^(~$)]")
+
+  data_file_index <-
+    stringr::str_detect(
+      data_files,
+      stringr::str_c(data_file, "$")
+    )
+
+  if (sum(data_file_index) == 0) {
+    stop("File not found in data/ folder.")
+  }
+
+  if (sum(data_file_index) > 1) {
+    matched_files <- data_files[data_file_index]
+    stop(
+      paste0(
+        "Multiple files in /data match the given name: ",
+        paste(matched_files, collapse = ", ")
+      )
+    )
+  }
+
+  data_file_path <- here::here("data", data_files[data_file_index])
+
+  is_excel <-
+    stringr::str_detect(
+      data_file,
+      stringr::str_c("\\.xlsx?$")
+    )
+
+  if (is_excel) {
+    rlang::check_installed("readxl")
+    readxl::read_excel(
+      data_file_path,
+      sheet = sheet,
+      col_types = ifelse(guess_cols, "guess", "text"),
+      ...
+    )
+  } else {
+    rlang::check_installed("vroom")
+    vroom::vroom(
+      data_file_path,
+      col_types = list(.default = ifelse(guess_cols, "?", "c")),
+      ...
+    )
+  }
+}
+
+
+#' Repair date-like columns into Date class
+#'
+#' Convert messy date-like columns (character or numeric) into Date objects.
+#'
+#' @param data A data frame.
+#' @param ... One or more columns to repair.
+#'
+#' @details
+#' The function checks each selected value and attempts the following conversions, in order:
+#' - If NA, leaves as NA.
+#' - If lubridate::is.timepoint(), converts to Date.
+#' - If a 4- or 5-digit number (Excel serial), converts using janitor::excel_numeric_to_date().
+#' - If  matches "2 digits - 2 digits - 4 digits", parses with lubridate::dmy().
+#' - If matches "4 digits - 2 digits - 2 digits", parses with lubridate::ymd().
+#' - Otherwise the value becomes NA.
+#'
+#' @return A data frame with the selected columns converted to Date.
+#' @export
+ody_repair_dates <- function(data, ...) {
+  rlang::check_installed("janitor")
+
+  data |>
+    dplyr::mutate(
+      dplyr::across(
+        c(...),
+        ~ purrr::map(
+          .x,
+          function(x) {
+            if (is.na(x)) {
+              return(NA)
+            }
+
+            if (lubridate::is.timepoint(x)) {
+              return(as.Date(x))
+            }
+
+            if (stringr::str_detect(x, "^\\d{4,5}$")) {
+              return(janitor::excel_numeric_to_date(as.numeric(x)))
+            }
+
+            if (stringr::str_detect(x, "^\\d{2}.\\d{2}.\\d{4}$")) {
+              return(lubridate::dmy(x))
+            }
+
+            if (stringr::str_detect(x, "^\\d{4}.\\d{2}.\\d{2}$")) {
+              return(lubridate::ymd(x))
+            }
+
+            NA
+          }
+        ) |>
+          unlist() |>
+          as.Date()
+      )
+    )
+}
+
+#' Write Multiple Data Frames to an Excel Workbook
+#'
+#' This function creates an Excel workbook with multiple worksheets, where each
+#' worksheet contains a data frame. The worksheets are automatically formatted
+#' with tables and auto-sized columns.
+#'
+#' @param ... Data frames to be written to the Excel file. Each argument will
+#'   become a separate worksheet, with the worksheet name derived from the
+#'   argument name or expression.
+#' @param .file_path Character string specifying the file path where the Excel
+#'   workbook will be saved. This should include the desired file name and
+#'   extension (e.g. "output/my_data.xlsx").
+#' @param .add_version Logical. If `TRUE` (default), adds a version suffix to
+#' the file name. The version is determined by the `.version_type` argument.
+#' @param .version_type Character. Type of versioning to use when `.add_version
+#' = TRUE`.
+#'   Options are "current_date" (default, uses today's date) or "import_date"
+#'   (uses the import date from a RedCap data object).
+#' @param .rc_name Character. Name of the RedCap data object in the global
+#' environment to extract the import date from. Default is "redcap_data". Only
+#' used when `.version_type = "import_date"`.
+#' @param .overwrite Logical. If `TRUE`, allows overwriting an existing file at
+#'   the specified path. Default is `FALSE`.
+#'
+#' @return Invisibly returns `NULL`. The function is called for its side effect
+#'   of creating an Excel file.
+#'
+#' @details
+#' The function performs the following operations:
+#' * Creates a new Excel workbook using `openxlsx2`
+#' * Adds each data frame as a separate worksheet
+#' * Formats data as tables with empty strings for NA values
+#' * Auto-sizes column widths for readability
+#' * Saves the workbook to the specified path
+#'
+#' @examples
+#' \dontrun{
+#' # Write multiple data frames to Excel
+#' ody_write_xlsx(
+#'   iris_data = iris,
+#'   mtcars_data = mtcars,
+#'   .file_path = "output/my_data.xlsx"
+#' )
+#'
+#' # Write without version control
+#' ody_write_xlsx(
+#'   sales = sales_df,
+#'   .file_path = "reports/sales.xlsx",
+#'   .add_version = FALSE
+#' )
+#' }
+#'
+#' @seealso [openxlsx2::wb_workbook()], [ody_save_path()]
+#'
+#' @export
+ody_write_xlsx <- function(
+  ...,
+  .file_path,
+  .add_version = TRUE,
+  .version_type = c("current_date", "import_date"),
+  .rc_name = "redcap_data",
+  .overwrite = FALSE
+) {
+  rlang::check_installed("openxlsx2")
+
+  if (.add_version) {
+    .version_type <- rlang::arg_match(.version_type)
+  }
+
+  elements <- rlang::enquos(...)
+
+  df_list <- purrr::map(elements, rlang::eval_tidy)
+
+  all_df <- all(purrr::map_lgl(df_list, is.data.frame))
+
+  if (!all_df) {
+    stop("All arguments must be data frames.")
+  }
+
+  df_names <- purrr::map_chr(elements, rlang::as_label)
+
+  wb <- openxlsx2::wb_workbook()
+
+  for (i in seq_along(df_list)) {
+    wb <-
+      openxlsx2::wb_add_worksheet(wb, df_names[i]) |>
+      openxlsx2::wb_add_data_table(x = df_list[[i]], na = "") |>
+      openxlsx2::wb_set_col_widths(
+        cols = 1:ncol(df_list[[i]]),
+        widths = "auto"
+      )
+  }
+
+  if (.add_version && .version_type == "current_date") {
+    save_func <- ody_save_path
+    .file_path <- stringr::str_split(.file_path, "/") |>
+      unlist()
+  } else if (.add_version && .version_type == "import_date") {
+    save_func <- here::here
+    import_date <- attr(
+      rlang::env_get(rlang::global_env(), .rc_name),
+      "import_date"
+    ) |>
+      stringr::str_extract("....-..-.. ..:..") |>
+      stringr::str_remove_all("-|:") |>
+      stringr::str_replace_all(" ", "_")
+    .file_path <-
+      stringr::str_c(.file_path, collapse = "/") |>
+      stringr::str_remove("\\.xlsx$") |>
+      stringr::str_c(
+        "_",
+        import_date,
+        ".xlsx"
+      )
+  } else {
+    save_func <- here::here
+    .file_path <- stringr::str_c(.file_path, collapse = "/")
+  }
+
+  openxlsx2::wb_save(wb, save_func(.file_path), overwrite = .overwrite)
 }

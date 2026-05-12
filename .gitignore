@@ -4,3 +4,6 @@
 sandbox/
 data_app.RData
 .vscode
+/.quarto/
+**/*.quarto_ipynb
+.positai

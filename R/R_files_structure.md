@@ -55,7 +55,7 @@ Functions to export and work on redcap projects.
 -   select_rc_classic [dplyr, tidyr, tidyselect, stringr]
 -   ody_rc_simplify_selection [simplify_selection, purrr, dplyr]
 -   simplify_selection [dplyr, tidyselect]
--   ody_rc_select [select_rc_long, select_rc_classic, rlang, purrr, dplyr, stringr]
+-   ody_rc_select [select_rc_long, select_rc_classic, rlang, purrr, dplyr, stringr, tibble]
 -   ody_rc_select_form [rlang, dplyr, tidyr, tidyselect, stringr]
 -   rc_select_viewer [select_rc_long, select_rc_classic, purrr, dplyr, stringr]
 -   ody_rc_filter_subject [tidyr, dplyr]
@@ -64,18 +64,19 @@ Functions to export and work on redcap projects.
 -   ody_rc_translate_meddra [tibble, dplyr]
 -   ody_rc_translate_atc [tibble, dplyr]
 -   wait_for_local_port [cli]
--   ody_rc_view [wait_for_local_port, rlang, stringr, callr, httpuv, rstudioapi]
+-   ody_rc_view [wait_for_local_port, rlang, stringr, callr, httpuv, rstudioapi, shiny]
+-   ody_rc_kill_viewers [rlang, purrr, cli, stringr]
 -   filter_condition [dplyr]
 -   get_conditions_from_metadata [filter_condition, dplyr, stringr, purrr, labelled]
 -   ody_rc_completeness [ody_verify_completeness, get_conditions_from_metadata, report_completeness, rlang, dplyr, tidyselect, stringr, labelled]
 -   ody_rc_spread [spreader, dplyr, tidyr, purrr, stringr]
 -   spreader [ody_rc_format, dplyr, tidyr, purrr, stringr]
 -   ody_rc_add_import_date [ody_rc_current, stringr, lubridate]
--   ody_rc_add_site [dplyr, tibble, stringr]
+-   ody_rc_add_site [dplyr, rlang]
 -   ody_rc_add_label [process_raw_dic, dplyr, labelled]
 -   ody_rc_get_metadata [extract_data, httr]
--   ody_rc_check_metadata_availability [extract_data, httr, stringr]
--   ody_rc_report_saps [get_single_field, dplyr, tidyr, tibble, stringr]
+-   ody_rc_check_metadata_availability [extract_data, purrr, tibble]
+-   ody_rc_report_saps [get_single_field, janitor, purrr, dplyr, tibble]
 
 ## **redcap_methods**
 
@@ -125,13 +126,13 @@ Miscelaneous utilities.
 -   ody_save_path [ody_add_version, stringr, here]
 -   ody_change_names [dplyr, purrr]
 -   ody_options
--   ody_proj_init [get_project_name, rlang, here, stringr]
+-   ody_proj_init [get_project_name, rlang, here, stringr, conflicted, git2r]
 -   save_lock [rlang, here, rstudioapi, renv] ADDIN
--   update_odytools [rstudioapi, devtools] ADDIN
+-   update_odytools [rstudioapi, pak] ADDIN
 -   compare_1_vs_others [tibble, dplyr]
 -   ody_compare_1_vs_others [compare_1_vs_others, dplyr, purrr]
 -   check_renvlock [here, git2r, lubridate, stringr, cli]
--   ody_gt2image [rlang, gt, magick]
+-   ody_gt2image [rlang, gt, magick, webshot2]
 -   ody_apply_on_pattern [dplyr, tidyselect, stringr]
 -   ody_label_df [dplyr, tidyr, purrr, stringr, labelled]
 -   ody_glue2lang [rlang, glue, stringr]
@@ -139,7 +140,7 @@ Miscelaneous utilities.
 -   ody_exofilter [dplyr]
 -   ody_read_data [stringr, here, rlang, readxl, vroom]
 -   ody_repair_dates [rlang, dplyr, purrr, stringr, lubridate, janitor]
--   ody_write_xlsx [rlang, purrr, stringr, openxlsx2, here, glue]
+-   ody_write_xlsx [ody_save_path, rlang, purrr, stringr, openxlsx2, here]
 
 ## **aes**
 

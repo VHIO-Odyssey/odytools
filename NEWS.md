@@ -1,4 +1,4 @@
-# odytools 0.9.5.9000
+# odytools 0.9.6
 
 - Added `ody_write_xlsx` to write data frames to Excel files.
 - Added `ody_rc_report_saps` to report SAPs across multiple REDCap projects.

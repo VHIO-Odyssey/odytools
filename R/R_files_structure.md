@@ -199,6 +199,13 @@ Methods for the generic ody_style wich are styling methods for different classes
 -   ody_style.tbl_ae_focus [rlang, gtsummary, gtreg, dplyr, gt]
 -   ody_style.ggsurvfit [rlang, ggsurvfit, ggplot2]
 
+## **randomization**
+
+Functions to build and simulate stratified block randomization lists.
+
+-   ody_make_random_list [blockrand, dplyr, purrr, rlang, stringr, tibble, tidyr]
+-   ody_simulate_recruitment [dplyr, purrr]
+
 ## **utils-pipe**
 
 Pipe operator.

@@ -1,5 +1,10 @@
 # odytools 0.9.6.9000
 
+## New functions
+
+- Added `ody_make_random_list` to generate stratified block randomization lists using permuted blocks. Supports multiple stratification factors and configurable block sizes via the `blockrand` package.
+- Added `ody_simulate_recruitment` to simulate patient recruitment from a stratified randomization list produced by `ody_make_random_list`. Returns allocation counts by stratum and treatment arm, overall treatment balance, and the magnitude of imbalance across arms.
+
 # odytools 0.9.6
 
 - Added `ody_write_xlsx` to write data frames to Excel files.

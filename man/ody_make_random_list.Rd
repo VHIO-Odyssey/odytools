@@ -28,8 +28,15 @@ factors. Each element name becomes a column in the output and each vector
 provides the allowed levels for that factor. If \code{NULL} (default), no
 stratification is applied and a single randomization list is generated.}
 
-\item{block_size}{An integer vector of allowed block sizes passed to
-\code{block.sizes} in \code{\link[blockrand:blockrand]{blockrand::blockrand()}}.}
+\item{block_size}{An integer vector specifying the number of times each
+treatment level is represented within a single block. The resulting total
+block size is \code{block_size * length(rnd_levels)}. For example, with two
+arms (\code{A} and \code{B}), \code{block_size = 1} produces blocks of size 2 (1 A,
+1 B), and \code{block_size = 2} produces blocks of size 4 (2 A, 2 B). With
+three arms (\code{A}, \code{B}, \code{C}), \code{block_size = 1} produces blocks of size 3
+(1 A, 1 B, 1 C). When a vector is supplied (e.g., \code{block_size = c(1, 2)}),
+each block is randomly assigned one of the allowed sizes. This argument
+is passed as \code{block.sizes} to \code{\link[blockrand:blockrand]{blockrand::blockrand()}}.}
 }
 \value{
 A tibble with one row per randomized allocation across all strata.

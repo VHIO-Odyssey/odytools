@@ -19,8 +19,15 @@
 #'   factors. Each element name becomes a column in the output and each vector
 #'   provides the allowed levels for that factor. If `NULL` (default), no
 #'   stratification is applied and a single randomization list is generated.
-#' @param block_size An integer vector of allowed block sizes passed to
-#'   `block.sizes` in [blockrand::blockrand()].
+#' @param block_size An integer vector specifying the number of times each
+#'   treatment level is represented within a single block. The resulting total
+#'   block size is `block_size * length(rnd_levels)`. For example, with two
+#'   arms (`A` and `B`), `block_size = 1` produces blocks of size 2 (1 A,
+#'   1 B), and `block_size = 2` produces blocks of size 4 (2 A, 2 B). With
+#'   three arms (`A`, `B`, `C`), `block_size = 1` produces blocks of size 3
+#'   (1 A, 1 B, 1 C). When a vector is supplied (e.g., `block_size = c(1, 2)`),
+#'   each block is randomly assigned one of the allowed sizes. This argument
+#'   is passed as `block.sizes` to [blockrand::blockrand()].
 #'
 #' @return A tibble with one row per randomized allocation across all strata.
 #'   Includes `block_id` and `block_size`, optional stratification columns from

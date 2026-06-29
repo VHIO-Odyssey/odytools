@@ -17,9 +17,9 @@ subjects to simulate.}
 \value{
 A named list with three elements:
 \describe{
-\item{\code{simulated_recruitment}}{A tibble of the allocated rows from
-\code{rnd_list}, one row per simulated subject, preserving all original
-columns.}
+\item{\code{simulated_recruitment}}{A tibble with one row per combination of
+stratum and treatment arm, with a column \code{n} counting the number of
+subjects allocated to each stratum–arm combination.}
 \item{\code{final_balance}}{A tibble with one row per treatment arm and a
 column \code{n} with the total number of allocations to that arm across all
 strata.}

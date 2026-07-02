@@ -28,6 +28,13 @@
 #'   (1 A, 1 B, 1 C). When a vector is supplied (e.g., `block_size = c(1, 2)`),
 #'   each block is randomly assigned one of the allowed sizes. This argument
 #'   is passed as `block.sizes` to [blockrand::blockrand()].
+#' @param rnd_seed A single integer to initialize the random number generator,
+#'   ensuring that the same randomization list is produced every time the
+#'   function is called with identical arguments. If `NULL` (default), a seed
+#'   is drawn automatically from the uniform integers in
+#'   `1:.Machine$integer.max` and a warning is issued. In both cases the seed
+#'   actually used is stored in the `rnd_seed` attribute of the returned tibble,
+#'   so it can always be retrieved and reused to reproduce the list exactly.
 #'
 #' @return A tibble with one row per randomized allocation across all strata.
 #'   Includes `block_id` and `block_size`, optional stratification columns from
@@ -37,18 +44,52 @@
 #'   The `block_id` values are character identifiers constructed by
 #'   concatenating stratum values (if present) and the per-stratum block id.
 #'
+#'   The returned tibble carries two attributes:
+#'   \describe{
+#'     \item{`rnd_seed`}{The integer seed used to generate the list, whether
+#'       supplied explicitly or drawn automatically. Store this value to
+#'       reproduce the randomization exactly.}
+#'     \item{`rnd_name`}{The name of the treatment-assignment column.}
+#'   }
+#'
 #' @details
+#'   **Reproducibility and RNG safety.** To guarantee that the randomization
+#'   list is reproducible across R versions and platforms, the function
+#'   temporarily overrides the random number generator to a fixed, well-known
+#'   configuration (Mersenne-Twister / Inversion / Rejection) before calling
+#'   [set.seed()]. The original RNG settings of the calling session are saved
+#'   before the override and restored with [on.exit()] once the function
+#'   returns, so the global RNG state is never permanently altered.
+#'
+#'   When `rnd_seed = NULL`, a seed is drawn from the current session RNG
+#'   *before* the override takes effect, which means it is genuinely random.
+#'   A warning is issued so the user is aware that no explicit seed was
+#'   provided. The auto-generated seed is stored in the `rnd_seed` attribute
+#'   of the output and should be recorded to allow exact reproduction of the
+#'   list in the future.
+#'
 #'   This function requires the `blockrand` package at runtime and checks for
 #'   its availability with [rlang::check_installed()].
 #'
 #' @examples
+#' # Reproducible list using an explicit seed
 #' ody_make_random_list(
 #'   n = 12,
 #'   rnd_levels = c("A", "B"),
 #'   rnd_name = "arm",
 #'   rnd_strata_list = list(site = c("S1", "S2"), sex = c("F", "M")),
-#'   block_size = c(2, 4)
+#'   block_size = c(2, 4),
+#'   rnd_seed = 4291
 #' )
+#'
+#' # Without a seed: a random seed is generated and stored in the rnd_seed
+#' # attribute of the returned tibble.
+#' rnd <- ody_make_random_list(
+#'   n = 12,
+#'   rnd_levels = c("A", "B"),
+#'   block_size = 2
+#' )
+#' attr(rnd, "rnd_seed")  # retrieve the auto-generated seed
 #'
 #' @export
 ody_make_random_list <- function(
@@ -56,9 +97,41 @@ ody_make_random_list <- function(
   rnd_levels,
   rnd_name = NULL,
   rnd_strata_list = NULL,
-  block_size
+  block_size,
+  rnd_seed = NULL
 ) {
   rlang::check_installed("blockrand")
+
+  # The original random number generator state is saved and restored at the end
+  # of the function to ensure that the randomization process does not affect the
+  # global RNG state.
+  initial_status_rng <- RNGkind()
+  on.exit(RNGkind(
+    kind = initial_status_rng[1],
+    normal.kind = initial_status_rng[2],
+    sample.kind = initial_status_rng[3]
+  ))
+
+  # The random number generator is set to a specific configuration to ensure
+  # reproducibility of the randomization process across different R versions.
+  RNGkind(
+    kind = "Mersenne-Twister",
+    normal.kind = "Inversion",
+    sample.kind = "Rejection"
+  )
+
+  # If a seed is provided, it is set to ensure reproducibility of the randomization
+  if (!is.null(rnd_seed)) {
+    set.seed(rnd_seed)
+  } else {
+    # If no seed is provided, a random seed is generated and set to ensure
+    # reproducibility of the randomization process
+    warning(
+      "No random seed provided. A random seed will be generated for reproducibility."
+    )
+    rnd_seed <- sample.int(.Machine$integer.max, 1)
+    set.seed(rnd_seed)
+  }
 
   if (is.null(rnd_strata_list)) {
     strata_df <- tibble::tibble(dummy = 1)
@@ -112,6 +185,7 @@ ody_make_random_list <- function(
   }
 
   attr(rnd_list, "rnd_name") <- rnd_name
+  attr(rnd_list, "rnd_seed") <- rnd_seed
 
   rnd_list
 }

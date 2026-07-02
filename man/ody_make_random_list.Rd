@@ -9,7 +9,8 @@ ody_make_random_list(
   rnd_levels,
   rnd_name = NULL,
   rnd_strata_list = NULL,
-  block_size
+  block_size,
+  rnd_seed = NULL
 )
 }
 \arguments{
@@ -37,6 +38,14 @@ three arms (\code{A}, \code{B}, \code{C}), \code{block_size = 1} produces blocks
 (1 A, 1 B, 1 C). When a vector is supplied (e.g., \code{block_size = c(1, 2)}),
 each block is randomly assigned one of the allowed sizes. This argument
 is passed as \code{block.sizes} to \code{\link[blockrand:blockrand]{blockrand::blockrand()}}.}
+
+\item{rnd_seed}{A single integer to initialize the random number generator,
+ensuring that the same randomization list is produced every time the
+function is called with identical arguments. If \code{NULL} (default), a seed
+is drawn automatically from the uniform integers in
+\code{1:.Machine$integer.max} and a warning is issued. In both cases the seed
+actually used is stored in the \code{rnd_seed} attribute of the returned tibble,
+so it can always be retrieved and reused to reproduce the list exactly.}
 }
 \value{
 A tibble with one row per randomized allocation across all strata.
@@ -46,6 +55,14 @@ default, or \code{rnd_name} when provided).
 
 The \code{block_id} values are character identifiers constructed by
 concatenating stratum values (if present) and the per-stratum block id.
+
+The returned tibble carries two attributes:
+\describe{
+\item{\code{rnd_seed}}{The integer seed used to generate the list, whether
+supplied explicitly or drawn automatically. Store this value to
+reproduce the randomization exactly.}
+\item{\code{rnd_name}}{The name of the treatment-assignment column.}
+}
 }
 \description{
 Generates treatment allocation lists using permuted blocks, optionally
@@ -57,16 +74,42 @@ separate block-randomized sequence for each stratum with
 strata-specific randomization schedules.
 }
 \details{
+\strong{Reproducibility and RNG safety.} To guarantee that the randomization
+list is reproducible across R versions and platforms, the function
+temporarily overrides the random number generator to a fixed, well-known
+configuration (Mersenne-Twister / Inversion / Rejection) before calling
+\code{\link[=set.seed]{set.seed()}}. The original RNG settings of the calling session are saved
+before the override and restored with \code{\link[=on.exit]{on.exit()}} once the function
+returns, so the global RNG state is never permanently altered.
+
+When \code{rnd_seed = NULL}, a seed is drawn from the current session RNG
+\emph{before} the override takes effect, which means it is genuinely random.
+A warning is issued so the user is aware that no explicit seed was
+provided. The auto-generated seed is stored in the \code{rnd_seed} attribute
+of the output and should be recorded to allow exact reproduction of the
+list in the future.
+
 This function requires the \code{blockrand} package at runtime and checks for
 its availability with \code{\link[rlang:check_installed]{rlang::check_installed()}}.
 }
 \examples{
+# Reproducible list using an explicit seed
 ody_make_random_list(
   n = 12,
   rnd_levels = c("A", "B"),
   rnd_name = "arm",
   rnd_strata_list = list(site = c("S1", "S2"), sex = c("F", "M")),
-  block_size = c(2, 4)
+  block_size = c(2, 4),
+  rnd_seed = 4291
 )
+
+# Without a seed: a random seed is generated and stored in the rnd_seed
+# attribute of the returned tibble.
+rnd <- ody_make_random_list(
+  n = 12,
+  rnd_levels = c("A", "B"),
+  block_size = 2
+)
+attr(rnd, "rnd_seed")  # retrieve the auto-generated seed
 
 }

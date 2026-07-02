@@ -107,6 +107,10 @@ ody_make_random_list <- function(
       )
   }
 
+  if (is.null(rnd_name)) {
+    rnd_name <- "treatment"
+  }
+
   attr(rnd_list, "rnd_name") <- rnd_name
 
   rnd_list
@@ -146,9 +150,16 @@ ody_make_random_list <- function(
 #' @seealso [ody_make_random_list()]
 #' @export
 ody_simulate_recruitment <- function(rnd_list, n_recruitment) {
-  strata <-
-    rnd_list$stratum |>
-    unique()
+  if (!is.null(rnd_list$stratum)) {
+    strata <-
+      rnd_list$stratum |>
+      unique()
+  } else {
+    strata <- "dummy_stratum"
+
+    rnd_list <- rnd_list |>
+      dplyr::mutate(stratum = "dummy_stratum")
+  }
 
   recruitment_strata <-
     strata[sample(1:length(strata), n_recruitment, replace = TRUE)] |>
@@ -167,6 +178,11 @@ ody_simulate_recruitment <- function(rnd_list, n_recruitment) {
   simulated_recruitment_count <-
     simulated_recruitment |>
     dplyr::count(.data$stratum, .data[[attr(rnd_list, "rnd_name")]])
+
+  if (length(unique(simulated_recruitment_count$stratum)) == 1) {
+    simulated_recruitment_count <- simulated_recruitment_count |>
+      dplyr::select(-.data$stratum)
+  }
 
   final_balance <-
     dplyr::count(

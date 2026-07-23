@@ -939,7 +939,7 @@ ody_write_xlsx <- function(
 }
 
 # Solo Addin:
-# Añade al final del script de dependencias del proyecto un cli alert con el id
+# Añade al final del .Rprofile del proyecto un cli alert con el id
 # indicado. El task id se solicita interactivamente.
 add_jira_task <- function() {
   rlang::check_installed("rstudioapi")
@@ -953,30 +953,26 @@ add_jira_task <- function() {
     stop("No task ID provided. Aborting.")
   }
 
-  dependencies_file <- list.files(
-    here::here(),
-    pattern = "_dependencies\\.R$",
-    full.names = TRUE
-  )
+  rprofile_file <- file.path(here::here(), ".Rprofile")
 
-  if (length(dependencies_file) == 0) {
-    stop("No dependencies file found in the project root.")
+  if (!file.exists(rprofile_file)) {
+    stop("No .Rprofile file found in the project root.")
   }
 
   cli_alert_code <- stringr::str_c(
-    'cli::cli_alert_info("Task ID: ',
+    '\ncli::cli_alert_info("\\nTask ID: ',
     task_id,
     '")'
   )
 
-  write(cli_alert_code, file = dependencies_file, append = TRUE)
+  write(cli_alert_code, file = rprofile_file, append = TRUE)
 
   cli::cli_alert_success(
     stringr::str_c(
       "Task ID ",
       task_id,
       " added to ",
-      basename(dependencies_file)
+      basename(rprofile_file)
     )
   )
 }

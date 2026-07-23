@@ -937,3 +937,46 @@ ody_write_xlsx <- function(
 
   openxlsx2::wb_save(wb, save_func(.file_path), overwrite = .overwrite)
 }
+
+# Solo Addin:
+# Añade al final del script de dependencias del proyecto un cli alert con el id
+# indicado. El task id se solicita interactivamente.
+add_jira_task <- function() {
+  rlang::check_installed("rstudioapi")
+
+  task_id <- rstudioapi::showPrompt(
+    title = "Add Jira Task",
+    message = "Please, enter the Jira task ID (e.g., OD-123):"
+  )
+
+  if (is.null(task_id) || task_id == "") {
+    stop("No task ID provided. Aborting.")
+  }
+
+  dependencies_file <- list.files(
+    here::here(),
+    pattern = "_dependencies\\.R$",
+    full.names = TRUE
+  )
+
+  if (length(dependencies_file) == 0) {
+    stop("No dependencies file found in the project root.")
+  }
+
+  cli_alert_code <- stringr::str_c(
+    'cli::cli_alert_info("Task ID: ',
+    task_id,
+    '")'
+  )
+
+  write(cli_alert_code, file = dependencies_file, append = TRUE)
+
+  cli::cli_alert_success(
+    stringr::str_c(
+      "Task ID ",
+      task_id,
+      " added to ",
+      basename(dependencies_file)
+    )
+  )
+}

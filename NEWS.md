@@ -1,4 +1,4 @@
-# odytools 0.9.6.9000
+# odytools 0.10.0
 
 ## New functions
 

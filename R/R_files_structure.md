@@ -141,6 +141,8 @@ Miscelaneous utilities.
 -   ody_read_data [stringr, here, rlang, readxl, vroom]
 -   ody_repair_dates [rlang, dplyr, purrr, stringr, lubridate, janitor]
 -   ody_write_xlsx [ody_save_path, rlang, purrr, stringr, openxlsx2, here]
+-   add_jira_task [cli, here, rlang, rstudioapi, stringr] ADDIN
+-   ody_get_query [DBI, odbc, readr, rlang, tibble]
 
 ## **aes**
 

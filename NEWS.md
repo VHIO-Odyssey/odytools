@@ -4,6 +4,11 @@
 
 - Added `ody_make_random_list` to generate stratified block randomization lists using permuted blocks. Supports multiple stratification factors and configurable block sizes via the `blockrand` package.
 - Added `ody_simulate_recruitment` to simulate patient recruitment from a stratified randomization list produced by `ody_make_random_list`. Returns allocation counts by stratum and treatment arm, overall treatment balance, and the magnitude of imbalance across arms.
+- Added `ody_get_query` to execute SQL queries from `.sql` files against a database connection. When no connection is provided, it automatically connects to the VHIO SQL Server using credentials stored in environment variables (`VHIO_SQL_SERVER_USER`, `VHIO_SQL_SERVER_PASSWORD`).
+
+## New internal functions and addins
+
+- Added `add_jira_task` addin to append a Jira task ID alert to the project's `.Rprofile`.
 
 # odytools 0.9.6
 

@@ -58,3 +58,7 @@ Description: Update odytools from GitHub.
 Binding: update_odytools
 Interactive: false
 
+Name: Add Jira Task
+Description: Add a Jira task code in dependencies.
+Binding: add_jira_task
+Interactive: false

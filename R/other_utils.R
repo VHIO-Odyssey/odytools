@@ -937,3 +937,111 @@ ody_write_xlsx <- function(
 
   openxlsx2::wb_save(wb, save_func(.file_path), overwrite = .overwrite)
 }
+
+# Solo Addin:
+# Añade al final del .Rprofile del proyecto un cli alert con el id
+# indicado. El task id se solicita interactivamente.
+add_jira_task <- function() {
+  rlang::check_installed("rstudioapi")
+
+  task_id <- rstudioapi::showPrompt(
+    title = "Add Jira Task",
+    message = "Please, enter the Jira task ID (e.g., OD-123):"
+  )
+
+  if (is.null(task_id) || task_id == "") {
+    stop("No task ID provided. Aborting.")
+  }
+
+  rprofile_file <- file.path(here::here(), ".Rprofile")
+
+  if (!file.exists(rprofile_file)) {
+    stop("No .Rprofile file found in the project root.")
+  }
+
+  cli_alert_code <- stringr::str_c(
+    '\ncli::cli_alert_info("\\nTask ID: ',
+    task_id,
+    '")'
+  )
+
+  write(cli_alert_code, file = rprofile_file, append = TRUE)
+
+  cli::cli_alert_success(
+    stringr::str_c(
+      "Task ID ",
+      task_id,
+      " added to ",
+      basename(rprofile_file)
+    )
+  )
+}
+
+#' @title Execute a SQL Query from a File
+#' @description
+#'   Reads a SQL query from a file and executes it against a database
+#'   connection, returning the results as a tibble. Intended for use with
+#'   the VHIO SQL Server instance; when no connection is provided, the
+#'   function attempts to establish one using credentials stored in
+#'   environment variables.
+#'
+#' @param query_path A character string with the path to a `.sql` file
+#'   containing the query to execute.
+#' @param connection A `DBIConnection` object. If `NULL` (default), the
+#'   function attempts to open a connection to the VHIO SQL Server using
+#'   the `VHIO_SQL_SERVER_USER` and `VHIO_SQL_SERVER_PASSWORD` environment
+#'   variables.
+#'
+#' @return A tibble with one row per record and one column per field
+#'   returned by the query.
+#'
+#' @details
+#'   The query file is read with [readr::read_file()] and executed via
+#'   [DBI::dbGetQuery()]. The hard-coded default connection targets
+#'   `172.27.254.6 / Prescreening_NEW` on port 1433 via the ODBC SQL
+#'   Server driver. Credentials must be set as environment variables
+#'   (`VHIO_SQL_SERVER_USER`, `VHIO_SQL_SERVER_PASSWORD`), typically in
+#'   the project's `.Renviron` file.
+#'
+#' @examples
+#' \dontrun{
+#' # Using an explicit connection
+#' con <- DBI::dbConnect(
+#'   odbc::odbc(),
+#'   Driver   = "SQL Server",
+#'   Server   = "172.27.254.6",
+#'   Database = "Prescreening_NEW",
+#'   UID      = Sys.getenv("VHIO_SQL_SERVER_USER"),
+#'   PWD      = Sys.getenv("VHIO_SQL_SERVER_PASSWORD"),
+#'   Port     = 1433
+#' )
+#' results <- ody_get_query("queries/my_query.sql", connection = con)
+#' }
+#'
+#' @seealso [DBI::dbGetQuery()], [readr::read_file()]
+#' @export
+ody_get_query <- function(query_path, connection = NULL) {
+  rlang::check_installed(c("DBI", "odbc"))
+
+  if (is.null(connection)) {
+    connection <-
+      odbc::dbConnect(
+        odbc::odbc(),
+        Driver = "SQL Server",
+        Server = "172.27.254.6",
+        Database = "Prescreening_NEW",
+        UID = Sys.getenv("VHIO_SQL_SERVER_USER"),
+        PWD = Sys.getenv("VHIO_SQL_SERVER_PASSWORD"),
+        Port = 1433
+      )
+  }
+
+  query <- readr::read_file(query_path)
+
+  results <- DBI::dbGetQuery(connection, query) |>
+    tibble::as_tibble()
+
+  DBI::dbDisconnect(connection)
+
+  results
+}

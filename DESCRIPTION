@@ -1,6 +1,6 @@
 Package: odytools
 Title: Oncology Data Science Group (ODysSey) tools
-Version: 0.9.6
+Version: 0.10.0
 Authors@R:
     person("Eduardo", "García-Galea", , "eduardogarcia@vhio.net", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4699-0786"))
@@ -72,6 +72,9 @@ Suggests:
     shinytitle,
     vroom,
     readxl,
-    pak
+    pak,
+    blockrand,
+    DBI,
+    odbc
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

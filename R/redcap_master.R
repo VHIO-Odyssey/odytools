@@ -325,7 +325,7 @@ ody_rc_arrange_master_therapy <- function(rc_data) {
       arranged_therapy_by_setting,
       arranged_therapy_by_date
     ) |>
-    dplyr::arrange(.data$dem_sap, .data$new_redcap_instance_number)
+    dplyr::arrange(.data$dem_sap, as.numeric(.data$new_redcap_instance_number))
 
   # Antes de convertir las new_redcap_instance_number en las instancias
   # definitivas, miramos qué casos han cambiado de instancia para incluir esta

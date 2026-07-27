@@ -2,41 +2,101 @@
 % Please edit documentation in R/other_utils.R
 \name{ody_get_query}
 \alias{ody_get_query}
-\title{Execute a SQL Query from a File}
+\title{Execute SQL Queries from a File}
 \usage{
-ody_get_query(query_path, connection = NULL)
+ody_get_query(
+  query_path,
+  connection = NULL,
+  multiple_queries = FALSE,
+  query_separator = NULL,
+  .names = NULL
+)
 }
 \arguments{
 \item{query_path}{A character string with the path to a \code{.sql} file
-containing the query to execute.}
+containing one or more queries.}
 
 \item{connection}{A \code{DBIConnection} object. If \code{NULL} (default), the
 function attempts to open a connection to the VHIO SQL Server using
 the \code{VHIO_SQL_SERVER_USER} and \code{VHIO_SQL_SERVER_PASSWORD} environment
-variables.}
+variables. When the connection is auto-created it is always closed on
+exit, even if an error occurs; a user-supplied connection is left open.}
+
+\item{multiple_queries}{Logical. If \code{FALSE} (default), the file is treated
+as a single query and executed as-is. If \code{TRUE}, the file is split into
+individual queries (see Details) and all of them are executed.}
+
+\item{query_separator}{An optional string. When \code{multiple_queries = TRUE}
+and \code{query_separator} is not \code{NULL}, the file is split on comment lines
+(\verb{--}) that contain this string (case-insensitive). For example,
+\code{query_separator = "new query"} treats every \verb{-- new query} comment as
+the start of a new query. When \code{NULL} (default), the automatic splitting
+heuristics are used (GO, semicolons, top-level keyword at column 0).}
+
+\item{.names}{An optional character vector of names for the returned
+list elements, one per query. Ignored when \code{multiple_queries = FALSE}
+or only one query is found.}
 }
 \value{
-A tibble with one row per record and one column per field
-returned by the query.
+\itemize{
+\item \strong{Single query}: a tibble with the query results (backward-compatible).
+\item \strong{Multiple queries}: a named list of tibbles, one per query, named
+\code{query_1}, \code{query_2}, … unless \code{.names} is provided.
+}
 }
 \description{
-Reads a SQL query from a file and executes it against a database
-connection, returning the results as a tibble. Intended for use with
+Reads one or more SQL queries from a file, executes each against a
+database connection, and returns the results. Intended for use with
 the VHIO SQL Server instance; when no connection is provided, the
 function attempts to establish one using credentials stored in
 environment variables.
 }
 \details{
-The query file is read with \code{\link[readr:read_file]{readr::read_file()}} and executed via
-\code{\link[DBI:dbGetQuery]{DBI::dbGetQuery()}}. The hard-coded default connection targets
-\verb{172.27.254.6 / Prescreening_NEW} on port 1433 via the ODBC SQL
-Server driver. Credentials must be set as environment variables
+This function is intended exclusively for read-only queries. All
+statements are executed with \code{\link[DBI:dbGetQuery]{DBI::dbGetQuery()}}.
+
+When \code{multiple_queries = TRUE}, queries are split according to the
+following priority: (1) \code{query_separator} — comment lines (\verb{--})
+containing the given string; (2) \code{GO} as a standalone line (SQL Server
+batch separator); (3) semicolons; (4) top-level keyword (\code{SELECT},
+\code{WITH}, \code{INSERT}, …) at column 0 preceded by a blank or comment line.
+Whitespace-only fragments are discarded.
+
+The hard-coded default connection targets \verb{172.27.254.6 / Prescreening_NEW} on port 1433 via the ODBC SQL Server driver.
+Credentials must be set as environment variables
 (\code{VHIO_SQL_SERVER_USER}, \code{VHIO_SQL_SERVER_PASSWORD}), typically in
 the project's \code{.Renviron} file.
 }
 \examples{
 \dontrun{
-# Using an explicit connection
+# Single query — returns a tibble (default behaviour)
+results <- ody_get_query("queries/my_query.sql")
+
+# File with multiple queries separated by GO or semicolons
+# Returns a named list: query_1, query_2, ...
+tbls <- ody_get_query("queries/multi.sql", multiple_queries = TRUE)
+tbls$query_1
+tbls$query_2
+
+# Automatic split with custom names for the list elements
+tbls <- ody_get_query(
+  "queries/multi.sql",
+  multiple_queries = TRUE,
+  .names = c("patients", "visits")
+)
+
+# Split on comment lines containing a specific string, e.g.:
+#   -- QUERY: guardant
+#   select ...
+#   -- QUERY: results
+#   select ...
+tbls <- ody_get_query(
+  "queries/multi.sql",
+  multiple_queries = TRUE,
+  query_separator = "QUERY:"
+)
+
+# Using an explicit connection (the caller is responsible for disconnecting)
 con <- DBI::dbConnect(
   odbc::odbc(),
   Driver   = "SQL Server",
@@ -47,6 +107,7 @@ con <- DBI::dbConnect(
   Port     = 1433
 )
 results <- ody_get_query("queries/my_query.sql", connection = con)
+DBI::dbDisconnect(con)
 }
 
 }

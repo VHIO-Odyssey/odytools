@@ -980,12 +980,47 @@ add_jira_task <- function() {
 # Helper: split a SQL text into individual query strings.
 #
 # Strategy (in order of priority):
+#   0. query_separator: comment lines containing the separator string.
 #   1. GO on its own line (SQL Server batch separator).
 #   2. Semicolon not inside parentheses (standard SQL delimiter).
 #   3. Top-level keyword (SELECT, WITH, INSERT, …) at column 0 that is
 #      preceded by at least one blank or comment-only line — covers files
 #      with no explicit delimiter between queries.
-split_sql_queries <- function(sql_text) {
+split_sql_queries <- function(sql_text, query_separator = NULL) {
+  lines <- stringr::str_split(sql_text, "\n")[[1]]
+  n <- length(lines)
+
+  # --- 0. Explicit query_separator ---
+  if (!is.null(query_separator)) {
+    is_comment <- stringr::str_detect(lines, "^\\s*--")
+    has_sep <- stringr::str_detect(
+      lines,
+      stringr::fixed(query_separator, ignore_case = TRUE)
+    )
+    sep_lines <- which(is_comment & has_sep)
+
+    if (length(sep_lines) == 0) {
+      cli::cli_warn(
+        "No comment lines containing {.val {query_separator}} found. \\
+         Returning the whole file as a single query."
+      )
+      trimmed <- stringr::str_trim(sql_text)
+      return(if (nchar(trimmed) > 0) trimmed else character(0))
+    }
+
+    # Each separator line starts a new query; content before the first
+    # separator (if any) becomes query 0.
+    starts <- if (sep_lines[1] > 1) c(1L, sep_lines) else sep_lines
+    ends <- c(starts[-1] - 1L, n)
+
+    queries <- purrr::map2_chr(
+      starts,
+      ends,
+      ~ stringr::str_trim(stringr::str_c(lines[.x:.y], collapse = "\n"))
+    )
+    return(queries[nchar(queries) > 0])
+  }
+
   # --- 1. GO separator ---
   go_pattern <- stringr::regex(
     "^\\s*GO\\s*$",
@@ -1017,9 +1052,6 @@ split_sql_queries <- function(sql_text) {
     "^(SELECT|WITH|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|MERGE|EXEC(UTE)?)\\b",
     ignore_case = TRUE
   )
-
-  lines <- stringr::str_split(sql_text, "\n")[[1]]
-  n <- length(lines)
 
   # Find lines that start a new top-level statement
   new_query_at <- purrr::keep(
@@ -1063,9 +1095,14 @@ split_sql_queries <- function(sql_text) {
 #'   variables. When the connection is auto-created it is always closed on
 #'   exit, even if an error occurs; a user-supplied connection is left open.
 #' @param multiple_queries Logical. If `FALSE` (default), the file is treated
-#'   as a single query and executed as-is — the same behaviour as the original
-#'   function. If `TRUE`, the file is split into individual queries (see
-#'   Details) and all of them are executed.
+#'   as a single query and executed as-is. If `TRUE`, the file is split into
+#'   individual queries (see Details) and all of them are executed.
+#' @param query_separator An optional string. When `multiple_queries = TRUE`
+#'   and `query_separator` is not `NULL`, the file is split on comment lines
+#'   (`--`) that contain this string (case-insensitive). For example,
+#'   `query_separator = "new query"` treats every `-- new query` comment as
+#'   the start of a new query. When `NULL` (default), the automatic splitting
+#'   heuristics are used (GO, semicolons, top-level keyword at column 0).
 #' @param .names An optional character vector of names for the returned
 #'   list elements, one per query. Ignored when `multiple_queries = FALSE`
 #'   or only one query is found.
@@ -1076,13 +1113,15 @@ split_sql_queries <- function(sql_text) {
 #'     `query_1`, `query_2`, … unless `.names` is provided.
 #'
 #' @details
-#'   Queries are split by `GO` used as a standalone line (the SQL Server
-#'   batch separator, case-insensitive). If no `GO` is found, the file is
-#'   split on semicolons (`;`) instead. Whitespace-only fragments are
-#'   discarded. Only `SELECT`-style queries (starting with `SELECT`, `WITH`,
-#'   `EXEC`, or `EXECUTE`) return a tibble; other statements (e.g. `INSERT`,
-#'   `UPDATE`) are executed via [DBI::dbExecute()] and produce a `NULL`
-#'   element in the list.
+#'   This function is intended exclusively for read-only queries. All
+#'   statements are executed with [DBI::dbGetQuery()].
+#'
+#'   When `multiple_queries = TRUE`, queries are split according to the
+#'   following priority: (1) `query_separator` — comment lines (`--`)
+#'   containing the given string; (2) `GO` as a standalone line (SQL Server
+#'   batch separator); (3) semicolons; (4) top-level keyword (`SELECT`,
+#'   `WITH`, `INSERT`, …) at column 0 preceded by a blank or comment line.
+#'   Whitespace-only fragments are discarded.
 #'
 #'   The hard-coded default connection targets `172.27.254.6 /
 #'   Prescreening_NEW` on port 1433 via the ODBC SQL Server driver.
@@ -1092,18 +1131,34 @@ split_sql_queries <- function(sql_text) {
 #'
 #' @examples
 #' \dontrun{
-#' # Single query — returns a tibble as before
+#' # Single query — returns a tibble (default behaviour)
 #' results <- ody_get_query("queries/my_query.sql")
 #'
-#' # File with multiple queries — returns a named list
-#' tbls <- ody_get_query("queries/multi.sql")
+#' # File with multiple queries separated by GO or semicolons
+#' # Returns a named list: query_1, query_2, ...
+#' tbls <- ody_get_query("queries/multi.sql", multiple_queries = TRUE)
 #' tbls$query_1
 #' tbls$query_2
 #'
-#' # Custom names for the list elements
-#' tbls <- ody_get_query("queries/multi.sql", .names = c("patients", "visits"))
+#' # Automatic split with custom names for the list elements
+#' tbls <- ody_get_query(
+#'   "queries/multi.sql",
+#'   multiple_queries = TRUE,
+#'   .names = c("patients", "visits")
+#' )
 #'
-#' # Using an explicit connection
+#' # Split on comment lines containing a specific string, e.g.:
+#' #   -- QUERY: guardant
+#' #   select ...
+#' #   -- QUERY: results
+#' #   select ...
+#' tbls <- ody_get_query(
+#'   "queries/multi.sql",
+#'   multiple_queries = TRUE,
+#'   query_separator = "QUERY:"
+#' )
+#'
+#' # Using an explicit connection (the caller is responsible for disconnecting)
 #' con <- DBI::dbConnect(
 #'   odbc::odbc(),
 #'   Driver   = "SQL Server",
@@ -1123,6 +1178,7 @@ ody_get_query <- function(
   query_path,
   connection = NULL,
   multiple_queries = FALSE,
+  query_separator = NULL,
   .names = NULL
 ) {
   rlang::check_installed(c("DBI", "odbc"))
@@ -1146,7 +1202,7 @@ ody_get_query <- function(
   sql_text <- readr::read_file(query_path)
 
   if (multiple_queries) {
-    queries <- split_sql_queries(sql_text)
+    queries <- split_sql_queries(sql_text, query_separator = query_separator)
     if (length(queries) == 0) {
       stop("No executable queries found in '", query_path, "'.")
     }
@@ -1163,22 +1219,10 @@ ody_get_query <- function(
     ))
   }
 
-  # Execute each query with the appropriate DBI function
-  select_pattern <- stringr::regex(
-    "^(SELECT|WITH|EXEC(UTE)?)\\b",
-    ignore_case = TRUE
+  results <- purrr::map(
+    queries,
+    ~ DBI::dbGetQuery(connection, .x) |> tibble::as_tibble()
   )
-
-  run_query <- function(q) {
-    if (stringr::str_detect(q, select_pattern)) {
-      DBI::dbGetQuery(connection, q) |> tibble::as_tibble()
-    } else {
-      DBI::dbExecute(connection, q)
-      invisible(NULL)
-    }
-  }
-
-  results <- purrr::map(queries, run_query)
 
   # Single query: return tibble directly (backward-compatible)
   if (length(results) == 1) {

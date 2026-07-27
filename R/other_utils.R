@@ -977,34 +977,132 @@ add_jira_task <- function() {
   )
 }
 
-#' @title Execute a SQL Query from a File
+# Helper: split a SQL text into individual query strings.
+#
+# Strategy (in order of priority):
+#   1. GO on its own line (SQL Server batch separator).
+#   2. Semicolon not inside parentheses (standard SQL delimiter).
+#   3. Top-level keyword (SELECT, WITH, INSERT, …) at column 0 that is
+#      preceded by at least one blank or comment-only line — covers files
+#      with no explicit delimiter between queries.
+split_sql_queries <- function(sql_text) {
+  # --- 1. GO separator ---
+  go_pattern <- stringr::regex(
+    "^\\s*GO\\s*$",
+    multiline = TRUE,
+    ignore_case = TRUE
+  )
+  if (stringr::str_detect(sql_text, go_pattern)) {
+    queries <- stringr::str_split(sql_text, go_pattern)[[1]]
+    queries <- stringr::str_trim(queries)
+    return(queries[nchar(queries) > 0])
+  }
+
+  # --- 2. Semicolon separator ---
+  if (stringr::str_detect(sql_text, ";")) {
+    queries <- stringr::str_split(sql_text, ";")[[1]]
+    queries <- stringr::str_trim(queries)
+    return(queries[nchar(queries) > 0])
+  }
+
+  # --- 3. Top-level keyword heuristic ---
+  # A line is "blank or comment" if it is empty or starts with --
+  is_sep_line <- function(line) {
+    stringr::str_detect(line, "^\\s*(--.*)?$")
+  }
+
+  # A top-level keyword is a SQL statement opener at column 0 (no leading
+  # whitespace) — this excludes indented sub-queries.
+  top_kw <- stringr::regex(
+    "^(SELECT|WITH|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|MERGE|EXEC(UTE)?)\\b",
+    ignore_case = TRUE
+  )
+
+  lines <- stringr::str_split(sql_text, "\n")[[1]]
+  n <- length(lines)
+
+  # Find lines that start a new top-level statement
+  new_query_at <- purrr::keep(
+    seq_len(n),
+    function(i) {
+      stringr::str_detect(lines[i], top_kw) &&
+        (i == 1 || is_sep_line(lines[i - 1]))
+    }
+  )
+
+  if (length(new_query_at) <= 1) {
+    # Cannot split: return whole text as a single query
+    trimmed <- stringr::str_trim(sql_text)
+    return(if (nchar(trimmed) > 0) trimmed else character(0))
+  }
+
+  # Slice lines into chunks from each start to the next start - 1
+  ends <- c(new_query_at[-1] - 1, n)
+  queries <- purrr::map2_chr(
+    new_query_at,
+    ends,
+    ~ stringr::str_trim(stringr::str_c(lines[.x:.y], collapse = "\n"))
+  )
+  queries[nchar(queries) > 0]
+}
+
+
+#' @title Execute SQL Queries from a File
 #' @description
-#'   Reads a SQL query from a file and executes it against a database
-#'   connection, returning the results as a tibble. Intended for use with
+#'   Reads one or more SQL queries from a file, executes each against a
+#'   database connection, and returns the results. Intended for use with
 #'   the VHIO SQL Server instance; when no connection is provided, the
 #'   function attempts to establish one using credentials stored in
 #'   environment variables.
 #'
 #' @param query_path A character string with the path to a `.sql` file
-#'   containing the query to execute.
+#'   containing one or more queries.
 #' @param connection A `DBIConnection` object. If `NULL` (default), the
 #'   function attempts to open a connection to the VHIO SQL Server using
 #'   the `VHIO_SQL_SERVER_USER` and `VHIO_SQL_SERVER_PASSWORD` environment
-#'   variables.
+#'   variables. When the connection is auto-created it is always closed on
+#'   exit, even if an error occurs; a user-supplied connection is left open.
+#' @param multiple_queries Logical. If `FALSE` (default), the file is treated
+#'   as a single query and executed as-is — the same behaviour as the original
+#'   function. If `TRUE`, the file is split into individual queries (see
+#'   Details) and all of them are executed.
+#' @param .names An optional character vector of names for the returned
+#'   list elements, one per query. Ignored when `multiple_queries = FALSE`
+#'   or only one query is found.
 #'
-#' @return A tibble with one row per record and one column per field
-#'   returned by the query.
+#' @return
+#'   * **Single query**: a tibble with the query results (backward-compatible).
+#'   * **Multiple queries**: a named list of tibbles, one per query, named
+#'     `query_1`, `query_2`, … unless `.names` is provided.
 #'
 #' @details
-#'   The query file is read with [readr::read_file()] and executed via
-#'   [DBI::dbGetQuery()]. The hard-coded default connection targets
-#'   `172.27.254.6 / Prescreening_NEW` on port 1433 via the ODBC SQL
-#'   Server driver. Credentials must be set as environment variables
+#'   Queries are split by `GO` used as a standalone line (the SQL Server
+#'   batch separator, case-insensitive). If no `GO` is found, the file is
+#'   split on semicolons (`;`) instead. Whitespace-only fragments are
+#'   discarded. Only `SELECT`-style queries (starting with `SELECT`, `WITH`,
+#'   `EXEC`, or `EXECUTE`) return a tibble; other statements (e.g. `INSERT`,
+#'   `UPDATE`) are executed via [DBI::dbExecute()] and produce a `NULL`
+#'   element in the list.
+#'
+#'   The hard-coded default connection targets `172.27.254.6 /
+#'   Prescreening_NEW` on port 1433 via the ODBC SQL Server driver.
+#'   Credentials must be set as environment variables
 #'   (`VHIO_SQL_SERVER_USER`, `VHIO_SQL_SERVER_PASSWORD`), typically in
 #'   the project's `.Renviron` file.
 #'
 #' @examples
 #' \dontrun{
+#' # Single query — returns a tibble as before
+#' results <- ody_get_query("queries/my_query.sql")
+#'
+#' # File with multiple queries — returns a named list
+#' tbls <- ody_get_query("queries/multi.sql")
+#' tbls$query_1
+#' tbls$query_2
+#'
+#' # Custom names for the list elements
+#' tbls <- ody_get_query("queries/multi.sql", .names = c("patients", "visits"))
+#'
 #' # Using an explicit connection
 #' con <- DBI::dbConnect(
 #'   odbc::odbc(),
@@ -1016,14 +1114,22 @@ add_jira_task <- function() {
 #'   Port     = 1433
 #' )
 #' results <- ody_get_query("queries/my_query.sql", connection = con)
+#' DBI::dbDisconnect(con)
 #' }
 #'
 #' @seealso [DBI::dbGetQuery()], [readr::read_file()]
 #' @export
-ody_get_query <- function(query_path, connection = NULL) {
+ody_get_query <- function(
+  query_path,
+  connection = NULL,
+  multiple_queries = FALSE,
+  .names = NULL
+) {
   rlang::check_installed(c("DBI", "odbc"))
 
-  if (is.null(connection)) {
+  auto_connect <- is.null(connection)
+
+  if (auto_connect) {
     connection <-
       odbc::dbConnect(
         odbc::odbc(),
@@ -1034,14 +1140,51 @@ ody_get_query <- function(query_path, connection = NULL) {
         PWD = Sys.getenv("VHIO_SQL_SERVER_PASSWORD"),
         Port = 1433
       )
+    on.exit(DBI::dbDisconnect(connection), add = TRUE)
   }
 
-  query <- readr::read_file(query_path)
+  sql_text <- readr::read_file(query_path)
 
-  results <- DBI::dbGetQuery(connection, query) |>
-    tibble::as_tibble()
+  if (multiple_queries) {
+    queries <- split_sql_queries(sql_text)
+    if (length(queries) == 0) {
+      stop("No executable queries found in '", query_path, "'.")
+    }
+  } else {
+    queries <- stringr::str_trim(sql_text)
+  }
 
-  DBI::dbDisconnect(connection)
+  if (!is.null(.names) && length(.names) != length(queries)) {
+    stop(sprintf(
+      "`.names` has %d element(s) but %d quer%s found.",
+      length(.names),
+      length(queries),
+      if (length(queries) == 1) "y was" else "ies were"
+    ))
+  }
 
-  results
+  # Execute each query with the appropriate DBI function
+  select_pattern <- stringr::regex(
+    "^(SELECT|WITH|EXEC(UTE)?)\\b",
+    ignore_case = TRUE
+  )
+
+  run_query <- function(q) {
+    if (stringr::str_detect(q, select_pattern)) {
+      DBI::dbGetQuery(connection, q) |> tibble::as_tibble()
+    } else {
+      DBI::dbExecute(connection, q)
+      invisible(NULL)
+    }
+  }
+
+  results <- purrr::map(queries, run_query)
+
+  # Single query: return tibble directly (backward-compatible)
+  if (length(results) == 1) {
+    return(results[[1]])
+  }
+
+  query_names <- .names %||% stringr::str_c("query_", seq_along(results))
+  rlang::set_names(results, query_names)
 }

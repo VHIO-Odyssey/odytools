@@ -1186,6 +1186,36 @@ ody_get_query <- function(
   auto_connect <- is.null(connection)
 
   if (auto_connect) {
+    vhio_reach <- tryCatch(
+      {
+        # Try to establish a socket connection to the Server
+        con <- socketConnection(
+          host = "172.27.254.6",
+          port = 1433,
+          blocking = TRUE,
+          timeout = 1
+        )
+        # If no errors occur, the network is accessible. Close the test
+        # connection.
+        close(con)
+        TRUE
+      },
+      error = function(e) {
+        # If an error occurs (like a timeout), return FALSE
+        FALSE
+      },
+      warning = function(w) {
+        FALSE
+      }
+    )
+
+    if (!vhio_reach) {
+      cli::cli_abort(c(
+        "x" = "Cannot reach the VHIO Data Lake.",
+        "i" = "Make sure you are connected to the VHIO network or VPN."
+      ))
+    }
+
     connection <-
       odbc::dbConnect(
         odbc::odbc(),

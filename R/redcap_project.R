@@ -370,7 +370,11 @@ rc_init_update <- function() {
       prompt = "Please enter a RedCap token:"
     )
     is_new_token <- TRUE
-  } else {
+  } else if (!exists("is_new_token")) {
+    # A token found directly in the project's .Renviron (the common case)
+    # is not new. If it came from the legacy-migration branch above,
+    # is_new_token was already set to TRUE there and must not be
+    # overwritten here.
     is_new_token <- FALSE
   }
 

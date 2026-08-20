@@ -278,11 +278,92 @@ rc_init_update <- function() {
 
   # Redcap Import
   # Is there a stored token for this project?
-  api_renv_name <- project_name |>
-    stringr::str_to_upper() |>
-    c("_API_KEY") |>
-    stringr::str_c(collapse = "")
-  token <- Sys.getenv(api_renv_name)
+  # The token is looked for exclusively in the project's own .Renviron file
+  # (not the user's ~/.Renviron nor whatever may already be in the session's
+  # environment), so that credentials stay scoped to the project they
+  # belong to. If the project's .Renviron does not exist (or does not
+  # contain the key), the token is treated as missing even if a variable
+  # with the same name happens to be set elsewhere (e.g. the user's
+  # ~/.Renviron).
+  # The variable name no longer needs to be project-specific since the
+  # token is now scoped to the project's own .Renviron file (it also avoids
+  # exposing the project's name/identity in the environment variable name).
+  api_renv_name <- "REDCAP_API_KEY"
+
+  project_renviron <- here::here(".Renviron")
+  if (file.exists(project_renviron)) {
+    readRenviron(project_renviron)
+    token <- Sys.getenv(api_renv_name)
+    # readRenviron() returns invisibly TRUE/FALSE, not the variables it set,
+    # so the key presence is checked directly on the file's contents.
+    key_in_project_renviron <- any(
+      stringr::str_detect(
+        readLines(project_renviron),
+        stringr::str_c("^", api_renv_name, "=")
+      )
+    )
+    if (!key_in_project_renviron) {
+      token <- ""
+    }
+  } else {
+    token <- ""
+  }
+
+  if (token == "") {
+    # Look for a token left over in the user's ~/.Renviron from before
+    # tokens were scoped to project-level .Renviron files. Older versions
+    # stored it under a project-specific name (e.g. MYPROJECT_API_KEY).
+    legacy_renv_name <- project_name |>
+      stringr::str_to_upper() |>
+      c("_API_KEY") |>
+      stringr::str_c(collapse = "")
+
+    user_renviron <- path.expand("~/.Renviron")
+    legacy_token <- ""
+    if (file.exists(user_renviron)) {
+      user_renviron_lines <- readLines(user_renviron)
+      legacy_line_index <- stringr::str_detect(
+        user_renviron_lines,
+        stringr::str_c("^", legacy_renv_name, "=")
+      )
+      if (any(legacy_line_index)) {
+        legacy_token <- user_renviron_lines[legacy_line_index] |>
+          stringr::str_remove(stringr::str_c("^", legacy_renv_name, "="))
+      }
+    }
+
+    if (legacy_token != "") {
+      migrate_legacy_token <- rstudioapi::showQuestion(
+        title = "Legacy token found",
+        message = stringr::str_c(
+          "A token for this project (",
+          legacy_renv_name,
+          ") was found in ",
+          "your user-level ~/.Renviron, left over from an older version. ",
+          "Migrate it to this project's own .Renviron and remove it from ",
+          "~/.Renviron?"
+        ),
+        ok = "Migrate",
+        cancel = "Enter a new token"
+      )
+      if (isTRUE(migrate_legacy_token)) {
+        token <- legacy_token
+        is_new_token <- TRUE
+      }
+
+      # Whether migrated or declined (a fresh token will be entered and
+      # saved to the project's own .Renviron below), the legacy line no
+      # longer belongs in ~/.Renviron and is removed either way.
+      writeLines(
+        user_renviron_lines[!legacy_line_index],
+        user_renviron
+      )
+      cli::cli_alert_info(
+        "Removed {legacy_renv_name} from ~/.Renviron ",
+        "(it is now managed in this project's .Renviron)."
+      )
+    }
+  }
 
   if (token == "") {
     token <- rstudioapi::askForPassword(
@@ -358,13 +439,51 @@ rc_init_update <- function() {
   }
 
   if (is_new_token) {
+    # Make sure .Renviron is ignored by git before writing any token to it.
+    # This matters for projects created with an older version of this
+    # function, where .gitignore may predate the .Renviron-based storage
+    # and therefore not exclude it yet.
+    project_gitignore <- here::here(".gitignore")
+    gitignore_lines <- if (file.exists(project_gitignore)) {
+      readLines(project_gitignore)
+    } else {
+      character()
+    }
+    if (!any(gitignore_lines == ".Renviron")) {
+      writeLines(
+        c(gitignore_lines, ".Renviron"),
+        project_gitignore
+      )
+      cli::cli_alert_info(
+        "Added .Renviron to .gitignore to prevent committing the token."
+      )
+    }
+
     token_renviron <- stringr::str_c(api_renv_name, "=", token)
-    writeLines(
-      c(readLines("~/.Renviron"), token_renviron),
-      "~/.Renviron"
+    existing_lines <- if (file.exists(project_renviron)) {
+      readLines(project_renviron)
+    } else {
+      character()
+    }
+    # Replace any pre-existing REDCAP_API_KEY line instead of appending a
+    # new one, so stale/duplicate tokens don't accumulate in the file.
+    key_line_index <- stringr::str_detect(
+      existing_lines,
+      stringr::str_c("^", api_renv_name, "=")
     )
+    if (any(key_line_index)) {
+      existing_lines[key_line_index] <- token_renviron
+      updated_lines <- existing_lines
+    } else {
+      updated_lines <- c(existing_lines, token_renviron)
+    }
+    writeLines(
+      updated_lines,
+      project_renviron
+    )
+    readRenviron(project_renviron)
     message(
-      "The provided token has been stored in ~/.Renviron.\nIt will be available after restarting your R session.\n"
+      "The provided token has been stored in the project's .Renviron file.\n"
     )
   }
 

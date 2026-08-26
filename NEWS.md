@@ -1,5 +1,9 @@
 # odytools 0.10.0.9000
 
+## Removed functions
+
+- Removed `ody_gpt` and `ody_correct` (and the "OdyGPT" RStudio add-in), which were based on the now obsolete `tidychatmodels` package. `tidychatmodels` has been dropped from Suggests.
+
 ## New functions
 
 - Added `ody_rc_simplify_selection2` as a conservative, stable replacement for `ody_rc_simplify_selection`. It only drops `redcap_event_name`/`redcap_instance_number` when this is guaranteed safe from stable project design metadata (`forms_events_mapping`) and/or from data actually observed, instead of relying on the `repeating` attribute inferred from imported data (which can vary across imports now that `repeatingFormsEvents` is no longer exportable with standard REDCap API privileges). `ody_rc_simplify_selection` is now superseded and emits a warning pointing to the new function.

@@ -19,13 +19,13 @@ A simplified data frame or list of data frames without the specified
 RedCap structural columns.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
+
 Remove RedCap structural columns (redcap_event_name, redcap_form_name,
 redcap_instance_type, redcap_instance_number) from a data frame or list of
 data frames.
 }
 \details{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
-
 This function decides whether \code{redcap_instance_number} can be dropped based
 on the \code{repeating} attribute attached to the RedCap import. Since REDCap
 stopped allowing \code{repeatingFormsEvents} to be exported with standard API

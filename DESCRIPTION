@@ -58,7 +58,6 @@ Suggests:
     magick,
     grDevices,
     git2r,
-    tidychatmodels,
     pdftools,
     ggpubr,
     gghalves,

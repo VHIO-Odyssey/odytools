@@ -1083,11 +1083,12 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 
 #' Simplify a selection by dropping RedCap structure variables (legacy)
 #'
+#' @description
+#' `r lifecycle::badge("superseded")`
+#'
 #' Remove RedCap structural columns (redcap_event_name, redcap_form_name,
 #' redcap_instance_type, redcap_instance_number) from a data frame or list of
 #' data frames.
-#'
-#' `r lifecycle::badge("superseded")`
 #'
 #' @param selected_data A data frame or list of data frames (typically the
 #' output of ody_rc_select or ody_rc_select_form).

@@ -2,7 +2,7 @@
 % Please edit documentation in R/redcap.R
 \name{ody_rc_simplify_selection}
 \alias{ody_rc_simplify_selection}
-\title{Simplify a selection by dropping RedCap structure variables}
+\title{Simplify a selection by dropping RedCap structure variables (legacy)}
 \usage{
 ody_rc_simplify_selection(selected_data, join = FALSE)
 }
@@ -22,4 +22,25 @@ RedCap structural columns.
 Remove RedCap structural columns (redcap_event_name, redcap_form_name,
 redcap_instance_type, redcap_instance_number) from a data frame or list of
 data frames.
+}
+\details{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#superseded}{\figure{lifecycle-superseded.svg}{options: alt='[Superseded]'}}}{\strong{[Superseded]}}
+
+This function decides whether \code{redcap_instance_number} can be dropped based
+on the \code{repeating} attribute attached to the RedCap import. Since REDCap
+stopped allowing \code{repeatingFormsEvents} to be exported with standard API
+privileges, this attribute is now inferred from the imported data itself
+(which forms/events actually show a non-missing instance number), instead
+of coming from the project's design metadata. As a consequence, a
+form/event that is repeatable by design but has no data yet (e.g. an empty
+"unscheduled" event) can be wrongly treated as non-repeatable, so
+\code{redcap_instance_number} may be dropped even though it could reappear as
+meaningful once that form/event starts collecting data. This makes the
+output of this function potentially unstable across successive imports of
+the same project.
+
+Use \code{ody_rc_simplify_selection2()} instead, which relies only on
+\code{forms_events_mapping} (stable project design metadata) and, for
+single-event forms, on directly observing whether the instance number is
+NA in the already selected data.
 }

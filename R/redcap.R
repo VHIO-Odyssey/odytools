@@ -1081,11 +1081,13 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 }
 
 
-#' Simplify a selection by dropping RedCap structure variables
+#' Simplify a selection by dropping RedCap structure variables (legacy)
 #'
 #' Remove RedCap structural columns (redcap_event_name, redcap_form_name,
 #' redcap_instance_type, redcap_instance_number) from a data frame or list of
 #' data frames.
+#'
+#' `r lifecycle::badge("superseded")`
 #'
 #' @param selected_data A data frame or list of data frames (typically the
 #' output of ody_rc_select or ody_rc_select_form).
@@ -1096,11 +1098,35 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' @return A simplified data frame or list of data frames without the specified
 #' RedCap structural columns.
 #'
+#' @details
+#' This function decides whether `redcap_instance_number` can be dropped based
+#' on the `repeating` attribute attached to the RedCap import. Since REDCap
+#' stopped allowing `repeatingFormsEvents` to be exported with standard API
+#' privileges, this attribute is now inferred from the imported data itself
+#' (which forms/events actually show a non-missing instance number), instead
+#' of coming from the project's design metadata. As a consequence, a
+#' form/event that is repeatable by design but has no data yet (e.g. an empty
+#' "unscheduled" event) can be wrongly treated as non-repeatable, so
+#' `redcap_instance_number` may be dropped even though it could reappear as
+#' meaningful once that form/event starts collecting data. This makes the
+#' output of this function potentially unstable across successive imports of
+#' the same project.
+#'
+#' Use `ody_rc_simplify_selection2()` instead, which relies only on
+#' `forms_events_mapping` (stable project design metadata) and, for
+#' single-event forms, on directly observing whether the instance number is
+#' NA in the already selected data.
+#'
 #' @export
 ody_rc_simplify_selection <- function(
   selected_data,
   join = FALSE
 ) {
+  cli::cli_alert_warning(c(
+    "{.fn ody_rc_simplify_selection} is superseded and may drop {.field redcap_instance_number} unsafely for forms/events without data yet.",
+    "i" = "Please use {.fn ody_rc_simplify_selection2} instead."
+  ))
+
   event_mapping <- attr(selected_data, "forms_events_mapping")
   repeating <- attr(selected_data, "repeating")
 
@@ -1176,6 +1202,131 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
   # Remove event name only if the form belongs to a single event
   if (length(possible_events) == 1) {
     removed_redcap_vars <- c(removed_redcap_vars, "redcap_event_name")
+  }
+
+  selected_data |>
+    dplyr::select(-tidyselect::any_of(removed_redcap_vars))
+}
+
+
+#' Simplify a selection by dropping RedCap structure variables (conservative)
+#'
+#' Remove RedCap structural columns (`redcap_form_name`,
+#' `redcap_instance_type`, and, when safe, `redcap_event_name` and
+#' `redcap_instance_number`) from a data frame or list of data frames.
+#'
+#' @param selected_data A data frame or list of data frames (typically the
+#' output of `ody_rc_select()` or `ody_rc_select_form()`).
+#' @param join Logical. If TRUE and `selected_data` is a list of data frames,
+#' the simplified data frames will be joined with `dplyr::full_join` by all
+#' the common columns. Defaults to `FALSE`: joining forms coming from
+#' different events/repeating structures can create unexpected many-to-many
+#' cross joins, so it is left to the user to decide, on a case by case basis,
+#' whether `join = TRUE` is appropriate.
+#'
+#' @return A simplified data frame or list of data frames without the
+#' RedCap structural columns that can be safely removed.
+#'
+#' @details
+#' This function only relies on information that is stable and does not
+#' depend on how much data has been collected so far:
+#'
+#' - `redcap_form_name` and `redcap_instance_type` are always removed, since
+#'   they never carry information useful for downstream analysis once a
+#'   selection has been made.
+#' - `redcap_event_name` is removed only if the form belongs to a single
+#'   possible event, according to `forms_events_mapping` (project design
+#'   metadata, unaffected by REDCap API privilege restrictions).
+#' - `redcap_instance_number` is removed only if the form belongs to a single
+#'   possible event **and** the already selected data has at least one row
+#'   (to rule out the vacuous case of no data at all) with
+#'   `redcap_instance_number` equal to `NA` in every row. If the form appears in
+#'   more than one event,
+#'   or if there is no data at all yet, `redcap_instance_number` is
+#'   never removed.
+#'
+#' Because of these rules, the output of this function is stable across
+#' successive imports of the same project as more data is collected: a
+#' column is only dropped when it can be shown, from stable metadata or from
+#' data actually observed, that it carries no information yet.
+#'
+#' This function supersedes `ody_rc_simplify_selection()`, which relied on
+#' the `repeating` attribute inferred from the data (now the only option
+#' since `repeatingFormsEvents` is no longer exportable with standard API
+#' privileges) and could therefore give a different (and potentially unsafe)
+#' answer for the same project depending on when it was imported or which
+#' data access groups the importing user could see.
+#'
+#' @export
+ody_rc_simplify_selection2 <- function(
+  selected_data,
+  join = FALSE
+) {
+  event_mapping <- attr(selected_data, "forms_events_mapping")
+
+  if (is.data.frame(selected_data)) {
+    return(simplify_selection2(selected_data, event_mapping))
+  }
+
+  simp_data <- purrr::map(
+    selected_data,
+    simplify_selection2,
+    event_mapping
+  )
+
+  if (join) {
+    simp_data <-
+      simp_data |>
+      purrr::reduce(dplyr::full_join) |>
+      suppressMessages()
+  }
+
+  attr(simp_data, "meddra_codes") <- attr(selected_data, "meddra_codes")
+  attr(simp_data, "meddra_fields") <- attr(selected_data, "meddra_fields")
+  attr(simp_data, "atc_codes") <- attr(selected_data, "atc_codes")
+  attr(simp_data, "atc_fields") <- attr(selected_data, "atc_fields")
+
+  simp_data
+}
+
+# Helper function of ody_rc_simplify_selection2. Conservative logic: only
+# drops redcap_event_name/redcap_instance_number when this is guaranteed safe
+# from stable metadata (forms_events_mapping) or from data actually observed
+# (never from data absence).
+simplify_selection2 <- function(selected_data, event_mapping) {
+  form_origin <- unique(selected_data$redcap_form_name)
+
+  if (!is.null(event_mapping)) {
+    possible_events <-
+      event_mapping |>
+      dplyr::filter(.data$form == form_origin) |>
+      dplyr::pull("unique_event_name")
+  } else {
+    possible_events <- "Classic_project_with_no_events"
+  }
+
+  # redcap_form_name and redcap_instance_type never carry useful information
+  # once a selection has been made.
+  removed_redcap_vars <- c("redcap_form_name", "redcap_instance_type")
+
+  # redcap_event_name and redcap_instance_number are only removed if the form
+  # belongs to a single possible event. If it belongs to more than one event,
+  # neither column is ever removed.
+  if (length(possible_events) == 1) {
+    removed_redcap_vars <- c(removed_redcap_vars, "redcap_event_name")
+
+    # redcap_instance_number is removed only if there is at least one row
+    # (to avoid the vacuous TRUE that all(is.na(x)) returns on an empty
+    # vector) and, in every row, redcap_instance_number is NA. This is a
+    # direct confirmation from observed data, not an inference: REDCap
+    # assigns an instance number from the first repetition of any repeating
+    # structure, so an observed NA rules out repetition.
+    if (
+      nrow(selected_data) > 0 &&
+        all(is.na(selected_data$redcap_instance_number))
+    ) {
+      removed_redcap_vars <- c(removed_redcap_vars, "redcap_instance_number")
+    }
   }
 
   selected_data |>

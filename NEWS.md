@@ -1,3 +1,14 @@
+# odytools 0.10.0.9000
+
+## New functions
+
+- Added `ody_rc_simplify_selection2` as a conservative, stable replacement for `ody_rc_simplify_selection`. It only drops `redcap_event_name`/`redcap_instance_number` when this is guaranteed safe from stable project design metadata (`forms_events_mapping`) and/or from data actually observed, instead of relying on the `repeating` attribute inferred from imported data (which can vary across imports now that `repeatingFormsEvents` is no longer exportable with standard REDCap API privileges). `ody_rc_simplify_selection` is now superseded and emits a warning pointing to the new function.
+
+## Improvements
+
+- `ody_get_query` now supports executing multiple SQL queries from a single `.sql` file, splitting on `GO`, semicolons, or top-level statement boundaries, or on an explicit `query_separator` comment marker; results can be named via `.names`. It also checks VHIO network reachability before attempting to connect and aborts early with a clear message if the SQL Server host cannot be reached.
+- REDCap API tokens are now stored in each project's own `.Renviron` (as `REDCAP_API_KEY`) instead of the user's `~/.Renviron`. Legacy project-specific tokens found in the user environment are automatically migrated and removed from `~/.Renviron`.
+
 # odytools 0.10.0
 
 ## New functions

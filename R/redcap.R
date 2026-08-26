@@ -1117,21 +1117,27 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 #' single-event forms, on directly observing whether the instance number is
 #' NA in the already selected data.
 #'
+#' To help decide whether migrating matters for a given selection, this
+#' function internally runs `ody_rc_simplify_selection2()` on the same input
+#' and compares, per form, the set of retained columns. A warning is only
+#' raised when the two functions disagree, detailing which columns are kept
+#' by one function but not the other. This function's own output is always
+#' what gets returned, regardless of the comparison; the internal call to
+#' `ody_rc_simplify_selection2()` is wrapped in `tryCatch()` so that an
+#' unexpected error there never affects this function's behaviour.
+#'
 #' @export
 ody_rc_simplify_selection <- function(
   selected_data,
   join = FALSE
 ) {
-  cli::cli_alert_warning(c(
-    "{.fn ody_rc_simplify_selection} is superseded and may drop {.field redcap_instance_number} unsafely for forms/events without data yet.",
-    "i" = "Please use {.fn ody_rc_simplify_selection2} instead."
-  ))
-
   event_mapping <- attr(selected_data, "forms_events_mapping")
   repeating <- attr(selected_data, "repeating")
 
   if (is.data.frame(selected_data)) {
-    return(simplify_selection(selected_data, event_mapping, repeating))
+    simp_data <- simplify_selection(selected_data, event_mapping, repeating)
+    warn_if_differs_from_v2(selected_data, simp_data)
+    return(simp_data)
   }
 
   simp_data <- purrr::map(
@@ -1140,6 +1146,8 @@ ody_rc_simplify_selection <- function(
     event_mapping,
     repeating
   )
+
+  warn_if_differs_from_v2(selected_data, simp_data)
 
   if (join) {
     simp_data <-
@@ -1153,6 +1161,84 @@ ody_rc_simplify_selection <- function(
   attr(simp_data, "atc_fields") <- attr(selected_data, "atc_fields")
 
   simp_data
+}
+
+# Helper function of ody_rc_simplify_selection. Internally runs
+# ody_rc_simplify_selection2() (with join = FALSE, so the comparison happens
+# per form, before any join can change the column set) and compares the set
+# of retained columns per form against the legacy result. Only warns, with
+# details on what differs, when the two functions disagree; the legacy
+# function's own output is always what gets returned regardless of this
+# check. The call to the v2 function is wrapped in tryCatch so that an
+# unexpected error there never breaks the (stable) legacy behaviour.
+warn_if_differs_from_v2 <- function(selected_data, legacy_result) {
+  v2_result <- tryCatch(
+    ody_rc_simplify_selection2(selected_data, join = FALSE),
+    error = function(e) NULL
+  )
+
+  if (is.null(v2_result)) {
+    return(invisible(NULL))
+  }
+
+  if (is.data.frame(legacy_result)) {
+    legacy_by_form <- list(selection = legacy_result)
+    v2_by_form <- list(selection = v2_result)
+  } else {
+    legacy_by_form <- legacy_result
+    v2_by_form <- v2_result
+  }
+
+  common_forms <- intersect(names(legacy_by_form), names(v2_by_form))
+
+  differing_forms <- purrr::keep(
+    common_forms,
+    function(form) {
+      !setequal(names(legacy_by_form[[form]]), names(v2_by_form[[form]]))
+    }
+  )
+
+  if (length(differing_forms) == 0) {
+    return(invisible(NULL))
+  }
+
+  purrr::walk(
+    differing_forms,
+    function(form) {
+      only_legacy <- setdiff(
+        names(legacy_by_form[[form]]),
+        names(v2_by_form[[form]])
+      )
+      only_v2 <- setdiff(
+        names(v2_by_form[[form]]),
+        names(legacy_by_form[[form]])
+      )
+
+      msg <- c(
+        "{.fn ody_rc_simplify_selection} and {.fn ody_rc_simplify_selection2} disagree on form {.val {form}}."
+      )
+      if (length(only_legacy) > 0) {
+        msg <- c(
+          msg,
+          "i" = "Kept only by the legacy function: {.field {only_legacy}}."
+        )
+      }
+      if (length(only_v2) > 0) {
+        msg <- c(
+          msg,
+          "i" = "Kept only by {.fn ody_rc_simplify_selection2}: {.field {only_v2}}."
+        )
+      }
+      msg <- c(
+        msg,
+        "i" = "Consider switching to {.fn ody_rc_simplify_selection2}, which is safer against forms/events without data yet."
+      )
+
+      cli::cli_alert_warning(msg)
+    }
+  )
+
+  invisible(NULL)
 }
 
 simplify_selection <- function(selected_data, event_mapping, repeating) {

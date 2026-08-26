@@ -43,4 +43,13 @@ Use \code{ody_rc_simplify_selection2()} instead, which relies only on
 \code{forms_events_mapping} (stable project design metadata) and, for
 single-event forms, on directly observing whether the instance number is
 NA in the already selected data.
+
+To help decide whether migrating matters for a given selection, this
+function internally runs \code{ody_rc_simplify_selection2()} on the same input
+and compares, per form, the set of retained columns. A warning is only
+raised when the two functions disagree, detailing which columns are kept
+by one function but not the other. This function's own output is always
+what gets returned, regardless of the comparison; the internal call to
+\code{ody_rc_simplify_selection2()} is wrapped in \code{tryCatch()} so that an
+unexpected error there never affects this function's behaviour.
 }

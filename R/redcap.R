@@ -648,6 +648,17 @@ label_rc_import <- function(rc_import) {
 }
 
 
+# Helper function used by nest_rc to evaluate labelled::is_regular_na()
+# column by column, preserving each column's labelled/na_values attributes.
+# Calling is_regular_na() directly on a data frame (or via apply()/as.matrix,
+# which coerce row-wise) strips those attributes, making user-defined missing
+# codes indistinguishable from actual data and therefore wrongly flagged as
+# "empty". Returns a logical matrix with the same dimensions as df.
+regular_na_matrix <- function(df) {
+  purrr::map_dfc(df, labelled::is_regular_na) |>
+    as.matrix()
+}
+
 # Helper function to nest the imported project
 nest_rc <- function(rc_raw) {
   id_var <- attr(rc_raw, "id_var")
@@ -723,7 +734,9 @@ nest_rc <- function(rc_raw) {
                   dplyr::select(dplyr::any_of(form_fields)) |>
                   # id_var is extracted
                   dplyr::select(-dplyr::any_of(id_var)) |>
-                  is.na() |>
+                  # User-defined missing codes are real, deliberate data and
+                  # should not count as "empty" (unlike regular NAs).
+                  regular_na_matrix() |>
                   all()
               ) {
                 return(
@@ -822,11 +835,12 @@ nest_rc <- function(rc_raw) {
                     dplyr::pull(vars, dplyr::any_of(complete_vars)) |>
                       labelled::is_regular_na()
                   } else {
-                    apply(
-                      to_check_vars,
-                      1,
-                      function(x) all(labelled::is_regular_na(x))
-                    )
+                    # regular_na_matrix() evaluates is_regular_na() column by
+                    # column (preserving labelled/na_values attributes) before
+                    # reducing row by row, so an instance whose only content
+                    # is a user-defined missing code is not treated as empty.
+                    regular_na_matrix(to_check_vars) |>
+                      apply(1, all)
                   }
                 }
               ),

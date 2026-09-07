@@ -86,9 +86,9 @@ import_rc <- function(
   events <- extract_data("event", token, url)
   forms_event_mapping <- extract_data("formEventMapping", token, url)
   # repeating <- extract_data("repeatingFormsEvents", token, url)
-  # ! repeatingFormsEvents ya no es importable con privilegios estandar de la
-  # ! API. Se arregla deduciendo el patrón de repetición a partir del propio
-  # ! data frame de datos.
+  #! repeatingFormsEvents ya no es importable.
+  #  Se requieren privilegios adicionales a los estandar de la API. Se arregla
+  #  deduciendo el patrón de repetición a partir del propio data frame de datos.
   repeating_info_vars <-
     redcap_data |>
     dplyr::select(
@@ -115,8 +115,9 @@ import_rc <- function(
   arms <- extract_data("arm", token, url)
   has_dag <- any(names(redcap_data) == "redcap_data_access_group")
   if (has_dag) {
-    #! dag también se deja de extraer con privilegios estándar de la API.
-    #! intento sacar la info de redcap_data directamente.
+    #! dag ya no es importable.
+    # Al menos conprivilegios estandar.
+    # Intento sacar la info de redcap_data directamente.
     # dag <- extract_data("dag", token, url)
     subjects_dag <- redcap_data |>
       dplyr::select(1, "redcap_data_access_group") |>

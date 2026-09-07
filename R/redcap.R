@@ -1033,6 +1033,64 @@ ody_rc_import <- function(
 }
 
 
+# Helper to get the names of the forms that actually have data in a nested
+# REDCap import.
+rc_forms_with_data <- function(rc_data) {
+  if (names(rc_data)[1] == "redcap_event_name") {
+    purrr::map(rc_data$redcap_event_data, "redcap_form_name") |>
+      unlist() |>
+      unique()
+  } else {
+    unique(rc_data$redcap_form_name)
+  }
+}
+
+# Helper of select_rc_classic/select_rc_long. Builds the 0-row tibble
+# returned when a variable cannot be selected because its form has no data
+# yet or because it has no column in the import (phantom variable). Column
+# types mirror a normal selection so that later full_joins do not fail on
+# type mismatches nor lose rows.
+empty_rc_selection <- function(rc_data, var_name, checkbox_aux, long) {
+  id_var <- attr(rc_data, "id_var")
+  subjects <- attr(rc_data, "subjects")
+
+  # The type of redcap_instance_number depends on the import (logical NA in
+  # projects without repeating structures, numeric otherwise), so it is
+  # taken from any form with data. If no form has data, all selections will
+  # be equally empty and consistent.
+  form_data_list <- if (long) {
+    purrr::map(rc_data$redcap_event_data, "redcap_form_data") |>
+      purrr::flatten()
+  } else {
+    rc_data$redcap_form_data
+  }
+  instance_number <- if (length(form_data_list) > 0) {
+    form_data_list[[1]]$redcap_instance_number[0]
+  } else {
+    logical(0)
+  }
+
+  var_column <- if (var_name %in% checkbox_aux) logical(0) else character(0)
+
+  empty_selection <- tibble::tibble(
+    !!id_var := subjects[0],
+    redcap_form_name = character(0),
+    redcap_instance_type = character(0),
+    redcap_instance_number = instance_number,
+    !!var_name := var_column
+  )
+
+  if (long) {
+    empty_selection <- empty_selection |>
+      dplyr::mutate(
+        redcap_event_name = character(0),
+        .before = "redcap_form_name"
+      )
+  }
+
+  empty_selection
+}
+
 # Helper function of ody_rc_select to select variables in a longitudinal
 # project.
 select_rc_long <- function(rc_data, var_name, metadata, checkbox_aux) {
@@ -1045,17 +1103,37 @@ select_rc_long <- function(rc_data, var_name, metadata, checkbox_aux) {
 
   id_var <- attr(rc_data, "id_var")
 
-  form_name <- metadata |>
-    dplyr::filter(
-      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")
-    ) |>
-    dplyr::pull("form_name")
+  form_name <- metadata$form_name[
+    metadata$field_name == stringr::str_remove(var_name, "___.+$")
+  ]
 
-  rc_data |>
+  # The form may have no data yet in this import (it was dropped when
+  # nesting because all its values were missing).
+  if (!form_name %in% rc_forms_with_data(rc_data)) {
+    cli::cli_warn(c(
+      "{.var {var_name}} belongs to form {.val {form_name}}, which has no data in this import yet.",
+      "i" = "Returning an empty tibble."
+    ))
+    return(empty_rc_selection(rc_data, var_name, checkbox_aux, long = TRUE))
+  }
+
+  selected <- rc_data |>
     dplyr::select("redcap_event_name", "redcap_event_data") |>
     tidyr::unnest(cols = "redcap_event_data") |>
     dplyr::filter(.data[["redcap_form_name"]] == form_name) |>
-    tidyr::unnest(cols = "redcap_form_data") |>
+    tidyr::unnest(cols = "redcap_form_data")
+
+  # Phantom variables (e.g. descriptive fields) are defined in the metadata
+  # but never have a column in the import.
+  if (!var_name %in% names(selected)) {
+    cli::cli_warn(c(
+      "{.var {var_name}} is defined in the metadata but has no column in the import (e.g. a descriptive field).",
+      "i" = "Returning an empty tibble."
+    ))
+    return(empty_rc_selection(rc_data, var_name, checkbox_aux, long = TRUE))
+  }
+
+  selected |>
     dplyr::select(
       dplyr::all_of(id_var),
       "redcap_event_name",
@@ -1077,15 +1155,35 @@ select_rc_classic <- function(rc_data, var_name, metadata, checkbox_aux) {
 
   id_var <- attr(rc_data, "id_var")
 
-  form_name <- metadata |>
-    dplyr::filter(
-      .data[["field_name"]] == stringr::str_remove(var_name, "___.+$")
-    ) |>
-    dplyr::pull("form_name")
+  form_name <- metadata$form_name[
+    metadata$field_name == stringr::str_remove(var_name, "___.+$")
+  ]
 
-  rc_data |>
+  # The form may have no data yet in this import (it was dropped when
+  # nesting because all its values were missing).
+  if (!form_name %in% rc_forms_with_data(rc_data)) {
+    cli::cli_warn(c(
+      "{.var {var_name}} belongs to form {.val {form_name}}, which has no data in this import yet.",
+      "i" = "Returning an empty tibble."
+    ))
+    return(empty_rc_selection(rc_data, var_name, checkbox_aux, long = FALSE))
+  }
+
+  selected <- rc_data |>
     dplyr::filter(.data[["redcap_form_name"]] == form_name) |>
-    tidyr::unnest(cols = "redcap_form_data") |>
+    tidyr::unnest(cols = "redcap_form_data")
+
+  # Phantom variables (e.g. descriptive fields) are defined in the metadata
+  # but never have a column in the import.
+  if (!var_name %in% names(selected)) {
+    cli::cli_warn(c(
+      "{.var {var_name}} is defined in the metadata but has no column in the import (e.g. a descriptive field).",
+      "i" = "Returning an empty tibble."
+    ))
+    return(empty_rc_selection(rc_data, var_name, checkbox_aux, long = FALSE))
+  }
+
+  selected |>
     dplyr::select(
       dplyr::all_of(id_var),
       "redcap_form_name",
@@ -1352,6 +1450,18 @@ simplify_selection <- function(selected_data, event_mapping, repeating) {
 #' column is only dropped when it can be shown, from stable metadata or from
 #' data actually observed, that it carries no information yet.
 #'
+#' Empty selections (0-row tibbles produced by `ody_rc_select()` for forms
+#' without data yet or for variables without a column in the export) are
+#' also handled. Since they contain no `redcap_form_name` value to inspect,
+#' the origin form is recovered from the list element name (selections made
+#' with `.if_different_forms = "list"` are named by form). If the form can
+#' be determined, the usual rules apply using `forms_events_mapping`; if it
+#' cannot (a bare empty data frame), `redcap_event_name` and
+#' `redcap_instance_number` are conservatively kept. Note that
+#' `redcap_instance_number` is never removed from an empty selection, so
+#' with `join = TRUE` it may appear as an all-`NA` column even if the other
+#' forms could drop it.
+#'
 #' This function supersedes `ody_rc_simplify_selection()`, which relied on
 #' the `repeating` attribute inferred from the data (now the only option
 #' since `repeatingFormsEvents` is no longer exportable with standard API
@@ -1370,10 +1480,16 @@ ody_rc_simplify_selection2 <- function(
     return(simplify_selection2(selected_data, event_mapping))
   }
 
-  simp_data <- purrr::map(
+  # The list names are the form names (set by ody_rc_select), which is the
+  # only place where the origin form of an empty selection (0-row tibble
+  # from a form without data yet) is recorded.
+  simp_data <- purrr::imap(
     selected_data,
-    simplify_selection2,
-    event_mapping
+    ~ simplify_selection2(
+      .x,
+      event_mapping,
+      form_fallback = if (is.character(.y)) .y else NULL
+    )
   )
 
   if (join) {
@@ -1395,14 +1511,29 @@ ody_rc_simplify_selection2 <- function(
 # drops redcap_event_name/redcap_instance_number when this is guaranteed safe
 # from stable metadata (forms_events_mapping) or from data actually observed
 # (never from data absence).
-simplify_selection2 <- function(selected_data, event_mapping) {
+simplify_selection2 <- function(
+  selected_data,
+  event_mapping,
+  form_fallback = NULL
+) {
   form_origin <- unique(selected_data$redcap_form_name)
 
-  if (!is.null(event_mapping)) {
+  # Empty selections (forms without data yet) have no redcap_form_name to
+  # inspect; the form is recovered from the list element name when
+  # available.
+  if (length(form_origin) == 0) {
+    form_origin <- form_fallback
+  }
+
+  if (!is.null(event_mapping) && length(form_origin) > 0) {
     possible_events <-
       event_mapping |>
       dplyr::filter(.data$form == form_origin) |>
       dplyr::pull("unique_event_name")
+  } else if (!is.null(event_mapping)) {
+    # The form cannot be determined (bare empty data frame): the mapping
+    # cannot be consulted, so redcap_event_name is conservatively kept.
+    possible_events <- character(0)
   } else {
     possible_events <- "Classic_project_with_no_events"
   }
@@ -1437,6 +1568,16 @@ simplify_selection2 <- function(selected_data, event_mapping) {
 
 
 #' Select variables from a REDCap import
+#'
+#' @details
+#' Variables whose form has no data yet in the import (the form was dropped
+#' when nesting because all its values were missing), and variables defined
+#' in the metadata but without a column in the export (e.g. `descriptive`
+#' fields), cannot be selected. In both cases a warning is issued and a
+#' 0-row tibble with the usual structure is returned, so pipelines do not
+#' break. In the `.if_different_forms = "join"` path this becomes an all-`NA`
+#' column. Selecting by the name of a form without data returns an empty
+#' tibble with a single warning.
 #'
 #' @param rc_data REDCap data imported with `ody_rc_import()`.
 #' @param ... Variable names to select. You can also pass a form name to select
@@ -1503,6 +1644,17 @@ ody_rc_select <- function(
       ) |>
       dplyr::pull("form_name") |>
       unique()
+
+    # The form may have no data yet in this import (it was dropped when
+    # nesting because all its values were missing). Warn once and return an
+    # empty tibble instead of failing variable by variable.
+    if (!current_form %in% rc_forms_with_data(rc_data)) {
+      cli::cli_warn(c(
+        "Form {.val {current_form}} has no data in this import yet.",
+        "i" = "Returning an empty tibble."
+      ))
+      return(tibble::tibble())
+    }
 
     # If the form contains phantom variables, the must be excluded since they do
     # not actually exist and the selection function would fail.
@@ -1574,12 +1726,17 @@ ody_rc_select <- function(
         sel_vars,
         function(x) select_rc_function(rc_data, x, metadata, checkbox_aux)
       ),
-      form = purrr::map(
-        .data$variables,
-        ~ .$redcap_form_name |> unique()
+      # The form is deduced from the metadata (not from the selected data)
+      # so that empty selections (0-row tibbles) are still grouped under
+      # their form.
+      form = purrr::map_chr(
+        sel_vars,
+        ~ metadata$form_name[
+          metadata$field_name == stringr::str_remove(.x, "___.+$")
+        ][1]
       )
     ) |>
-      tidyr::nest(data = .data$variables)
+      tidyr::nest(data = "variables")
 
     extracted_list <- purrr::map(
       extracted_vars[[2]],

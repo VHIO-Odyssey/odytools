@@ -10,6 +10,8 @@
 
 ## Improvements
 
+- `ody_rc_simplify_selection2()` now works with empty selections (variables of forms without data yet): the origin form is recovered from the list element name and the usual conservative rules apply; if the form cannot be determined, `redcap_event_name` and `redcap_instance_number` are kept.
+- `ody_rc_select()` no longer fails when a selected variable belongs to a form that has no data yet in the import, or when the variable is defined in the metadata but has no column in the export (e.g. a `descriptive` field). Both cases now emit an informative warning and return a 0-row tibble with the expected structure (which becomes an all-`NA` column in the `.if_different_forms = "join"` path, and a form-named empty entry in the `"list"` path). Selecting by the name of a form without data returns an empty tibble with a single warning.
 - `ody_get_query` now supports executing multiple SQL queries from a single `.sql` file, splitting on `GO`, semicolons, or top-level statement boundaries, or on an explicit `query_separator` comment marker; results can be named via `.names`. It also checks VHIO network reachability before attempting to connect and aborts early with a clear message if the SQL Server host cannot be reached.
 - REDCap API tokens are now stored in each project's own `.Renviron` (as `REDCAP_API_KEY`) instead of the user's `~/.Renviron`. Legacy project-specific tokens found in the user environment are automatically migrated and removed from `~/.Renviron`.
 

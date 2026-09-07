@@ -36,6 +36,10 @@ add_select_test_attributes <- function(rc_data) {
     form_name = "demographics"
   )
   attr(rc_data, "subjects") <- c("1", "2", "3")
+  # Needed by ody_rc_select_form(), which validates against the forms attribute.
+  attr(rc_data, "forms") <- tibble::tibble(
+    instrument_name = c("demographics", "empty_form")
+  )
 
   rc_data
 }
@@ -227,6 +231,46 @@ test_that("selecting a form without data by name warns once and returns an empty
 
   expect_equal(nrow(selection), 0)
   expect_equal(ncol(selection), 0)
+})
+
+test_that("ody_rc_select_form with a form without data warns and returns an empty tibble (classic)", {
+  rc_data <- make_classic_import()
+
+  expect_warning(
+    selection <- ody_rc_select_form(rc_data, empty_form),
+    'Form "empty_form" has no data in this import yet'
+  )
+
+  expect_equal(nrow(selection), 0)
+  expect_equal(ncol(selection), 0)
+})
+
+test_that("ody_rc_select_form with a form without data warns and returns an empty tibble (longitudinal)", {
+  rc_data <- make_long_import()
+
+  expect_warning(
+    selection <- ody_rc_select_form(rc_data, empty_form),
+    'Form "empty_form" has no data in this import yet'
+  )
+
+  expect_equal(nrow(selection), 0)
+  expect_equal(ncol(selection), 0)
+})
+
+test_that("ody_rc_select_form still works with a form with data", {
+  rc_data <- make_classic_import()
+
+  expect_no_warning(selection <- ody_rc_select_form(rc_data, demographics))
+  expect_equal(nrow(selection), 3)
+  expect_setequal(selection$demo_age, c("25", "30", "35"))
+
+  rc_data_long <- make_long_import()
+
+  expect_no_warning(
+    selection_long <- ody_rc_select_form(rc_data_long, demographics)
+  )
+  expect_equal(nrow(selection_long), 4)
+  expect_setequal(selection_long$demo_age, c("25", "30", "41", "52"))
 })
 
 test_that("normal selections are unchanged", {

@@ -1826,6 +1826,13 @@ ody_rc_select <- function(
 
 #' Select variables from a specific form in a RedCap import
 #'
+#' @details
+#' A form defined in the metadata but without data yet in the import (it was
+#' dropped when nesting because all its values were missing) cannot be
+#' selected. In that case a warning is issued and a 0-row tibble is returned,
+#' so pipelines do not break. This mirrors the behaviour of `ody_rc_select()`
+#' when selecting by form name.
+#'
 #' @param rc_data A RedCap data import (typically the output of `ody_rc_import`).
 #' @param form_name The name (as an expression or character) of the form from which to select variables.
 #' @param .form_name_is_character Logical. If TRUE, `form_name` is assumed to be a character name.
@@ -1855,6 +1862,17 @@ ody_rc_select_form <- function(
         stringr::str_c(available_forms, collapse = "\n")
       )
     )
+  }
+
+  # The form may have no data yet in this import (it was dropped when
+  # nesting because all its values were missing). Warn once and return an
+  # empty tibble, mirroring ody_rc_select()'s form-name path.
+  if (!form_name %in% rc_forms_with_data(rc_data)) {
+    cli::cli_warn(c(
+      "Form {.val {form_name}} has no data in this import yet.",
+      "i" = "Returning an empty tibble."
+    ))
+    return(tibble::tibble())
   }
 
   events_mapping <- attr(rc_data, "forms_events_mapping")

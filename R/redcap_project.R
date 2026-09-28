@@ -267,7 +267,14 @@ rc_init_update <- function() {
 
   if (is_update) {
     load(here::here(stringr::str_c(project_name, ".RData")))
+    # project_id (not project_title) is the invariant project identifier; the
+    # title is kept only to make the mismatch error message readable.
     pre_update_project <- attr(
+      rlang::env_get(rlang::current_env(), "redcap_data"),
+      "project_info"
+    )$project_id |>
+      as.character()
+    pre_update_title <- attr(
       rlang::env_get(rlang::current_env(), "redcap_data"),
       "project_info"
     )$project_title
@@ -391,13 +398,19 @@ rc_init_update <- function() {
   }
 
   if (is_update) {
-    post_update_project <- attr(redcap_data, "project_info")$project_title
+    post_update_project <- attr(redcap_data, "project_info")$project_id |>
+      as.character()
     if (pre_update_project != post_update_project) {
+      post_update_title <- attr(redcap_data, "project_info")$project_title
       stop(
-        "The project associated with the token provided (",
+        "The project associated with the token provided (PID ",
         post_update_project,
-        ") does not match the current project (",
+        ", ",
+        post_update_title,
+        ") does not match the current project (PID ",
         pre_update_project,
+        ", ",
+        pre_update_title,
         "). Update canceled."
       )
     }

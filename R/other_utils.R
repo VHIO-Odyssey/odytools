@@ -1253,3 +1253,27 @@ ody_get_query <- function(
   query_names <- .names %||% stringr::str_c("query_", seq_along(results))
   rlang::set_names(results, query_names)
 }
+
+# Helper para los atajos de teclado de Positron: devuelve el texto seleccionado
+# o, si no hay seleccion, la expresion completa (statement/pipe) bajo el cursor.
+.cursor_statement_text <- function() {
+  ctx <- rstudioapi::getSourceEditorContext()
+  sel <- rstudioapi::primary_selection(ctx)
+  if (nzchar(sel[["text"]])) {
+    return(sel[["text"]])
+  }
+  line <- sel[["range"]][["start"]][[1]]
+  pd <- tryCatch(
+    utils::getParseData(parse(text = ctx[["contents"]], keep.source = TRUE)),
+    error = function(e) NULL
+  )
+  if (is.null(pd)) {
+    return(ctx[["contents"]][line])
+  }
+  tops <- pd[pd[["token"]] == "expr" & pd[["parent"]] == 0, ]
+  hit <- tops[line >= tops[["line1"]] & line <= tops[["line2"]], ]
+  if (nrow(hit) == 0) {
+    return(ctx[["contents"]][line])
+  }
+  utils::getParseText(pd, hit[["id"]][1])
+}

@@ -1262,18 +1262,41 @@ ody_get_query <- function(
   if (nzchar(sel[["text"]])) {
     return(sel[["text"]])
   }
+  contents <- ctx[["contents"]]
   line <- sel[["range"]][["start"]][[1]]
+  ext <- tolower(tools::file_ext(ctx[["path"]]))
+  if (ext %in% c("qmd", "rmd")) {
+    fences <- grep("^\\s*```", contents)
+    before <- fences[fences < line]
+    after <- fences[fences > line]
+    if (length(before) == 0 || length(after) == 0) {
+      return(contents[line])
+    }
+    chunk_start <- max(before)
+    chunk_end <- min(after)
+    if (!grepl("^\\s*```\\{r[ ,}]", contents[chunk_start], ignore.case = TRUE)) {
+      return(contents[line])
+    }
+    if (chunk_end - chunk_start <= 1) {
+      return("")
+    }
+    contents <- contents[(chunk_start + 1):(chunk_end - 1)]
+    line <- line - chunk_start
+    if (line < 1 || line > length(contents)) {
+      return("")
+    }
+  }
   pd <- tryCatch(
-    utils::getParseData(parse(text = ctx[["contents"]], keep.source = TRUE)),
+    utils::getParseData(parse(text = contents, keep.source = TRUE)),
     error = function(e) NULL
   )
   if (is.null(pd)) {
-    return(ctx[["contents"]][line])
+    return(contents[line])
   }
   tops <- pd[pd[["token"]] == "expr" & pd[["parent"]] == 0, ]
   hit <- tops[line >= tops[["line1"]] & line <= tops[["line2"]], ]
   if (nrow(hit) == 0) {
-    return(ctx[["contents"]][line])
+    return(contents[line])
   }
   utils::getParseText(pd, hit[["id"]][1])
 }
